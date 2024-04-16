@@ -9,19 +9,40 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.11",
+    "@fullcalendar/daygrid": "^6.1.11",
+    "@fullcalendar/interaction": "^6.1.11",
+    "@fullcalendar/react": "^6.1.11",
+    "@fullcalendar/timegrid": "^6.1.11",
+    "@material-ui/core": "^4.12.4",
+    "@material-ui/icons": "^4.11.3",
+    "@material-ui/lab": "^4.0.0-alpha.61",
+    "@syncfusion/ej2-react-charts": "^25.1.39",
     "axios": "^1.6.8",
+    "axios-case-converter": "^1.1.1",
+    "chat.js": "^1.0.2",
+    "framer-motion": "^11.0.25",
+    "js-cookie": "^3.0.5",
     "next": "14.1.4",
+    "next-auth": "^4.24.7",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-router-dom": "^6.22.3",
+    "recharts": "^2.12.4"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^10.4.19",
+    "chart.js": "^4.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.1.4",
     "postcss": "^8.4.38",
+    "react-chartjs-2": "^5.2.0",
     "tailwindcss": "^3.4.3",
     "typescript": "^5"
   }
