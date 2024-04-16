@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // 未認証の場合はsigninページへリダイレクト
-    if (!loading && !isSignedIn && pathname !== "/signin") {
+    if (!loading && !isSignedIn && pathname !== "/login") {
       router.push("/login");
     }
   }, [loading, isSignedIn, pathname]);

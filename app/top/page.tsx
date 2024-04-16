@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import moneyImage from "../public/TOPお金.png";
-import taskImage from "../public/TOP-removebg-preview.png";
+import moneyImage from "@/../public/TOPお金.png";
+import taskImage from "@/../public/TOP-removebg-preview.png";
 
 export default function TOP() {
   return (

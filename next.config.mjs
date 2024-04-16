@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+    router: {
+    base: '/top/'
+    }
+};
 
 export default nextConfig;

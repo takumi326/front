@@ -2,7 +2,6 @@
 import React from "react";
 import { Calendar } from "@/components/calendar";
 import { ChartPage } from "@/components/graph";
-import { MyFunnel } from "@/components/graph2";
 
 const Mypage: React.FC = () => {
   return (
@@ -11,9 +10,6 @@ const Mypage: React.FC = () => {
       <Calendar />
       <p>グラフ1</p>
       <ChartPage />
-      <p>グラフ2</p>
-      <MyFunnel />
-      <p>終わり</p>
     </div>
   );
 };
