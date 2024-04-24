@@ -4,44 +4,41 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
 import { AuthContext } from "@/context/AuthContext";
-import { signUp } from "@/lib/api/auth";
+import { signIn } from "@/lib/api/auth";
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
-import { SignUpParams } from "@/types/auth_interface";
+import { SignInParams } from "@/types/auth_interface";
 
-export const SignUpForm: React.FC = () => {
-  const router = useRouter();
+export const LoginForm: React.FC = () => {
+  const router = useRouter(); // Next.jsのルーターを利用
 
-  const { setIsSignedIn, setCurrentUser } = useContext(AuthContext);
-
+  const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
+    useContext(AuthContext);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState<string>("");
   const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const params: SignUpParams = {
+    const params: SignInParams = {
       email: email,
       password: password,
-      passwordConfirmation: passwordConfirmation,
     };
 
     try {
-      const res = await signUp(params);
+      const res = await signIn(params);
       console.log(res);
 
       if (res.status === 200) {
-        // アカウント作成と同時にログインさせてしまう
-        // 本来であればメール確認などを挟むべきだが、今回はサンプルなので
         Cookies.set("_access_token", res.headers["access-token"]);
         Cookies.set("_client", res.headers["client"]);
         Cookies.set("_uid", res.headers["uid"]);
 
         setIsSignedIn(true);
         setCurrentUser(res.data.data);
+        setcurrentUserId(res.data.data.id);
 
-        router.push("/mypage");
+        router.push(`/mypage`);
 
         console.log("Signed in successfully!");
       } else {
@@ -54,7 +51,7 @@ export const SignUpForm: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto md:w-2/3 w-full px-10 pt-24 pb-16">
+    <div className="mx-auto md:w-2/3 w-full px-10 pt-28 pb-16">
       <p className="text-4xl font-bold text-center">ログイン</p>
       <form onSubmit={handleSubmit} className="mb-0">
         <div className="mt-16">
@@ -86,22 +83,7 @@ export const SignUpForm: React.FC = () => {
             autoComplete="current-password"
           />
         </div>
-        <div>
-          <label htmlFor="password" className="text-2xl">
-            パスワード確認
-          </label>
-          <input
-            type="password"
-            id="password"
-            placeholder="password"
-            className="w-full my-5 py-3"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        <div className="py-6 pb-20">
+        <div className="py-6 pb-24">
           <button
             type="submit"
             className="font-bold text-xl bg-blue-500 px-3 rounded-full text-white"

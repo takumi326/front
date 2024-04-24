@@ -12,13 +12,17 @@ export const AuthContext = createContext<{
   setIsSignedIn: React.Dispatch<React.SetStateAction<boolean>>;
   currentUser: User | undefined;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | undefined>>;
+  currentUserId: number;
+  setcurrentUserId: React.Dispatch<React.SetStateAction<User | undefined>>;
 }>({
   loading: false,
   setLoading: () => {},
   isSignedIn: false,
-  setIsSignedIn: () => {}, // ダミー関数の提供
+  setIsSignedIn: () => {}, 
   currentUser: undefined,
   setCurrentUser: () => {},
+  currentUserId: 123,
+  setcurrentUserId: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -27,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | undefined>();
+  const [currentUserId, setcurrentUserId] = useState<number>(-1);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -38,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (res?.data.isLogin === true) {
         setIsSignedIn(true);
         setCurrentUser(res?.data.data);
+        setcurrentUserId(res?.data.data.id);
 
         console.log(res?.data.data);
       } else {
@@ -70,6 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsSignedIn,
         currentUser,
         setCurrentUser,
+        currentUserId,
+        setcurrentUserId,
       }}
     >
       {children}

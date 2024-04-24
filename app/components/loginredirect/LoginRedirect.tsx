@@ -1,9 +1,9 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 
-export const SignedIn: React.FC<{ children: React.ReactNode }> = ({
+export const LoginRedirect: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const router = useRouter();
@@ -16,9 +16,9 @@ export const SignedIn: React.FC<{ children: React.ReactNode }> = ({
       Cookies.get("_client") &&
       Cookies.get("_uid")
     ) {
-      router.push("/mypage");
+      router.push(`/mypage`);
     }
-  }, [pathname]);
+  }, [pathname, router]);
 
   return <>{children}</>;
 };

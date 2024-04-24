@@ -1,8 +1,8 @@
 import React from "react";
 import "@/globals.css";
 
-import { Header } from "@/components/header/header";
-import { Footer } from "@/components/footer/footer";
+import { Header } from "@/components/header/Header";
+import { Footer } from "@/components/footer/Footer";
 
 export default function RootLayout({
   children,
