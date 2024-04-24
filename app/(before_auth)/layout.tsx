@@ -1,9 +1,9 @@
 import React from "react";
 import "@/globals.css";
 
-import { Header } from "@/components/header/header";
-import { Footer } from "@/components/footer/footer";
-import { SignedIn } from "@/context/SignedIn";
+import { Header } from "@/components/header/Header";
+import { Footer } from "@/components/footer/Footer";
+import { LoginRedirect } from "@/components/loginredirect/LoginRedirect";
 
 export default function RootLayout({
   children,
@@ -12,11 +12,11 @@ export default function RootLayout({
 }) {
   return (
     <>
-      <SignedIn>
+      <LoginRedirect>
         <Header />
         <div className="bg-gray-100">{children}</div>
         <Footer />
-      </SignedIn>
+      </LoginRedirect>
     </>
   );
 }
