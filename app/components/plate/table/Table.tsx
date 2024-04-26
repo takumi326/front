@@ -77,7 +77,7 @@ const Row: React.FC<ComponentProps> = (props) => {
 
   const handleCheckboxChange = (event) => {
     event.stopPropagation();
-    onSelect(row.id);
+    onSelect(row.id, row.completed);
   };
 
   const formatDate = (date: Date | undefined): string => {
@@ -88,7 +88,6 @@ const Row: React.FC<ComponentProps> = (props) => {
 
   const handleUpdate = (checked) => {
     const updatedRow = { checked };
-    console.log(updatedRow);
     onUpdate(updatedRow);
   };
 
@@ -104,7 +103,6 @@ const Row: React.FC<ComponentProps> = (props) => {
         updatedRow.body,
         updatedRow.completed
       );
-      console.log(updatedRow);
       setIsChecked(!isChecked);
       onUpdate(updatedRow);
     } catch (error) {
@@ -352,47 +350,78 @@ export function TableShow() {
       }
       return 0;
     };
-    console.log(selected);
+
+    console.log(incompleteSelected.length);
+    console.log(completedSelected.length);
+    console.log(selected.length);
 
     return compare(orderBy);
   });
 
   const handleSelectAllClick = () => {
-    if (selected.length === rows.length) {
-      setSelected([]);
+    if (filter === "incomplete") {
+      if (incompleteSelected.length === incompletePurposes.length) {
+        setIncompleteSelected([]);
+        setSelected(selected.filter((id) => !incompleteSelected.includes(id)));
+      } else {
+        const allIds = incompletePurposes.map((purpose) => purpose.id);
+        setIncompleteSelected(allIds);
+        setSelected([...selected, ...allIds]);
+      }
+    } else if (filter === "completed") {
+      if (completedSelected.length === completedPurposes.length) {
+        setCompletedSelected([]);
+        setSelected(selected.filter((id) => !completedSelected.includes(id)));
+      } else {
+        const allIds = completedPurposes.map((purpose) => purpose.id);
+        setCompletedSelected(allIds);
+        setSelected([...selected, ...allIds]);
+      }
     } else {
-      const allIds = rows.map((row) => row.id);
-      setSelected(allIds);
+      if (selected.length === purposes.length) {
+        setCompletedSelected([]);
+        setIncompleteSelected([]);
+        setSelected([]);
+      } else {
+        const allIds = purposes.map((purpose) => purpose.id);
+        const allCompletedIds = completedPurposes.map((purpose) => purpose.id);
+        const allIncompleteIds = incompletePurposes.map(
+          (purpose) => purpose.id
+        );
+        setCompletedSelected(allCompletedIds);
+        setIncompleteSelected(allIncompleteIds);
+        setSelected(allIds);
+      }
     }
   };
 
-  const handleSelectAllIncompleteClick = () => {
-    if (selected.length === rows.filter((row) => !row.completed).length) {
-      setSelected([]);
+  const handleSelect = (id: string, completed: boolean) => {
+    if (completed) {
+      if (completedSelected.includes(id)) {
+        setCompletedSelected(completedSelected.filter((item) => item !== id));
+        setSelected(completedSelected.filter((item) => item !== id));
+      } else {
+        setCompletedSelected([...completedSelected, id]);
+        setSelected([...selected, id]);
+      }
     } else {
-      const allIds = rows.filter((row) => !row.completed).map((row) => row.id);
-      setSelected(allIds);
+      if (incompleteSelected.includes(id)) {
+        setIncompleteSelected(incompleteSelected.filter((item) => item !== id));
+        setSelected(incompleteSelected.filter((item) => item !== id));
+      } else {
+        setIncompleteSelected([...incompleteSelected, id]);
+        setSelected([...selected, id]);
+      }
     }
   };
 
-  const handleSelectAllCompletedClick = () => {
-    if (selected.length === rows.filter((row) => row.completed).length) {
-      setSelected([]);
+  const isSelected = (id: string, completed: boolean) => {
+    if (completed) {
+      return completedSelected.includes(id);
     } else {
-      const allIds = rows.filter((row) => row.completed).map((row) => row.id);
-      setSelected(allIds);
+      return incompleteSelected.includes(id);
     }
   };
-
-  const handleSelect = (id: string) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((item) => item !== id));
-    } else {
-      setSelected([...selected, id]);
-    }
-  };
-
-  const isSelected = (id: string) => selected.includes(id);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -419,6 +448,8 @@ export function TableShow() {
 
   const handleAllDelete = () => {
     deleteAllPurpose(selected);
+    setCompletedSelected([]); // 選択をクリア
+    setIncompleteSelected([]); // 選択をクリア
     setSelected([]); // 選択をクリア
   };
 
@@ -510,47 +541,35 @@ export function TableShow() {
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
-                {filter === "incomplete" ? (
-                  <Checkbox
-                    indeterminate={
-                      selected.length > 0 &&
-                      selected.length <
-                        rows.filter((row) => !row.completed).length
-                    }
-                    checked={
-                      selected.length > 0 &&
-                      selected.length ===
-                        rows.filter((row) => !row.completed).length
-                    }
-                    onChange={handleSelectAllIncompleteClick}
-                  />
-                ) : filter === "completed" ? (
-                  <Checkbox
-                    indeterminate={
-                      selected.length > 0 &&
-                      selected.length <
-                        rows.filter((row) => row.completed).length
-                    }
-                    checked={
-                      selected.length > 0 &&
-                      selected.length ===
-                        rows.filter((row) => row.completed).length
-                    }
-                    onChange={handleSelectAllCompletedClick}
-                  />
-                ) : filter === "all" ? (
-                  <Checkbox
-                    indeterminate={
-                      selected.length > 0 && selected.length < rows.length
-                    }
-                    checked={
-                      selected.length > 0 && selected.length === rows.length
-                    }
-                    onChange={handleSelectAllClick}
-                  />
-                ) : (
-                  <span>?</span>
-                )}
+                <Checkbox
+                  indeterminate={
+                    filter === "incomplete"
+                      ? incompleteSelected.length > 0 &&
+                        incompleteSelected.length <
+                          rows.filter((row) => !row.completed).length
+                      : filter === "completed"
+                      ? completedSelected.length > 0 &&
+                        completedSelected.length <
+                          rows.filter((row) => row.completed).length
+                      : filter === "all"
+                      ? selected.length > 0 && selected.length < rows.length
+                      : false
+                  }
+                  checked={
+                    filter === "incomplete"
+                      ? incompleteSelected.length > 0 &&
+                        incompleteSelected.length ===
+                          rows.filter((row) => !row.completed).length
+                      : filter === "completed"
+                      ? completedSelected.length > 0 &&
+                        completedSelected.length ===
+                          rows.filter((row) => row.completed).length
+                      : filter === "all"
+                      ? selected.length > 0 && selected.length === rows.length
+                      : false
+                  }
+                  onChange={handleSelectAllClick}
+                />
               </TableCell>
               {Object.keys(visibleColumns).map((key) => (
                 <TableCell key={key}>
@@ -585,7 +604,7 @@ export function TableShow() {
                 key={row.title}
                 row={row}
                 onSelect={handleSelect}
-                isSelected={isSelected(row.id)}
+                isSelected={isSelected(row.id, row.completed)}
                 visibleColumns={visibleColumns}
                 onUpdate={updatePurpose}
                 onDelete={handleDelete}
