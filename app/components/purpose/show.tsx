@@ -103,12 +103,6 @@ export const PurposeShow: React.FC<Purpose> = (props) => {
     onClose();
   };
 
-  // console.log(editTitle);
-  // console.log(editResult);
-  // console.log(editDeadline);
-  // console.log(editBody);
-  // console.log(editCompleted);
-
   return (
     <Box width={560} height={600}>
       <ul className="w-full">

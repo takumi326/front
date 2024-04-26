@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AuthContext } from "@/context/AuthContext";
 import { signUp } from "@/lib/api/auth";
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
-import { SignUpParams } from "@/types/auth_interface";
+import { SignUpParams } from "@/types/authInterface";
 
 export const SignUpForm: React.FC = () => {
   const router = useRouter();

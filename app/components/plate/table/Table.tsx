@@ -1,10 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import moment from "moment";
-
-import { PurposeShow } from "@/components/purpose/show";
 import { PurposeNew } from "@/components/purpose/new";
-import { PurposeEdit as Edit } from "@/lib/api/PurposeDate";
+import { Row } from "./Row";
+
 import {
   Box,
   Checkbox,
@@ -24,160 +22,15 @@ import {
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
 import {
   PurposeGetData as getData,
+  PurposeEdit as Edit,
   PurposeDelete as Delete,
 } from "@/lib/api/PurposeDate";
-
-// 列名を日本語に変換する辞書
-const columnNames = {
-  title: "項目",
-  result: "目標",
-  deadline: "期限",
-};
-
-// コンポーネントで使用する Props の型を定義
-interface ComponentProps {
-  row: Purpose; // row に Purpose 型を適用
-  onSelect: (id: string) => void; // onSelect の型を指定
-  isSelected: boolean;
-  visibleColumns: any[]; // 適切な型を指定する必要があります
-  onDelete: (id: string) => void; // onDelete の型を指定
-  onEdit: (purpose: Purpose) => void; // onEdit の型を指定
-}
-
-// Purposeの型定義
-type Purpose = {
-  id: string;
-  title: string;
-  result: string;
-  deadline: Date;
-  body: string;
-  completed: boolean;
-};
-
-// 表の行コンポーネント
-const Row: React.FC<ComponentProps> = (props) => {
-  const { row, onSelect, isSelected, visibleColumns, onUpdate, onDelete } =
-    props;
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isChecked, setIsChecked] = useState(row.completed);
-
-  const handleTitleClick = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleEditCloseModal = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const handleCheckboxChange = (event) => {
-    event.stopPropagation();
-    onSelect(row.id, row.completed);
-  };
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
-    return moment(date).format("MM/DD/YY");
-  };
-
-  const handleUpdate = (checked) => {
-    const updatedRow = { checked };
-    onUpdate(updatedRow);
-  };
-
-  const handleCompletionToggle = async (event) => {
-    event.stopPropagation();
-    try {
-      const updatedRow = { ...row, completed: !isChecked };
-      await Edit(
-        updatedRow.id,
-        updatedRow.title,
-        updatedRow.result,
-        updatedRow.deadline,
-        updatedRow.body,
-        updatedRow.completed
-      );
-      setIsChecked(!isChecked);
-      onUpdate(updatedRow);
-    } catch (error) {
-      console.error("Failed to edit todo:", error);
-    }
-  };
-
-  return (
-    <React.Fragment>
-      {isEditModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 ">
-          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
-          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
-            <button
-              onClick={handleEditCloseModal}
-              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
-            >
-              <CloseIcon />
-            </button>
-            <PurposeShow
-              id={row.id}
-              title={row.title}
-              result={row.result}
-              deadline={row.deadline}
-              body={row.body}
-              completed={row.completed}
-              onEdit={handleUpdate}
-              onClose={handleEditCloseModal}
-            />
-          </div>
-        </div>
-      )}
-      <TableRow
-        sx={{
-          "& > *": {
-            borderBottom: "unset",
-            backgroundColor: isSelected ? "#f5f5f5" : "transparent",
-          },
-        }}
-      >
-        <TableCell padding="checkbox">
-          <Checkbox checked={isSelected} onChange={handleCheckboxChange} />
-        </TableCell>
-        {Object.keys(visibleColumns).map((key) =>
-          visibleColumns[key] ? (
-            <TableCell key={key} component="th" scope="row">
-              {key === "title" ? (
-                <button
-                  style={{
-                    color: "blue",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
-                  onClick={handleTitleClick}
-                >
-                  {row.title}
-                </button>
-              ) : key === "deadline" ? (
-                formatDate(row.deadline)
-              ) : (
-                row[key]
-              )}
-            </TableCell>
-          ) : null
-        )}
-        <TableCell align="right">
-          <Checkbox checked={row.completed} onChange={handleCompletionToggle} />
-          <IconButton onClick={() => onDelete(row.id)}>
-            <DeleteIcon />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-    </React.Fragment>
-  );
-};
+import { columnNames, Purpose } from "@/types/purposeInterface";
 
 export function TableShow() {
   const [purposes, setPurposes] = useState<Purpose[]>([]);
@@ -208,6 +61,38 @@ export function TableShow() {
     result: item.result,
     deadline: item.deadline,
   }));
+
+  const [orderBy, setOrderBy] =
+    React.useState<keyof (typeof rows)[0]>("deadline");
+
+  const [order, setOrder] = React.useState<{
+    [key: string]: "asc" | "desc" | "default";
+  }>({
+    title: "default",
+    result: "default",
+    deadline: "asc",
+  });
+
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const [columnSettings, setColumnSettings] = useState<{
+    [key: string]: boolean;
+  }>(() => {
+    if (rows.length > 0) {
+      const initialSettings: { [key: string]: boolean } = {};
+      Object.keys(rows[0]).forEach((key) => {
+        initialSettings[key] = true;
+      });
+      return initialSettings;
+    } else {
+      // rows が空の場合は適切な初期設定を行う
+      return {
+        title: true,
+        result: true,
+        deadline: true,
+      };
+    }
+  });
 
   useEffect(() => {
     getData().then((data) => {
@@ -292,38 +177,6 @@ export function TableShow() {
     }
   };
 
-  const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof rows)[0]>("deadline");
-
-  const [order, setOrder] = React.useState<{
-    [key: string]: "asc" | "desc" | "default";
-  }>({
-    title: "default",
-    result: "default",
-    deadline: "asc",
-  });
-
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-
-  const [columnSettings, setColumnSettings] = useState<{
-    [key: string]: boolean;
-  }>(() => {
-    if (rows.length > 0) {
-      const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(rows[0]).forEach((key) => {
-        initialSettings[key] = true;
-      });
-      return initialSettings;
-    } else {
-      // rows が空の場合は適切な初期設定を行う
-      return {
-        title: true,
-        result: true,
-        deadline: true,
-      };
-    }
-  });
-
   const handleRequestSort = (property: keyof (typeof rows)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
@@ -351,9 +204,9 @@ export function TableShow() {
       return 0;
     };
 
-    console.log(incompleteSelected.length);
-    console.log(completedSelected.length);
-    console.log(selected.length);
+    // console.log(incompleteSelected.length);
+    // console.log(completedSelected.length);
+    // console.log(selected.length);
 
     return compare(orderBy);
   });
