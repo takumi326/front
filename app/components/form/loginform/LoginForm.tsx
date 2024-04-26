@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AuthContext } from "@/context/AuthContext";
 import { signIn } from "@/lib/api/auth";
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
-import { SignInParams } from "@/types/auth_interface";
+import { SignInParams } from "@/types/authInterface";
 
 export const LoginForm: React.FC = () => {
   const router = useRouter(); // Next.jsのルーターを利用
