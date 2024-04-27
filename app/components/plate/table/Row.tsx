@@ -1,19 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, ChangeEvent } from "react";
 import moment from "moment";
-
-import { PurposeShow } from "@/components/purpose/show";
 
 import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { PurposeEdit as Edit } from "@/lib/api/PurposeDate";
+import { purposeEdit as Edit } from "@/lib/api/purpose-api";
+import { purposeRowProps, purposeDate } from "@/interface/purpose-interface";
 
-import { ComponentProps} from "@/types/purposeInterface";
+import { PurposeShow } from "@/components/purpose/show";
 
 // 表の行コンポーネント
-export const Row: React.FC<ComponentProps> = (props) => {
+export const Row: React.FC<purposeRowProps> = (props) => {
   const { row, onSelect, isSelected, visibleColumns, onUpdate, onDelete } =
     props;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -27,8 +26,8 @@ export const Row: React.FC<ComponentProps> = (props) => {
     setIsEditModalOpen(false);
   };
 
-  const handleCheckboxChange = (event) => {
-    event.stopPropagation();
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     onSelect(row.id, row.completed);
   };
 
@@ -38,13 +37,8 @@ export const Row: React.FC<ComponentProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
-  const handleUpdate = (checked) => {
-    const updatedRow = { checked };
-    onUpdate(updatedRow);
-  };
-
-  const handleCompletionToggle = async (event) => {
-    event.stopPropagation();
+  const handleCompletionToggle = async (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     try {
       const updatedRow = { ...row, completed: !isChecked };
       await Edit(
@@ -81,7 +75,7 @@ export const Row: React.FC<ComponentProps> = (props) => {
               deadline={row.deadline}
               body={row.body}
               completed={row.completed}
-              onEdit={handleUpdate}
+              onUpdate={onUpdate}
               onClose={handleEditCloseModal}
             />
           </div>
@@ -115,7 +109,7 @@ export const Row: React.FC<ComponentProps> = (props) => {
               ) : key === "deadline" ? (
                 formatDate(row.deadline)
               ) : (
-                row[key]
+                String(row[key as keyof purposeDate])
               )}
             </TableCell>
           ) : null

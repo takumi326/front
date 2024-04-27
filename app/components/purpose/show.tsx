@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { PurposeEdit as Edit } from "@/lib/api/PurposeDate";
+import React, { useState, ChangeEvent } from "react";
+
 import moment from "moment";
+
 import {
   Box,
   Checkbox,
@@ -10,20 +11,14 @@ import {
   Typography,
   Stack,
 } from "@mui/material";
+
+import { purposeEdit as Edit } from "@/lib/api/purpose-api";
+import { purpopseShowProps } from "@/interface/purpose-interface";
+
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-// Purposeの型定義
-type Purpose = {
-  id: string;
-  title: string;
-  result: string;
-  deadline: Date;
-  body: string;
-  completed: boolean;
-};
-
-export const PurposeShow: React.FC<Purpose> = (props) => {
-  const { id, title, result, deadline, body, completed, onEdit, onClose } =
+export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
+  const { id, title, result, deadline, body, completed, onUpdate, onClose } =
     props;
   const undifindDateObject = new Date();
 
@@ -51,14 +46,14 @@ export const PurposeShow: React.FC<Purpose> = (props) => {
         body: editBody,
         completed: editCompleted,
       };
-      onEdit(editedData);
+      onUpdate(editedData);
     } catch (error) {
       console.error("Failed to edit todo:", error);
     }
   };
 
   // フォームの変更を処理するハンドラー
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     // name属性に基づいて対応する状態を更新
     switch (name) {
@@ -80,22 +75,9 @@ export const PurposeShow: React.FC<Purpose> = (props) => {
     setEditCompleted(!editCompleted); // 現在の値を反転させて更新
   };
 
-  const dateObject = new Date(editDeadline);
-
   // 日付が変更されたときのハンドラ
-  const handleDateChange = (date) => {
+  const handleDateChange = (date: Date) => {
     setEditDeadline(date);
-  };
-
-  const formattedDeadline = moment(deadline).format("MM/DD/YY");
-
-  // 選択された時刻をフォーマットする関数
-  const formatSelectedTime = (date) => {
-    return date.toLocaleTimeString();
-  };
-
-  const handleClearDate = () => {
-    setEditDeadline(undefined);
   };
 
   const handleSave = () => {
@@ -136,7 +118,13 @@ export const PurposeShow: React.FC<Purpose> = (props) => {
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">期限</Typography>
-          <Box sx={{ border: "1px solid #ccc", borderRadius: "4px",borderWidth: "px" }}>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
             <InputDateTime
               selectedDate={editDeadline}
               onChange={handleDateChange}

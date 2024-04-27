@@ -1,5 +1,5 @@
 import React from "react";
-import { LoginForm } from "@/components/form/loginform/LoginForm";
+import { LoginForm } from "@/components/form/LoginForm";
 
 const Login: React.FC = () => {
   return (

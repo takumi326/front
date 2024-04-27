@@ -11,7 +11,7 @@ export const InputDateTime: React.FC<{
   return (
     <DatePicker
       selected={selectedDate}
-      onChange={(date: Date | undefined) => onChange(date)}
+      onChange={(date: Date) => onChange(date)}
       dateFormat="MM/dd/yy "
       timeCaption="Time"
       placeholderText="いつか"

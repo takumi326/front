@@ -3,7 +3,7 @@ import "@/globals.css";
 
 import { Header } from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/context/auth-context";
 
 export default function AuthenticatedLayout({
   children,

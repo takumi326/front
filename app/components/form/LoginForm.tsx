@@ -3,16 +3,18 @@ import React, { useState, useContext } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
-import { AuthContext } from "@/context/AuthContext";
+import { authContext } from "@/context/auth-context";
 import { signIn } from "@/lib/api/auth";
+import { signInParams } from "@/interface/auth-interface";
+
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
-import { SignInParams } from "@/types/authInterface";
+
 
 export const LoginForm: React.FC = () => {
   const router = useRouter(); // Next.jsのルーターを利用
 
   const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
-    useContext(AuthContext);
+    useContext(authContext);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
@@ -20,7 +22,7 @@ export const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const params: SignInParams = {
+    const params: signInParams = {
       email: email,
       password: password,
     };
