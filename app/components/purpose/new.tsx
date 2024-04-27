@@ -1,28 +1,14 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { PurposeNew as New } from "@/lib/api/PurposeDate";
-import moment from "moment";
-import {
-  Box,
-  Checkbox,
-  TextField,
-  Button,
-  Typography,
-  Stack,
-} from "@mui/material";
+import React, { useState, ChangeEvent } from "react";
+
+import { Box, TextField, Button, Typography, Stack } from "@mui/material";
+
+import { purposeNew as New } from "@/lib/api/purpose-api";
+import { purposeNewProps } from "@/interface/purpose-interface";
+
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-// Purposeの型定義
-type Purpose = {
-  id: string;
-  title: string;
-  result: string;
-  deadline: Date;
-  body: string;
-  completed: boolean;
-};
-
-export const PurposeNew: React.FC<Purpose> = (props) => {
+export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const { onAdd, onClose } = props;
   const undifindDateObject = new Date();
   const [newTitle, setNewTitle] = useState("");
@@ -41,7 +27,7 @@ export const PurposeNew: React.FC<Purpose> = (props) => {
   };
 
   // フォームの変更を処理するハンドラー
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     // name属性に基づいて対応する状態を更新
     switch (name) {
@@ -59,26 +45,15 @@ export const PurposeNew: React.FC<Purpose> = (props) => {
     }
   };
 
-  // 選択された時刻をフォーマットする関数
-  const formatSelectedTime = (date) => {
-    return date.toLocaleTimeString();
-  };
-
   const handleSave = () => {
     newPurpose();
     console.log(newTitle);
     onClose();
   };
 
-  const handleDateChange = (date) => {
+  const handleDateChange = (date: Date) => {
     setNewDeadline(date);
   };
-
-  // console.log(editTitle);
-  // console.log(editResult);
-  // console.log(editDeadline);
-  // console.log(editBody);
-  // console.log(editCompleted);
 
   return (
     <Box width={560} height={600}>

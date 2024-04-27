@@ -5,10 +5,10 @@ import Link from "next/link";
 import Cookies from "js-cookie";
 
 import { signOut } from "@/lib/api/auth";
-import { AuthContext } from "@/context/AuthContext";
+import { authContext } from "@/context/auth-context";
 
 export const Header: React.FC = () => {
-  const { currentUserId, setIsSignedIn } = useContext(AuthContext);
+  const { currentUserId, setIsSignedIn } = useContext(authContext);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authenticated, setAuthenticated] = useState(false);
@@ -18,7 +18,9 @@ export const Header: React.FC = () => {
     const client = Cookies.get("_client");
     const uid = Cookies.get("_uid");
     const isAuthenticated = accessToken && client && uid;
-    setAuthenticated(isAuthenticated);
+    if (isAuthenticated) {
+      setAuthenticated(true);
+    }
   }, []);
 
   const handleSignOut = async (e: React.MouseEvent<HTMLButtonElement>) => {

@@ -1,12 +1,12 @@
 // サインアップ
-export interface SignUpParams {
+export interface signUpParams {
   email: string;
   password: string;
   passwordConfirmation: string;
 }
 
 // サインイン
-export interface SignInParams {
+export interface signInParams {
   email: string;
   password: string;
 }

@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
 
+import { Typography, Container, Grid, Box } from "@mui/material";
+
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-200">

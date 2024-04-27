@@ -1,15 +1,15 @@
 import { client } from "@/lib/api/client";
 import Cookies from "js-cookie";
 
-import { SignUpParams, SignInParams } from "@/types/auth_interface";
+import { signUpParams, signInParams } from "@/interface/auth-interface";
 
 // サインアップ（新規アカウント作成）
-export const signUp = (params: SignUpParams) => {
+export const signUp = (params: signUpParams) => {
   return client.post("auth", params);
 };
 
 // サインイン（ログイン）
-export const signIn = (params: SignInParams) => {
+export const signIn = (params: signInParams) => {
   return client.post("auth/sign_in", params);
 };
 
@@ -40,4 +40,3 @@ export const getCurrentUser = () => {
     },
   });
 };
-

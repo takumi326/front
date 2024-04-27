@@ -1,7 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { PurposeNew } from "@/components/purpose/new";
-import { Row } from "./Row";
 
 import {
   Box,
@@ -26,20 +24,28 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
 import {
-  PurposeGetData as getData,
-  PurposeEdit as Edit,
-  PurposeDelete as Delete,
-} from "@/lib/api/PurposeDate";
-import { columnNames, Purpose } from "@/types/purposeInterface";
+  purposeGetData as getData,
+  purposeDelete as Delete,
+} from "@/lib/api/purpose-api";
+import {
+  columnNames,
+  purposeDate,
+  selectPurposeDate,
+} from "@/interface/purpose-interface";
 
-export function TableShow() {
-  const [purposes, setPurposes] = useState<Purpose[]>([]);
-  const [completedPurposes, setCompletedPurposes] = useState<Purpose[]>([]);
-  const [incompletePurposes, setIncompletePurposes] = useState<Purpose[]>([]);
+import { Row } from "@/components/plate/table/Row";
+import { PurposeNew } from "@/components/purpose/new";
+
+export const TableShow: React.FC = () => {
+  const [purposes, setPurposes] = useState<purposeDate[]>([]);
+  const [completedPurposes, setCompletedPurposes] = useState<purposeDate[]>([]);
+  const [incompletePurposes, setIncompletePurposes] = useState<purposeDate[]>(
+    []
+  );
   const [filter, setFilter] = useState<"all" | "completed" | "incomplete">(
     "incomplete"
   );
-  const [displayedPurposes, setDisplayedPurposes] = useState<Purpose[]>([]);
+  const [displayedPurposes, setDisplayedPurposes] = useState<purposeDate[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -56,7 +62,7 @@ export function TableShow() {
     completed: item.completed,
   }));
 
-  const selectrows = purposes.map((item) => ({
+  const selectrows: selectPurposeDate[] = purposes.map((item) => ({
     title: item.title,
     result: item.result,
     deadline: item.deadline,
@@ -114,7 +120,7 @@ export function TableShow() {
   }, [purposes, isEditing, isAdding]);
 
   useEffect(() => {
-    let filteredPurposes: Purpose[] = [];
+    let filteredPurposes: purposeDate[] = [];
     if (filter === "all") {
       filteredPurposes = purposes;
     } else if (filter === "completed") {
@@ -139,13 +145,13 @@ export function TableShow() {
   };
 
   // TableShow コンポーネント内での更新処理
-  const newPurpose = (newPurpose) => {
+  const newPurpose = (newPurpose: purposeDate) => {
     setPurposes([...purposes, newPurpose]);
     setIsEditing(true);
   };
 
   // TableShow コンポーネント内での更新処理
-  const updatePurpose = (updatePurpose) => {
+  const updatePurpose = (updatePurpose: purposeDate) => {
     const updatedPurposes = purposes.map((purpose) => {
       if (purpose.id === updatePurpose.id) {
         return updatePurpose; // 編集されたデータで該当の目的を更新
@@ -203,11 +209,6 @@ export function TableShow() {
       }
       return 0;
     };
-
-    // console.log(incompleteSelected.length);
-    // console.log(completedSelected.length);
-    // console.log(selected.length);
-
     return compare(orderBy);
   });
 
@@ -284,7 +285,7 @@ export function TableShow() {
     setAnchorEl(null);
   };
 
-  const handleColumnToggle = (property: keyof (typeof rows)[0]) => {
+  const handleColumnToggle = (property: keyof selectPurposeDate) => {
     setColumnSettings((prevSettings) => ({
       ...prevSettings,
       [property]: !prevSettings[property],
@@ -295,7 +296,7 @@ export function TableShow() {
     Object.entries(columnSettings).filter(([key, value]) => value)
   );
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: string) => {
     deletePurpose(id);
   };
 
@@ -383,9 +384,12 @@ export function TableShow() {
       >
         {rows.length > 0 &&
           Object.keys(selectrows[0]).map((key) => (
-            <MenuItem key={key} onClick={() => handleColumnToggle(key)}>
+            <MenuItem
+              key={key}
+              onClick={() => handleColumnToggle(key as keyof selectPurposeDate)}
+            >
               <Checkbox checked={columnSettings[key]} />
-              {columnNames[key]}
+              {columnNames[key as keyof selectPurposeDate]}
             </MenuItem>
           ))}
       </Menu>
@@ -427,7 +431,9 @@ export function TableShow() {
               {Object.keys(visibleColumns).map((key) => (
                 <TableCell key={key}>
                   <Stack direction="row" alignItems="center">
-                    <Typography>{columnNames[key]}</Typography>
+                    <Typography>
+                      {columnNames[key as keyof selectPurposeDate]}
+                    </Typography>
 
                     <IconButton
                       onClick={() =>
@@ -468,4 +474,4 @@ export function TableShow() {
       </TableContainer>
     </Box>
   );
-}
+};

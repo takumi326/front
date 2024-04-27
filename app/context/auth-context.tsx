@@ -1,27 +1,27 @@
 "use client";
-import React, { createContext, useEffect, useState, useContext } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/api/auth";
-import { User } from "@/types/auth_interface";
+import { User } from "@/interface/auth-interface";
 
-export const AuthContext = createContext<{
+export const authContext = createContext<{
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   isSignedIn: boolean;
   setIsSignedIn: React.Dispatch<React.SetStateAction<boolean>>;
   currentUser: User | undefined;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | undefined>>;
-  currentUserId: number;
-  setcurrentUserId: React.Dispatch<React.SetStateAction<User | undefined>>;
+  currentUserId: number | undefined;
+  setcurrentUserId: React.Dispatch<React.SetStateAction<number | undefined>>;
 }>({
   loading: false,
   setLoading: () => {},
   isSignedIn: false,
-  setIsSignedIn: () => {}, 
+  setIsSignedIn: () => {},
   currentUser: undefined,
   setCurrentUser: () => {},
-  currentUserId: 123,
+  currentUserId: undefined,
   setcurrentUserId: () => {},
 });
 
@@ -30,8 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<User | undefined>();
-  const [currentUserId, setcurrentUserId] = useState<number>(-1);
+  const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
+  const [currentUserId, setcurrentUserId] = useState<number | undefined>(
+    undefined
+  );
   const router = useRouter();
   const pathname = usePathname();
 
@@ -65,10 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!loading && !isSignedIn && pathname !== "/login") {
       router.push("/login");
     }
-  }, [loading, isSignedIn, pathname]);
+  }, [loading, isSignedIn, pathname, router]);
 
   return (
-    <AuthContext.Provider
+    <authContext.Provider
       value={{
         loading,
         setLoading,
@@ -81,6 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </authContext.Provider>
   );
 };

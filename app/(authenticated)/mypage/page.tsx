@@ -1,6 +1,5 @@
 import React from "react";
 import { Calendar } from "@/components/plate/calendar/Calendar";
-// import { DifferentUserId } from "@/components/differentuserid/DifferentUserId";
 
 const Mypage: React.FC = () => {
   return (
