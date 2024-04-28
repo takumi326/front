@@ -1,5 +1,5 @@
 // 列名を日本語に変換する辞書
-export const columnNames = {
+export const columnPurposeNames = {
   title: "項目",
   result: "目標",
   deadline: "期限",
