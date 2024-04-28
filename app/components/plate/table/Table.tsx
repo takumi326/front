@@ -28,24 +28,29 @@ import {
   purposeDelete as Delete,
 } from "@/lib/api/purpose-api";
 import {
-  columnNames,
-  purposeDate,
+  columnPurposeNames,
   selectPurposeDate,
 } from "@/interface/purpose-interface";
+import { Props } from "@/interface/purpose-task";
 
 import { Row } from "@/components/plate/table/Row";
 import { PurposeNew } from "@/components/purpose/new";
 
-export const TableShow: React.FC = () => {
-  const [purposes, setPurposes] = useState<purposeDate[]>([]);
-  const [completedPurposes, setCompletedPurposes] = useState<purposeDate[]>([]);
-  const [incompletePurposes, setIncompletePurposes] = useState<purposeDate[]>(
-    []
-  );
+export const TableShow: React.FC<Props> = (props) => {
+  const { dateType, columnName} = props;
+  const [purposes, setPurposes] = useState<(typeof dateType)[]>([]);
+  const [completedPurposes, setCompletedPurposes] = useState<
+    (typeof dateType)[]
+  >([]);
+  const [incompletePurposes, setIncompletePurposes] = useState<
+    (typeof dateType)[]
+  >([]);
   const [filter, setFilter] = useState<"all" | "completed" | "incomplete">(
     "incomplete"
   );
-  const [displayedPurposes, setDisplayedPurposes] = useState<purposeDate[]>([]);
+  const [displayedPurposes, setDisplayedPurposes] = useState<
+    (typeof dateType)[]
+  >([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -120,7 +125,7 @@ export const TableShow: React.FC = () => {
   }, [purposes, isEditing, isAdding]);
 
   useEffect(() => {
-    let filteredPurposes: purposeDate[] = [];
+    let filteredPurposes: (typeof dateType)[] = [];
     if (filter === "all") {
       filteredPurposes = purposes;
     } else if (filter === "completed") {
@@ -145,13 +150,13 @@ export const TableShow: React.FC = () => {
   };
 
   // TableShow コンポーネント内での更新処理
-  const newPurpose = (newPurpose: purposeDate) => {
+  const newPurpose = (newPurpose: typeof dateType) => {
     setPurposes([...purposes, newPurpose]);
     setIsEditing(true);
   };
 
   // TableShow コンポーネント内での更新処理
-  const updatePurpose = (updatePurpose: purposeDate) => {
+  const updatePurpose = (updatePurpose: typeof dateType) => {
     const updatedPurposes = purposes.map((purpose) => {
       if (purpose.id === updatePurpose.id) {
         return updatePurpose; // 編集されたデータで該当の目的を更新
@@ -389,7 +394,7 @@ export const TableShow: React.FC = () => {
               onClick={() => handleColumnToggle(key as keyof selectPurposeDate)}
             >
               <Checkbox checked={columnSettings[key]} />
-              {columnNames[key as keyof selectPurposeDate]}
+              {columnName[key as keyof selectPurposeDate]}
             </MenuItem>
           ))}
       </Menu>
@@ -432,7 +437,7 @@ export const TableShow: React.FC = () => {
                 <TableCell key={key}>
                   <Stack direction="row" alignItems="center">
                     <Typography>
-                      {columnNames[key as keyof selectPurposeDate]}
+                      {columnPurposeNames[key as keyof selectPurposeDate]}
                     </Typography>
 
                     <IconButton
