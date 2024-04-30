@@ -27,30 +27,26 @@ import {
   purposeGetData as getData,
   purposeDelete as Delete,
 } from "@/lib/api/purpose-api";
-import {
-  columnPurposeNames,
-  selectPurposeDate,
-} from "@/interface/purpose-interface";
-import { Props } from "@/interface/purpose-task";
 
-import { Row } from "@/components/plate/table/Row";
+import {
+  purposeData,
+  columnPurposeNames,
+  selectPurposeData,
+} from "@/interface/purpose-interface";
+
+import { PurposeRow } from "@/components/purpose/row";
 import { PurposeNew } from "@/components/purpose/new";
 
-export const TableShow: React.FC<Props> = (props) => {
-  const { dateType, columnName} = props;
-  const [purposes, setPurposes] = useState<(typeof dateType)[]>([]);
-  const [completedPurposes, setCompletedPurposes] = useState<
-    (typeof dateType)[]
-  >([]);
-  const [incompletePurposes, setIncompletePurposes] = useState<
-    (typeof dateType)[]
-  >([]);
+export const PurposeTable: React.FC = () => {
+  const [purposes, setPurposes] = useState<purposeData[]>([]);
+  const [completedPurposes, setCompletedPurposes] = useState<purposeData[]>([]);
+  const [incompletePurposes, setIncompletePurposes] = useState<purposeData[]>(
+    []
+  );
   const [filter, setFilter] = useState<"all" | "completed" | "incomplete">(
     "incomplete"
   );
-  const [displayedPurposes, setDisplayedPurposes] = useState<
-    (typeof dateType)[]
-  >([]);
+  const [displayedPurposes, setDisplayedPurposes] = useState<purposeData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -67,7 +63,7 @@ export const TableShow: React.FC<Props> = (props) => {
     completed: item.completed,
   }));
 
-  const selectrows: selectPurposeDate[] = purposes.map((item) => ({
+  const selectrows: selectPurposeData[] = purposes.map((item) => ({
     title: item.title,
     result: item.result,
     deadline: item.deadline,
@@ -125,7 +121,7 @@ export const TableShow: React.FC<Props> = (props) => {
   }, [purposes, isEditing, isAdding]);
 
   useEffect(() => {
-    let filteredPurposes: (typeof dateType)[] = [];
+    let filteredPurposes: purposeData[] = [];
     if (filter === "all") {
       filteredPurposes = purposes;
     } else if (filter === "completed") {
@@ -150,13 +146,13 @@ export const TableShow: React.FC<Props> = (props) => {
   };
 
   // TableShow コンポーネント内での更新処理
-  const newPurpose = (newPurpose: typeof dateType) => {
+  const newPurpose = (newPurpose: purposeData) => {
     setPurposes([...purposes, newPurpose]);
     setIsEditing(true);
   };
 
   // TableShow コンポーネント内での更新処理
-  const updatePurpose = (updatePurpose: typeof dateType) => {
+  const updatePurpose = (updatePurpose: purposeData) => {
     const updatedPurposes = purposes.map((purpose) => {
       if (purpose.id === updatePurpose.id) {
         return updatePurpose; // 編集されたデータで該当の目的を更新
@@ -290,7 +286,7 @@ export const TableShow: React.FC<Props> = (props) => {
     setAnchorEl(null);
   };
 
-  const handleColumnToggle = (property: keyof selectPurposeDate) => {
+  const handleColumnToggle = (property: keyof selectPurposeData) => {
     setColumnSettings((prevSettings) => ({
       ...prevSettings,
       [property]: !prevSettings[property],
@@ -391,10 +387,10 @@ export const TableShow: React.FC<Props> = (props) => {
           Object.keys(selectrows[0]).map((key) => (
             <MenuItem
               key={key}
-              onClick={() => handleColumnToggle(key as keyof selectPurposeDate)}
+              onClick={() => handleColumnToggle(key as keyof selectPurposeData)}
             >
               <Checkbox checked={columnSettings[key]} />
-              {columnName[key as keyof selectPurposeDate]}
+              {columnPurposeNames[key as keyof selectPurposeData]}
             </MenuItem>
           ))}
       </Menu>
@@ -437,7 +433,7 @@ export const TableShow: React.FC<Props> = (props) => {
                 <TableCell key={key}>
                   <Stack direction="row" alignItems="center">
                     <Typography>
-                      {columnPurposeNames[key as keyof selectPurposeDate]}
+                      {columnPurposeNames[key as keyof selectPurposeData]}
                     </Typography>
 
                     <IconButton
@@ -464,7 +460,7 @@ export const TableShow: React.FC<Props> = (props) => {
           </TableHead>
           <TableBody>
             {sortedRows.map((row) => (
-              <Row
+              <PurposeRow
                 key={row.title}
                 row={row}
                 onSelect={handleSelect}

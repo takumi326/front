@@ -1,8 +1,6 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
 
-import moment from "moment";
-
 import {
   Box,
   Checkbox,
@@ -13,15 +11,13 @@ import {
 } from "@mui/material";
 
 import { purposeEdit as Edit } from "@/lib/api/purpose-api";
-import { purpopseShowProps } from "@/interface/purpose-interface";
+import { purposeShowProps } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
+export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   const { id, title, result, deadline, body, completed, onUpdate, onClose } =
     props;
-  const undifindDateObject = new Date();
-
   const [editTitle, setEditTitle] = useState(title);
   const [editResult, setEditResult] = useState(result);
   const [editDeadline, setEditDeadline] = useState<Date>(deadline);

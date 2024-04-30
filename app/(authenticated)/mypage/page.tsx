@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar } from "@/components/plate/calendar/Calendar";
+import { Calendar } from "@/components/plate/Calendar";
 
 const Mypage: React.FC = () => {
   return (

@@ -1,11 +1,11 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-import { purposeData } from "@/interface/purpose-interface";
+import { taskData } from "@/interface/task-interface";
 
-export const purposeGetData = async () => {
+export const taskGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/purposes", {
+    const response = await axios.get("http://localhost:3000/tasks", {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),
@@ -19,20 +19,26 @@ export const purposeGetData = async () => {
   }
 };
 
-export const purposeNew = async (
+export const taskNew = async (
   title: string,
-  result: string,
-  deadline: Date,
+  schedule: string,
+  time: string,
+  repetition: boolean,
+  repetition_type: string,
+  repetition_settings: string,
   body: string
-): Promise<purposeData> => {
+): Promise<taskData> => {
   try {
     const response = await axios.post(
-      "http://localhost:3000/purposes",
+      "http://localhost:3000/tasks",
       {
-        purpose: {
+        task: {
           title: title,
-          result: result,
-          deadline: deadline,
+          schedule: schedule,
+          time: time,
+          repetition: repetition,
+          repetition_type: repetition_type,
+          repetition_settings: repetition_settings,
           body: body,
           completed: false,
         },
@@ -49,26 +55,32 @@ export const purposeNew = async (
     // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
-    throw new Error("Failed to post purpose");
+    throw new Error("Failed to post task");
   }
 };
 
-export const purposeEdit = async (
+export const taskEdit = async (
   id: string,
   title: string,
-  result: string,
-  deadline: Date,
+  schedule: string,
+  time: string,
+  repetition: boolean,
+  repetition_type: string,
+  repetition_settings: string,
   body: string,
   completed: boolean
 ) => {
   try {
     const response = await axios.patch(
-      `http://localhost:3000/purposes/${id}`,
+      `http://localhost:3000/tasks/${id}`,
       {
-        purpose: {
+        task: {
           title: title,
-          result: result,
-          deadline: deadline,
+          schedule: schedule,
+          time: time,
+          repetition: repetition,
+          repetition_type: repetition_type,
+          repetition_settings: repetition_settings,
           body: body,
           completed: completed,
         },
@@ -84,13 +96,13 @@ export const purposeEdit = async (
     console.log("update成功");
     return response;
   } catch (error) {
-    throw new Error("Failed to edit purpose");
+    throw new Error("Failed to edit task");
   }
 };
 
-export const purposeDelete = async (id: string) => {
+export const taskDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/purposes/${id}`, {
+    await axios.delete(`http://localhost:3000/tasks/${id}`, {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),
@@ -99,6 +111,6 @@ export const purposeDelete = async (id: string) => {
     });
     console.log("delete成功");
   } catch (error) {
-    throw new Error("Failed to delete purpose");
+    throw new Error("Failed to delete task");
   }
 };

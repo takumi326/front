@@ -1,8 +1,6 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
 
-import moment from "moment";
-
 import {
   Box,
   Checkbox,
@@ -12,43 +10,70 @@ import {
   Stack,
 } from "@mui/material";
 
-import { purposeEdit as Edit } from "@/lib/api/purpose-api";
-import { purpopseShowProps } from "@/interface/purpose-interface";
+import { taskEdit as Edit } from "@/lib/api/task-api";
+import { taskShowProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
-  const { id, title, result, deadline, body, completed, onUpdate, onClose } =
-    props;
-  const undifindDateObject = new Date();
-
+export const TaskShow: React.FC<taskShowProps> = (props) => {
+  const {
+    id,
+    title,
+    purpose_id,
+    purpose_title,
+    schedule,
+    time,
+    repetition,
+    repetition_type,
+    repetition_settings,
+    body,
+    completed,
+    onUpdate,
+    onClose,
+  } = props;
   const [editTitle, setEditTitle] = useState(title);
-  const [editResult, setEditResult] = useState(result);
-  const [editDeadline, setEditDeadline] = useState<Date>(deadline);
+  const [editPurposeId, setEditPurposeId] = useState(purpose_id);
+  const [editPurposeTitle, setEditPurposeTitle] = useState(purpose_title);
+  const [editSchedule, setEditSchedule] = useState<Date>(schedule);
+  const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
+  const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
+  const [editRepetitionSettings, setEditRepetitionSettings] =
+    useState(repetition_settings);
+  const [editTime, setEditTime] = useState(time);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
 
-  const editPurpose = async (id: string) => {
+  const editTask = async (id: string) => {
     try {
       await Edit(
         id,
         editTitle,
-        editResult,
-        editDeadline,
+        editPurposeId,
+        editPurposeTitle,
+        editSchedule,
+        editRepetition,
+        editRepetitionType,
+        editRepetitionSettings,
+        editTime,
         editBody,
         editCompleted
       );
       const editedData = {
         id: id,
         title: editTitle,
-        result: editResult,
-        deadline: editDeadline,
+        purpose_id: editPurposeId,
+        purpose_title: editPurposeTitle,
+        schedule: editSchedule,
+        repetition: editRepetition,
+        repetition_type: editRepetitionType,
+        repetition_settings: editRepetitionSettings,
+        time: editTime,
         body: editBody,
         completed: editCompleted,
       };
       onUpdate(editedData);
     } catch (error) {
-      console.error("Failed to edit todo:", error);
+      console.error("Failed to edit task:", error);
     }
   };
 
@@ -60,9 +85,8 @@ export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
       case "title":
         setEditTitle(value);
         break;
-      case "result":
-        setEditResult(value);
-        break;
+      case "time":
+        setEditTime(value);
       case "body":
         setEditBody(value);
         break;
@@ -75,13 +99,17 @@ export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
     setEditCompleted(!editCompleted); // 現在の値を反転させて更新
   };
 
+  const handleRepetitonChange = () => {
+    setEditRepetition(!editRepetition); 
+  };
+
   // 日付が変更されたときのハンドラ
-  const handleDateChange = (date: Date) => {
-    setEditDeadline(date);
+  const handleSchedulChange = (date: Date) => {
+    setEditSchedule(date);
   };
 
   const handleSave = () => {
-    editPurpose(id);
+    editTask(id);
     onClose();
   };
 
@@ -107,17 +135,17 @@ export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">目標</Typography>
+          <Typography variant="subtitle1">関連する目標</Typography>
           <TextField
             fullWidth
             variant="outlined"
-            name="result"
-            value={editResult}
+            name="purpose_title"
+            value={editPurposeTitle}
             onChange={handleChange}
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">期限</Typography>
+          <Typography variant="subtitle1">予定</Typography>
           <Box
             sx={{
               border: "1px solid #ccc",
@@ -126,10 +154,36 @@ export const PurposeShow: React.FC<purpopseShowProps> = (props) => {
             }}
           >
             <InputDateTime
-              selectedDate={editDeadline}
-              onChange={handleDateChange}
+              selectedDate={editSchedule}
+              onChange={handleSchedulChange}
             />
           </Box>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">繰り返し</Typography>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={editSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">どのくらいやったか</Typography>
+          <TextField
+            fullWidth
+            multiline
+            variant="outlined"
+            name="time"
+            value={editTime}
+            onChange={handleChange}
+          />
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>

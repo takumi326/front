@@ -1,6 +1,8 @@
+"use client";
 import React from "react";
-import { Calendar } from "@/components/plate/calendar/Calendar";
-import { TableShow } from "@/components/plate/table/Table";
+
+import { Calendar } from "@/components/plate/Calendar";
+import { TaskTable } from "@/components/plate/taskTable";
 
 const Task: React.FC = () => {
   return (
@@ -11,7 +13,7 @@ const Task: React.FC = () => {
         </div>
         <div className="pr-10">
           <p className="font-bold text-lg">タスク一覧</p>
-          <TableShow />
+          <TaskTable />
         </div>
       </ul>
     </>
@@ -19,5 +21,3 @@ const Task: React.FC = () => {
 };
 
 export default Task;
-
-
