@@ -3,12 +3,12 @@ import React, { useState, ChangeEvent } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
-import { purposeNew as New } from "@/lib/api/purpose-api";
-import { purposeNewProps } from "@/interface/purpose-interface";
+import { taskNew as New } from "@/lib/api/task-api";
+import { taskNewProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const PurposeNew: React.FC<purposeNewProps> = (props) => {
+export const TaskNew: React.FC<taskNewProps> = (props) => {
   const { onAdd, onClose } = props;
   const undifindDateObject = new Date();
   const [newTitle, setNewTitle] = useState("");
@@ -16,7 +16,7 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
   const [newBody, setNewBody] = useState("");
 
-  const newPurpose = async () => {
+  const newTask = async () => {
     try {
       const response = await New(newTitle, newResult, newDeadline, newBody);
       console.log(newTitle);
@@ -46,7 +46,7 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   };
 
   const handleSave = () => {
-    newPurpose();
+    newTask();
     console.log(newTitle);
     onClose();
   };

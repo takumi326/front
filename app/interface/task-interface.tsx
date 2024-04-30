@@ -1,17 +1,43 @@
+// Taskの型定義
+export type taskData = {
+  id: string;
+  title: string;
+  purpose_id: string;
+  purpose_title: string;
+  schedule: Date;
+  repetition: boolean;
+  repetition_type: string;
+  repetition_settings: string;
+  time: string;
+  body: string;
+  completed: boolean;
+};
+
+// ヘッダーに表示するTaskの型定義
+export type selectTaskData = {
+  title: string;
+  purpose_title: string;
+  schedule: Date;
+  repetition_type: string;
+  time: string;
+};
+
 // 列名を日本語に変換する辞書
 export const columnTaskNames = {
   title: "項目",
-  result: "目標",
-  deadline: "期限",
+  purpose_title: "関連する目標",
+  schedule: "予定",
+  repetition_type: "繰り返し",
+  time: "時間",
 };
 
 // Rowコンポーネントで使用する Props の型を定義
-export interface purposeRowProps {
-  row: taskDate; // row に Purpose 型を適用
+export interface taskRowProps {
+  row: taskData; // row に Task 型を適用
   onSelect: (id: string, completed: boolean) => void; // onSelect の型を指定
   isSelected: boolean;
-  visibleColumns: { [key: string]: boolean }; // 適切な型を指定する必要があります
-  onUpdate: (updatedPurpose: taskDate) => void;
+  visibleColumns: { [key: string]: boolean };
+  onUpdate: (updatedTask: taskData) => void;
   onDelete: (id: string) => void; // onDelete の型を指定
 }
 
@@ -19,33 +45,21 @@ export interface purposeRowProps {
 export interface taskShowProps {
   id: string;
   title: string;
-  result: string;
-  deadline: Date;
+  purpose_id: string;
+  purpose_title: string;
+  schedule: Date;
+  repetition: boolean;
+  repetition_type: string;
+  repetition_settings: string;
+  time: string;
   body: string;
   completed: boolean;
-  onUpdate: (updatedPurpose: taskDate) => void;
+  onUpdate: (updatedTask: taskData) => void;
   onClose: () => void;
 }
 
 // Newコンポーネントで使用する Props の型を定義
 export interface taskNewProps {
-  onAdd: (newPurpose: taskDate) => void;
+  onAdd: (newTask: taskData) => void;
   onClose: () => void;
 }
-
-// Purposeの型定義
-export type taskDate = {
-  id: string;
-  title: string;
-  result: string;
-  deadline: Date;
-  body: string;
-  completed: boolean;
-};
-
-// Purposeの型定義
-export type selectTaskDate = {
-  title: string;
-  result: string;
-  deadline: Date;
-};

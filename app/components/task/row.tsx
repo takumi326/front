@@ -6,13 +6,13 @@ import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { purposeEdit as Edit } from "@/lib/api/purpose-api";
-import { purposeRowProps, purposeDate } from "@/interface/purpose-interface";
+import { taskEdit as Edit } from "@/lib/api/task-api";
+import { taskRowProps, taskData } from "@/interface/task-interface";
 
-import { PurposeShow } from "@/components/purpose/show";
+import { TaskShow } from "@/components/task/show";
 
 // 表の行コンポーネント
-export const Row: React.FC<purposeRowProps> = (props) => {
+export const TaskRow: React.FC<taskRowProps> = (props) => {
   const { row, onSelect, isSelected, visibleColumns, onUpdate, onDelete } =
     props;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,7 +68,7 @@ export const Row: React.FC<purposeRowProps> = (props) => {
             >
               <CloseIcon />
             </button>
-            <PurposeShow
+            <TaskShow
               id={row.id}
               title={row.title}
               result={row.result}
@@ -107,9 +107,9 @@ export const Row: React.FC<purposeRowProps> = (props) => {
                   {row.title}
                 </button>
               ) : key === "deadline" ? (
-                formatDate(row.deadline)
+                formatDate(row.schedule)
               ) : (
-                String(row[key as keyof purposeDate])
+                String(row[key as keyof taskData])
               )}
             </TableCell>
           ) : null
