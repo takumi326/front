@@ -21,8 +21,8 @@ export const taskGetData = async () => {
 
 export const taskNew = async (
   title: string,
-  schedule: string,
-  time: string,
+  purpose_id: string,
+  schedule: Date,
   repetition: boolean,
   repetition_type: string,
   repetition_settings: string,
@@ -34,8 +34,8 @@ export const taskNew = async (
       {
         task: {
           title: title,
+          purpose_id: purpose_id,
           schedule: schedule,
-          time: time,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,
@@ -62,8 +62,8 @@ export const taskNew = async (
 export const taskEdit = async (
   id: string,
   title: string,
-  schedule: string,
-  time: string,
+  purpose_id: string,
+  schedule: Date,
   repetition: boolean,
   repetition_type: string,
   repetition_settings: string,
@@ -76,8 +76,8 @@ export const taskEdit = async (
       {
         task: {
           title: title,
+          purpose_id: purpose_id,
           schedule: schedule,
-          time: time,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,

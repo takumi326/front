@@ -61,7 +61,6 @@ export const TaskTable: React.FC = () => {
     repetition: item.repetition,
     repetition_type: item.repetition_type,
     repetition_settings: item.repetition_settings,
-    time: item.time,
     body: item.body,
     completed: item.completed,
   }));
@@ -71,7 +70,6 @@ export const TaskTable: React.FC = () => {
     purpose_title: item.purpose_title,
     schedule: item.schedule,
     repetition_type: item.repetition_type,
-    time: item.time,
   }));
 
   const [orderBy, setOrderBy] =
@@ -102,8 +100,10 @@ export const TaskTable: React.FC = () => {
       // rows が空の場合は適切な初期設定を行う
       return {
         title: true,
-        result: true,
-        deadline: true,
+        purpose_title: true,
+        schedule: true,
+        repetition_type: true,
+        time: false,
       };
     }
   });
@@ -111,6 +111,7 @@ export const TaskTable: React.FC = () => {
   useEffect(() => {
     getData().then((data) => {
       setTasks(data);
+      console.log(data);
     });
   }, [isEditing, isAdding]);
 

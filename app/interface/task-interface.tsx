@@ -7,8 +7,7 @@ export type taskData = {
   schedule: Date;
   repetition: boolean;
   repetition_type: string;
-  repetition_settings: string;
-  time: string;
+  repetition_settings: [];
   body: string;
   completed: boolean;
 };
@@ -19,7 +18,6 @@ export type selectTaskData = {
   purpose_title: string;
   schedule: Date;
   repetition_type: string;
-  time: string;
 };
 
 // 列名を日本語に変換する辞書
@@ -28,7 +26,6 @@ export const columnTaskNames = {
   purpose_title: "関連する目標",
   schedule: "予定",
   repetition_type: "繰り返し",
-  time: "時間",
 };
 
 // Rowコンポーネントで使用する Props の型を定義
@@ -51,7 +48,6 @@ export interface taskShowProps {
   repetition: boolean;
   repetition_type: string;
   repetition_settings: string;
-  time: string;
   body: string;
   completed: boolean;
   onUpdate: (updatedTask: taskData) => void;

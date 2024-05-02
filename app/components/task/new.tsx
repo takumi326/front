@@ -1,28 +1,60 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 
-import { Box, TextField, Button, Typography, Stack } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Stack,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
 import { taskNew as New } from "@/lib/api/task-api";
 import { taskNewProps } from "@/interface/task-interface";
+
+import { purposeGetData } from "@/lib/api/purpose-api";
+import { purposeData } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TaskNew: React.FC<taskNewProps> = (props) => {
   const { onAdd, onClose } = props;
   const undifindDateObject = new Date();
+
+  const [purposes, setPurposes] = useState<purposeData[]>([]);
+
   const [newTitle, setNewTitle] = useState("");
-  const [newResult, setNewResult] = useState("");
-  const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
+  const [newPurposeId, setNewPurposeId] = useState("");
+  const [newPurposeTitle, setNewPurposeTitle] = useState("");
+  const [newSchedule, setNewSchedule] = useState<Date>(undifindDateObject);
+  const [newRepetition, setNewRepetition] = useState<boolean>(false);
+  const [newRepetitionType, setNewRepetitionType] = useState("");
+  const [newRepetitionSettings, setNewRepetitionSettings] = useState("");
+  // const [newTime, setNewTime] = useState("");
   const [newBody, setNewBody] = useState("");
+
+  useEffect(() => {
+    purposeGetData().then((data) => {
+      setPurposes(data);
+    });
+  }, []);
 
   const newTask = async () => {
     try {
-      const response = await New(newTitle, newResult, newDeadline, newBody);
-      console.log(newTitle);
-      onAdd(response);
+      const newData = await New(
+        newTitle,
+        newPurposeId,
+        newSchedule,
+        newRepetition,
+        newRepetitionType,
+        newRepetitionSettings,
+        newBody
+      );
+      onAdd(newData);
     } catch (error) {
-      console.error("Failed to create todo:", error);
+      console.error("Failed to create task:", error);
     }
   };
 
@@ -34,9 +66,6 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
       case "title":
         setNewTitle(value);
         break;
-      case "result":
-        setNewResult(value);
-        break;
       case "body":
         setNewBody(value);
         break;
@@ -45,14 +74,19 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
   };
 
-  const handleSave = () => {
-    newTask();
-    console.log(newTitle);
-    onClose();
+  const handlePurposeChange = (event: ChangeEvent<{ value: unknown }>) => {
+    setNewPurposeId(event.target.value as string);
   };
 
-  const handleDateChange = (date: Date) => {
-    setNewDeadline(date);
+  const handleSchedulChange = (date: Date) => {
+    setNewSchedule(date);
+  };
+
+  const handleRepetitionChange = () => {};
+
+  const handleSave = () => {
+    newTask();
+    onClose();
   };
 
   return (
@@ -69,17 +103,26 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">目標</Typography>
-          <TextField
+          <Typography variant="subtitle1">関連する目標</Typography>
+          <Select
             fullWidth
-            variant="outlined"
-            name="result"
-            value={newResult}
-            onChange={handleChange}
-          />
+            value={newPurposeId}
+            onChange={handlePurposeChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {purposes.map((purpose) => (
+              <MenuItem key={purpose.id} value={purpose.id}>
+                {purpose.title}
+              </MenuItem>
+            ))}
+          </Select>
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">期限</Typography>
+          <Typography variant="subtitle1">予定</Typography>
           <Box
             sx={{
               border: "1px solid #ccc",
@@ -88,10 +131,20 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             }}
           >
             <InputDateTime
-              selectedDate={newDeadline}
-              onChange={handleDateChange}
+              selectedDate={newSchedule}
+              onChange={handleSchedulChange}
             />
           </Box>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">繰り返し</Typography>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          ></Box>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>
