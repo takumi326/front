@@ -66,7 +66,7 @@ export const taskEdit = async (
   schedule: Date,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: string,
+  repetition_settings: [],
   body: string,
   completed: boolean
 ) => {
@@ -94,6 +94,7 @@ export const taskEdit = async (
       }
     );
     console.log("update成功");
+    console.log(response);
     return response;
   } catch (error) {
     throw new Error("Failed to edit task");

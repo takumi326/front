@@ -15,8 +15,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControlLabel,
-  FormGroup,
 } from "@mui/material";
 
 import { taskEdit as Edit } from "@/lib/api/task-api";
@@ -86,7 +84,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         editSchedule,
         editRepetition,
         editRepetitionType,
-        repetition_settings,
+        editRepetitionSettings,
         editBody,
         editCompleted
       );
@@ -102,6 +100,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         body: editBody,
         completed: editCompleted,
       };
+      console.log(editedData);
       onUpdate(editedData);
     } catch (error) {
       console.error("Failed to edit task:", error);
@@ -144,8 +143,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
-    console.log(selectedDays);
-    console.log(editRepetitionSettings);
+    setPeriod("daily");
   };
 
   // 繰り返しダイアログの枠外をクリックされたとき
@@ -169,7 +167,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setRepetitionDialogOpen(false);
     setEditRepetition(false);
     setEditRepetitionType("");
-    setEditRepetitionSettings("");
+    setEditRepetitionSettings([]);
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("");
@@ -191,6 +189,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   // 保存ボタン押したとき
   const handleSave = () => {
     editTask(id);
+    console.log(editRepetition);
     onClose();
   };
 
@@ -278,7 +277,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
           }
 
           nextSchedule +=
-            (daysUntilNextSchedule + editRepetitionSettings[0] * 7) *
+            (daysUntilNextSchedule + (editRepetitionSettings[0] - 1) * 7) *
             24 *
             60 *
             60 *
@@ -319,7 +318,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={650}>
+    <Box width={560} height={700}>
       <ul className="w-full">
         <li className="flex items-center">
           <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
