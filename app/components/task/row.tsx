@@ -44,8 +44,11 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
       await Edit(
         updatedRow.id,
         updatedRow.title,
-        updatedRow.result,
-        updatedRow.deadline,
+        updatedRow.purpose_id,
+        updatedRow.schedule,
+        updatedRow.repetition,
+        updatedRow.repetition_type,
+        updatedRow.repetition_settings,
         updatedRow.body,
         updatedRow.completed
       );
@@ -71,8 +74,12 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
             <TaskShow
               id={row.id}
               title={row.title}
-              result={row.result}
-              deadline={row.deadline}
+              purpose_id={row.purpose_id}
+              purpose_title={row.purpose_title}
+              schedule={row.schedule}
+              repetition={row.repetition}
+              repetition_type={row.repetition_type}
+              repetition_settings={row.repetition_settings}
               body={row.body}
               completed={row.completed}
               onUpdate={onUpdate}
@@ -106,7 +113,7 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
                 >
                   {row.title}
                 </button>
-              ) : key === "deadline" ? (
+              ) : key === "schedule" ? (
                 formatDate(row.schedule)
               ) : (
                 String(row[key as keyof taskData])

@@ -11,6 +11,7 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const { onAdd, onClose } = props;
   const undifindDateObject = new Date();
+
   const [newTitle, setNewTitle] = useState("");
   const [newResult, setNewResult] = useState("");
   const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
