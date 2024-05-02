@@ -47,7 +47,7 @@ export interface taskShowProps {
   schedule: Date;
   repetition: boolean;
   repetition_type: string;
-  repetition_settings: string;
+  repetition_settings: [];
   body: string;
   completed: boolean;
   onUpdate: (updatedTask: taskData) => void;
