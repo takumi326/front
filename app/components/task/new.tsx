@@ -1,17 +1,23 @@
 "use client";
 import React, { useState, ChangeEvent, useEffect } from "react";
+import moment from "moment";
 
 import {
   Box,
+  Checkbox,
   TextField,
   Button,
   Typography,
   Stack,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
-import { taskNew as New } from "@/lib/api/task-api";
+import { taskEdit as Edit } from "@/lib/api/task-api";
 import { taskNewProps } from "@/interface/task-interface";
 
 import { purposeGetData } from "@/lib/api/purpose-api";
@@ -19,15 +25,22 @@ import { purposeData } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
+import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+
 export const TaskNew: React.FC<taskNewProps> = (props) => {
   const { onAdd, onClose } = props;
   const undifindDateObject = new Date();
 
   const [purposes, setPurposes] = useState<purposeData[]>([]);
+  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
+  const [frequency, setFrequency] = useState(1);
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [period, setPeriod] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newPurposeId, setNewPurposeId] = useState("");
-  const [newPurposeTitle, setNewPurposeTitle] = useState("");
   const [newSchedule, setNewSchedule] = useState<Date>(undifindDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
