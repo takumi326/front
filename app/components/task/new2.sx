@@ -1,42 +1,3 @@
-export const TaskShow: React.FC<taskShowProps> = (props) => {
-  const {
-    id,
-    title,
-    purpose_id,
-    purpose_title,
-    schedule,
-    repetition,
-    repetition_type,
-    repetition_settings,
-    body,
-    completed,
-    onUpdate,
-    onClose,
-  } = props;
-
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(
-    repetition_settings && repetition_settings[0] ? repetition_settings[0] : 1
-  );
-  const [selectedDays, setSelectedDays] = useState(
-    repetition_settings && repetition_settings.length > 1
-      ? repetition_settings.slice(1)
-      : []
-  );
-  const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
-
-  const [editTitle, setEditTitle] = useState(title);
-  const [editPurposeId, setEditPurposeId] = useState(purpose_id);
-  const [editPurposeTitle, setEditPurposeTitle] = useState(purpose_title);
-  const [editSchedule, setEditSchedule] = useState<Date>(schedule);
-  const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
-  const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
-  const [editRepetitionSettings, setEditRepetitionSettings] =
-    useState(repetition_settings);
-  // const [editTime, setEditTime] = useState(time);
-  const [editBody, setEditBody] = useState(body);
-  const [editCompleted, setEditCompleted] = useState<boolean>(completed);
 
   useEffect(() => {
     purposeGetData().then((data) => {
@@ -44,37 +5,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     });
   }, []);
 
-  const editTask = async (id: string) => {
-    try {
-      await Edit(
-        id,
-        editTitle,
-        editPurposeId,
-        editSchedule,
-        editRepetition,
-        editRepetitionType,
-        editRepetitionSettings,
-        editBody,
-        editCompleted
-      );
-      const editedData = {
-        id: id,
-        title: editTitle,
-        purpose_id: editPurposeId,
-        purpose_title: editPurposeTitle,
-        schedule: editSchedule,
-        repetition: editRepetition,
-        repetition_type: editRepetitionType,
-        repetition_settings: editRepetitionSettings,
-        body: editBody,
-        completed: editCompleted,
-      };
-      console.log(editedData);
-      onUpdate(editedData);
-    } catch (error) {
-      console.error("Failed to edit task:", error);
-    }
-  };
+
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
