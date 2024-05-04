@@ -26,6 +26,7 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
 
   const handleTitleClick = () => {
     setIsEditModalOpen(true);
+    console.log(row);
   };
 
   const handleEditCloseModal = () => {
@@ -240,10 +241,15 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
                 </button>
               ) : key === "schedule" ? (
                 formatDate(row.schedule)
+              ) : key === "purpose_title" ? (
+                row.purpose_title !== null ? (
+                  row.purpose_title
+                ) : (
+                  ""
+                )
               ) : key === "repetition_type" ? (
                 <>
                   {renderRepetition()}
-
                   {row.repetition === true && (
                     <Typography>
                       次回の予定：{formatDate(nextSchedule)}
