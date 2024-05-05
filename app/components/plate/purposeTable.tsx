@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 
 import {
   Box,
@@ -34,11 +34,14 @@ import {
   selectPurposeData,
 } from "@/interface/purpose-interface";
 
+import { purposeContext } from "@/context/purpose-context";
+
 import { PurposeRow } from "@/components/purpose/row";
 import { PurposeNew } from "@/components/purpose/new";
 
 export const PurposeTable: React.FC = () => {
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
+  const { purposes, setPurposes } = useContext(purposeContext);
+
   const [completedPurposes, setCompletedPurposes] = useState<purposeData[]>([]);
   const [incompletePurposes, setIncompletePurposes] = useState<purposeData[]>(
     []
@@ -104,6 +107,7 @@ export const PurposeTable: React.FC = () => {
   useEffect(() => {
     getData().then((data) => {
       setPurposes(data);
+      console.log(purposes)
     });
   }, [isEditing, isAdding]);
 
@@ -118,6 +122,7 @@ export const PurposeTable: React.FC = () => {
     setCompletedPurposes(completed);
     setIncompletePurposes(incomplete);
     setDisplayedPurposes(purposes);
+    console.log(2)
   }, [purposes, isEditing, isAdding]);
 
   useEffect(() => {

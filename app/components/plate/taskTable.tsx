@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 
 import {
   Box,
@@ -34,11 +34,14 @@ import {
   selectTaskData,
 } from "@/interface/task-interface";
 
+import { taskContext } from "@/context/task-context";
+
 import { TaskRow } from "@/components/task/row";
 import { TaskNew } from "@/components/task/new";
 
 export const TaskTable: React.FC = () => {
-  const [tasks, setTasks] = useState<taskData[]>([]);
+  const { tasks, setTasks } = useContext(taskContext);
+
   const [completedTasks, setCompletedTasks] = useState<taskData[]>([]);
   const [incompleteTasks, setIncompleteTasks] = useState<taskData[]>([]);
   const [filter, setFilter] = useState<"all" | "completed" | "incomplete">(

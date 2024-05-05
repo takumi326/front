@@ -5,10 +5,12 @@ import {
   Box,
   Checkbox,
   TextField,
+  IconButton,
   Button,
   Typography,
   Stack,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import { purposeEdit as Edit } from "@/lib/api/purpose-api";
 import { purposeShowProps } from "@/interface/purpose-interface";
@@ -16,8 +18,17 @@ import { purposeShowProps } from "@/interface/purpose-interface";
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeShow: React.FC<purposeShowProps> = (props) => {
-  const { id, title, result, deadline, body, completed, onUpdate, onClose } =
-    props;
+  const {
+    id,
+    title,
+    result,
+    deadline,
+    body,
+    completed,
+    onUpdate,
+    onClose,
+    onDelete,
+  } = props;
   const [editTitle, setEditTitle] = useState(title);
   const [editResult, setEditResult] = useState(result);
   const [editDeadline, setEditDeadline] = useState<Date>(deadline);
@@ -144,6 +155,12 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
               保存
             </Button>
           </Stack>
+          <IconButton
+            onClick={() => onDelete(id)}
+            className="absolute right-0 bottom-0 m-8"
+          >
+            <DeleteIcon />
+          </IconButton>
         </li>
       </ul>
     </Box>
