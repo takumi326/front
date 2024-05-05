@@ -22,7 +22,6 @@ export const columnPurposeNames = {
   deadline: "期限",
 };
 
-
 // Rowコンポーネントで使用する Props の型を定義
 export interface purposeRowProps {
   row: purposeData; // row に Purpose 型を適用
@@ -43,6 +42,7 @@ export interface purposeShowProps {
   completed: boolean;
   onUpdate: (updatedPurpose: purposeData) => void;
   onClose: () => void;
+  onDelete: (id: string) => void; // onDelete の型を指定
 }
 
 // Newコンポーネントで使用する Props の型を定義

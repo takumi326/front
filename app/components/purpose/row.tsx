@@ -77,6 +77,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
               completed={row.completed}
               onUpdate={onUpdate}
               onClose={handleEditCloseModal}
+              onDelete={onDelete}
             />
           </div>
         </div>
