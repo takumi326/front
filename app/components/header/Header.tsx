@@ -59,6 +59,18 @@ export const Header: React.FC = () => {
               <li className="">
                 <Link href={`/mypage`}>MYページ</Link>
               </li>
+              <li className="">
+                <Link href="/money">お金管理</Link>
+              </li>
+              <li className="">
+                <Link href="/purpose">目標管理</Link>
+              </li>
+              <li className="">
+                <Link href="/task">タスク管理</Link>
+              </li>
+              <li className="">
+                <Link href="/top">タイマー</Link>
+              </li>
             </>
           ) : (
             <>
@@ -67,18 +79,6 @@ export const Header: React.FC = () => {
               </li>
             </>
           )}
-          <li className="">
-            <Link href="/top">お金管理</Link>
-          </li>
-          <li className="">
-            <Link href="/purpose">目標管理</Link>
-          </li>
-          <li className="">
-            <Link href="/task">タスク管理</Link>
-          </li>
-          <li className="">
-            <Link href="/top">タイマー</Link>
-          </li>
         </ul>
         <ul className="flex ml-auto ml-64">
           {authenticated ? (
