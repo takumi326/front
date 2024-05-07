@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import { taskEdit as Edit } from "@/lib/api/task-api";
 import { taskShowProps } from "@/interface/task-interface";
@@ -43,6 +44,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     completed,
     onUpdate,
     onClose,
+    onDelete,
   } = props;
 
   const [purposes, setPurposes] = useState<purposeData[]>([]);
@@ -425,6 +427,12 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
               保存
             </Button>
           </Stack>
+          <IconButton
+            onClick={() => onDelete(id)}
+            className="absolute right-0 bottom-0 m-8"
+          >
+            <DeleteIcon />
+          </IconButton>
         </li>
       </ul>
 

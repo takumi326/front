@@ -210,6 +210,7 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
               completed={row.completed}
               onUpdate={onUpdate}
               onClose={handleEditCloseModal}
+              onDelete={onDelete}
             />
           </div>
         </div>
