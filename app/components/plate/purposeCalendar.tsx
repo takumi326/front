@@ -34,7 +34,7 @@ export const PurposeCalendar = (): JSX.Element => {
         initialView="dayGridMonth"
         locales={[jaLocale]}
         locale="ja"
-        height={605}
+        height={638}
         events={events}
         businessHours={{ daysOfWeek: [1, 2, 3, 4, 5] }}
         dayCellContent={(e) => e.dayNumberText.replace("日", "")} // 日付の「日」を削除する

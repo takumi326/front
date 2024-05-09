@@ -9,7 +9,7 @@ const Purpose: React.FC = () => {
   return (
     <>
       <PurposeProvider>
-        <ul className="py-10 grid grid-cols-2">
+        <ul className="py-6 grid grid-cols-2">
           <div className="pl-10 max-w-3xl">
             <PurposeCalendar />
           </div>

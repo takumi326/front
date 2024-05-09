@@ -93,9 +93,9 @@ export const TaskTable: React.FC = () => {
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (rows.length > 0) {
+    if (selectrows.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(rows[0]).forEach((key) => {
+      Object.keys(selectrows[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
