@@ -1,11 +1,11 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-import { taskData } from "@/interface/task-interface";
+import { paymentData } from "@/interface/payment-interface";
 
-export const taskGetData = async () => {
+export const paymentGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/tasks", {
+    const response = await axios.get("http://localhost:3000/payments", {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),
@@ -19,28 +19,29 @@ export const taskGetData = async () => {
   }
 };
 
-export const taskNew = async (
-  title: string,
-  purpose_id: string,
+export const paymentNew = async (
+  category_id: string,
+  classification_id: string,
+  amount: number,
   schedule: Date,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: string,
+  repetition_settings: [],
   body: string
-): Promise<taskData> => {
+): Promise<paymentData> => {
   try {
     const response = await axios.post(
-      "http://localhost:3000/tasks",
+      "http://localhost:3000/payments",
       {
-        task: {
-          title: title,
-          purpose_id: purpose_id,
+        payment: {
+          category_id: category_id,
+          classification_id: classification_id,
+          amount: amount,
           schedule: schedule,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,
           body: body,
-          completed: false,
         },
       },
       {
@@ -55,34 +56,34 @@ export const taskNew = async (
     // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
-    throw new Error("Failed to post task");
+    throw new Error("Failed to post payment");
   }
 };
 
-export const taskEdit = async (
+export const paymentEdit = async (
   id: string,
-  title: string,
-  purpose_id: string,
+  category_id: string,
+  classification_id: string,
+  amount: number,
   schedule: Date,
   repetition: boolean,
   repetition_type: string,
   repetition_settings: [],
-  body: string,
-  completed: boolean
+  body: string
 ) => {
   try {
     const response = await axios.patch(
-      `http://localhost:3000/tasks/${id}`,
+      `http://localhost:3000/payments/${id}`,
       {
-        task: {
-          title: title,
-          purpose_id: purpose_id,
+        payment: {
+          category_id: category_id,
+          classification_id: classification_id,
+          amount: amount,
           schedule: schedule,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,
           body: body,
-          completed: completed,
         },
       },
       {
@@ -97,13 +98,13 @@ export const taskEdit = async (
     console.log(response);
     return response;
   } catch (error) {
-    throw new Error("Failed to edit task");
+    throw new Error("Failed to edit payment");
   }
 };
 
-export const taskDelete = async (id: string) => {
+export const paymentDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/tasks/${id}`, {
+    await axios.delete(`http://localhost:3000/payments/${id}`, {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),
@@ -112,6 +113,6 @@ export const taskDelete = async (id: string) => {
     });
     console.log("delete成功");
   } catch (error) {
-    throw new Error("Failed to delete task");
+    throw new Error("Failed to delete payment");
   }
 };

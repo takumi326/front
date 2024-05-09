@@ -23,31 +23,109 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import {
-  taskGetData as getData,
-  taskDelete as Delete,
-} from "@/lib/api/task-api";
+import { moneyContext } from "@/context/money-context";
 
 import {
-  taskData,
-  columnTaskNames,
-  selectTaskData,
-} from "@/interface/task-interface";
+  paymentGetData,
+  paymentDelete,
+} from "@/lib/api/payment-api";
+import {
+  paymentData,
+  columnPaymentNames,
+  selectPaymentData,
+} from "@/interface/payment-interface";
+import { PaymentRow } from "@/components/payment/row";
+import { PaymentNew } from "@/components/payment/new";
 
-import { taskContext } from "@/context/task-context";
+import {
+  incomeGetData,
+  incomeDelete,
+} from "@/lib/api/income-api";
+import {
+  incomeData,
+  columnIncomeNames,
+  selectIncomeData,
+} from "@/interface/income-interface";
+import { IncomeRow } from "@/components/income/row";
+import { IncomeNew } from "@/components/income/new";
 
-import { TaskRow } from "@/components/task/row";
-import { TaskNew } from "@/components/task/new";
+import {
+  transferGetData,
+  transferDelete,
+} from "@/lib/api/transfer-api";
+import {
+  transferData,
+  columnTransferNames,
+  selectTransferData,
+} from "@/interface/transfer-interface";
+import { TransferRow } from "@/components/transfer/row";
+import { TransferNew } from "@/components/transfer/new";
 
-export const Moneyable: React.FC = () => {
-  const { tasks, setTasks } = useContext(taskContext);
+import {
+  accountGetData,
+  accountDelete,
+} from "@/lib/api/account-api";
+import {
+  accountData,
+  columnAccountNames,
+  selectAccountData,
+} from "@/interface/account-interface";
+import { AccountRow } from "@/components/account/row";
+import { AccountNew } from "@/components/account/new";
 
-  const [completedTasks, setCompletedTasks] = useState<taskData[]>([]);
-  const [incompleteTasks, setIncompleteTasks] = useState<taskData[]>([]);
-  const [filter, setFilter] = useState<"all" | "completed" | "incomplete">(
-    "incomplete"
+import {
+  categoryGetData,
+  categoryDelete,
+} from "@/lib/api/category-api";
+import {
+  categoryData,
+  columnCategoryNames,
+  selectCategoryData,
+} from "@/interface/category-interface";
+import { CategoryRow } from "@/components/category/row";
+import { CategoryNew } from "@/components/category/new";
+
+
+import {
+  classificationGetData,
+  classificationDelete,
+} from "@/lib/api/classification-api";
+import {
+  classificationData,
+  columnClassificationNames,
+  selectClassificationData,
+} from "@/interface/classification-interface";
+import { ClassificationRow } from "@/components/classification/row";
+import { ClassificationNew } from "@/components/classification/new";
+
+export const MoneyTable: React.FC = () => {
+  const {
+    classifications,
+    setClassifications,
+    categories,
+    setCategories,
+    payments,
+    setPayments,
+    incomes,
+    setIncomes,
+    accounts,
+    setAccounts,
+    transfers,
+    setTransfers,
+  } = useContext(moneyContext);
+
+  const [rows, setRows] = useState<accountData[]>([]);
+  const [selectrows, setSelectRows] = useState<selectAccountData[]>([]);
+  const [completedAccounts, setCompletedAccounts] = useState<accountData[]>([]);
+  const [incompleteAccounts, setIncompleteAccounts] = useState<accountData[]>(
+    []
   );
-  const [displayedTasks, setDisplayedTasks] = useState<taskData[]>([]);
+
+  const [filter, setFilter] = useState<"payment" | "income" | "account">(
+    "payment"
+  );
+
+  const [displayedAccounts, setDisplayedAccounts] = useState<accountData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -55,96 +133,133 @@ export const Moneyable: React.FC = () => {
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
-  const rows = tasks.map((item) => ({
-    id: item.id,
-    title: item.title,
-    purpose_id: item.purpose_id,
-    purpose_title: item.purpose_title,
-    schedule: item.schedule,
-    repetition: item.repetition,
-    repetition_type: item.repetition_type,
-    repetition_settings: item.repetition_settings,
-    body: item.body,
-    completed: item.completed,
-  }));
+  useEffect(() => {
+    const updaterows =
+      filter === "payment"
+        ? accounts.map((item) => ({
+            id: item.id,
+            name: item.name,
+            amount: item.amount,
+            body: item.body,
+          }))
+        : filter === "income"
+        ? accounts.map((item) => ({
+            id: item.id,
+            name: item.name,
+            amount: item.amount,
+            body: item.body,
+          }))
+        : accounts.map((item) => ({
+            id: item.id,
+            name: item.name,
+            amount: item.amount,
+            body: item.body,
+          }));
+    setRows(updaterows);
+  }, [filter]);
 
-  const selectrows: selectTaskData[] = tasks.map((item) => ({
-    title: item.title,
-    purpose_title: item.purpose_title,
-    schedule: item.schedule,
-    repetition_type: item.repetition_type,
-  }));
+  useEffect(() => {
+    const updateselectrows =
+      filter === "payment"
+        ? accounts.map((item) => ({
+            name: item.name,
+            amount: item.amount,
+          }))
+        : filter === "income"
+        ? accounts.map((item) => ({
+            name: item.name,
+            amount: item.amount,
+          }))
+        : accounts.map((item) => ({
+            name: item.name,
+            amount: item.amount,
+          }));
+    setSelectRows(updateselectrows);
+  }, [filter]);
 
-  const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof rows)[0]>("schedule");
+  const [orderBy, setOrderBy] = useState<keyof (typeof selectrows)[0]>("name");
 
-  const [order, setOrder] = React.useState<{
+  const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
   }>({
-    title: "default",
-    purpose_title: "default",
-    schedule: "asc",
-    repetition_type: "default",
-    time: "default",
+    name: "default",
+    amount: "default",
   });
 
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  useEffect(() => {
+    const updateorderBy: {
+      [key: string]: "asc" | "desc" | "default";
+    } =
+      filter === "payment"
+        ? {
+            name: "default",
+            amount: "default",
+          }
+        : filter === "income"
+        ? {
+            name: "default",
+            amount: "default",
+          }
+        : {
+            name: "default",
+            amount: "default",
+          };
+    setOrder(updateorderBy);
+  }, [filter]);
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (rows.length > 0) {
+    if (selectrows.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(rows[0]).forEach((key) => {
+      Object.keys(selectrows[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
     } else {
       // rows が空の場合は適切な初期設定を行う
       return {
-        title: true,
-        purpose_title: true,
-        schedule: true,
-        repetition_type: true,
-        time: false,
+        name: true,
+        amount: true,
       };
     }
   });
 
   useEffect(() => {
     getData().then((data) => {
-      setTasks(data);
-      console.log(data);
+      setAccounts(data);
+      console.log(accounts);
     });
   }, [isEditing, isAdding]);
 
   useEffect(() => {
     setIsEditing(false);
     setIsAdding(false);
-  }, [tasks]);
+  }, [accounts]);
 
   useEffect(() => {
-    const completed = tasks.filter((task) => task.completed);
-    const incomplete = tasks.filter((task) => !task.completed);
-    setCompletedTasks(completed);
-    setIncompleteTasks(incomplete);
-    setDisplayedTasks(tasks);
-  }, [tasks, isEditing, isAdding]);
+    const completed = accounts.filter((account) => account.completed);
+    const incomplete = accounts.filter((account) => !account.completed);
+    setDisplayedAccounts(accounts);
+    console.log(2);
+  }, [accounts, isEditing, isAdding]);
 
   useEffect(() => {
-    let filteredTasks: taskData[] = [];
-    if (filter === "all") {
-      filteredTasks = tasks;
-    } else if (filter === "completed") {
-      filteredTasks = completedTasks;
-    } else if (filter === "incomplete") {
-      filteredTasks = incompleteTasks;
+    let filteredAccounts: accountData[] = [];
+    if (filter === "payment") {
+      filteredAccounts = accounts;
+    } else if (filter === "income") {
+      filteredAccounts = completedAccounts;
+    } else if (filter === "account") {
+      filteredAccounts = incompleteAccounts;
     }
     // 表示される目的を設定
-    setDisplayedTasks(filteredTasks);
-  }, [filter, tasks, completedTasks, incompleteTasks]);
+    setDisplayedAccounts(filteredAccounts);
+  }, [filter, accounts, completedAccounts, incompleteAccounts]);
 
-  const handleFilterChange = (value: "all" | "completed" | "incomplete") => {
+  const handleFilterChange = (value: "payment" | "income" | "account") => {
     setFilter(value);
   };
 
@@ -157,39 +272,39 @@ export const Moneyable: React.FC = () => {
   };
 
   // TableShow コンポーネント内での更新処理
-  const newTask = (newTask: taskData) => {
-    setTasks([...tasks, newTask]);
+  const newAccount = (newAccount: accountData) => {
+    setAccounts([...accounts, newAccount]);
     setIsEditing(true);
   };
 
   // TableShow コンポーネント内での更新処理
-  const updateTask = (updateTask: taskData) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === updateTask.id) {
-        return updateTask; // 編集されたデータで該当の目的を更新
+  const updateAccount = (updateAccount: accountData) => {
+    const updatedAccounts = accounts.map((account) => {
+      if (account.id === updateAccount.id) {
+        return updateAccount; // 編集されたデータで該当の目的を更新
       }
-      return task;
+      return account;
     });
-    setTasks(updatedTasks); // 更新された tasks ステートを設定
+    setAccounts(updatedAccounts); // 更新された accounts ステートを設定
     setIsAdding(true);
   };
 
-  const deleteTask = async (id: string) => {
+  const deleteAccount = async (id: string) => {
     try {
       console.log(id);
       await Delete(id);
-      setTasks(tasks.filter((task) => task.id !== id)); // UIからも削除
+      setAccounts(accounts.filter((account) => account.id !== id)); // UIからも削除
     } catch (error) {
       console.error("Failed to delete todo:", error);
     }
   };
 
-  const deleteAllTask = async (ids: string[]) => {
+  const deleteAllAccount = async (ids: string[]) => {
     try {
       // 複数のIDに対して削除を実行
       await Promise.all(ids.map((id) => Delete(id)));
       // UIからも削除
-      setTasks(tasks.filter((task) => !ids.includes(task.id)));
+      setAccounts(accounts.filter((account) => !ids.includes(account.id)));
     } catch (error) {
       console.error("Failed to delete todo:", error);
     }
@@ -212,7 +327,7 @@ export const Moneyable: React.FC = () => {
   };
 
   // データをソートする関数
-  const sortedRows = displayedTasks.slice().sort((a, b) => {
+  const sortedRows = displayedAccounts.slice().sort((a, b) => {
     const compare = (key: keyof (typeof rows)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
@@ -226,32 +341,34 @@ export const Moneyable: React.FC = () => {
 
   const handleSelectAllClick = () => {
     if (filter === "incomplete") {
-      if (incompleteSelected.length === incompleteTasks.length) {
+      if (incompleteSelected.length === incompleteAccounts.length) {
         setIncompleteSelected([]);
         setSelected(selected.filter((id) => !incompleteSelected.includes(id)));
       } else {
-        const allIds = incompleteTasks.map((task) => task.id);
+        const allIds = incompleteAccounts.map((account) => account.id);
         setIncompleteSelected(allIds);
         setSelected([...selected, ...allIds]);
       }
     } else if (filter === "completed") {
-      if (completedSelected.length === completedTasks.length) {
+      if (completedSelected.length === completedAccounts.length) {
         setCompletedSelected([]);
         setSelected(selected.filter((id) => !completedSelected.includes(id)));
       } else {
-        const allIds = completedTasks.map((task) => task.id);
+        const allIds = completedAccounts.map((account) => account.id);
         setCompletedSelected(allIds);
         setSelected([...selected, ...allIds]);
       }
     } else {
-      if (selected.length === tasks.length) {
+      if (selected.length === accounts.length) {
         setCompletedSelected([]);
         setIncompleteSelected([]);
         setSelected([]);
       } else {
-        const allIds = tasks.map((task) => task.id);
-        const allCompletedIds = completedTasks.map((task) => task.id);
-        const allIncompleteIds = incompleteTasks.map((task) => task.id);
+        const allIds = accounts.map((account) => account.id);
+        const allCompletedIds = completedAccounts.map((account) => account.id);
+        const allIncompleteIds = incompleteAccounts.map(
+          (account) => account.id
+        );
         setCompletedSelected(allCompletedIds);
         setIncompleteSelected(allIncompleteIds);
         setSelected(allIds);
@@ -295,7 +412,7 @@ export const Moneyable: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleColumnToggle = (property: keyof selectTaskData) => {
+  const handleColumnToggle = (property: keyof selectAccountData) => {
     setColumnSettings((prevSettings) => ({
       ...prevSettings,
       [property]: !prevSettings[property],
@@ -307,11 +424,11 @@ export const Moneyable: React.FC = () => {
   );
 
   const handleDelete = (id: string) => {
-    deleteTask(id);
+    deleteAccount(id);
   };
 
   const handleAllDelete = () => {
-    deleteAllTask(selected);
+    deleteAllAccount(selected);
     setCompletedSelected([]); // 選択をクリア
     setIncompleteSelected([]); // 選択をクリア
     setSelected([]); // 選択をクリア
@@ -333,29 +450,29 @@ export const Moneyable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <TaskNew onAdd={newTask} onClose={handleNewCloseModal} />
+            <AccountNew onAdd={newAccount} onClose={handleNewCloseModal} />
           </div>
         </div>
       )}
       <Stack direction="row" alignItems="center">
         <Stack direction="row" alignItems="center" spacing={2}>
           <Button
-            variant={filter === "incomplete" ? "contained" : "outlined"}
-            onClick={() => handleFilterChange("incomplete")}
+            variant={filter === "payment" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("payment")}
           >
-            未完了
+            支出
           </Button>
           <Button
-            variant={filter === "completed" ? "contained" : "outlined"}
-            onClick={() => handleFilterChange("completed")}
+            variant={filter === "income" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("income")}
           >
-            完了
+            収入
           </Button>
           <Button
-            variant={filter === "all" ? "contained" : "outlined"}
-            onClick={() => handleFilterChange("all")}
+            variant={filter === "account" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("account")}
           >
-            すべて
+            預金
           </Button>
         </Stack>
         <Button
@@ -396,10 +513,10 @@ export const Moneyable: React.FC = () => {
           Object.keys(selectrows[0]).map((key) => (
             <MenuItem
               key={key}
-              onClick={() => handleColumnToggle(key as keyof selectTaskData)}
+              onClick={() => handleColumnToggle(key as keyof selectAccountData)}
             >
               <Checkbox checked={columnSettings[key]} />
-              {columnTaskNames[key as keyof selectTaskData]}
+              {columnAccountNames[key as keyof selectAccountData]}
             </MenuItem>
           ))}
       </Menu>
@@ -442,7 +559,7 @@ export const Moneyable: React.FC = () => {
                 <TableCell key={key}>
                   <Stack direction="row" alignItems="center">
                     <Typography>
-                      {columnTaskNames[key as keyof selectTaskData]}
+                      {columnAccountNames[key as keyof selectAccountData]}
                     </Typography>
 
                     <IconButton
@@ -469,13 +586,13 @@ export const Moneyable: React.FC = () => {
           </TableHead>
           <TableBody>
             {sortedRows.map((row) => (
-              <TaskRow
+              <AccountRow
                 key={row.title}
                 row={row}
                 onSelect={handleSelect}
                 isSelected={isSelected(row.id, row.completed)}
                 visibleColumns={visibleColumns}
-                onUpdate={updateTask}
+                onUpdate={updateAccount}
                 onDelete={handleDelete}
               />
             ))}
