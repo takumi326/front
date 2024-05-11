@@ -14,19 +14,35 @@ export type incomeData = {
 };
 
 // ヘッダーに表示するIncomeの型定義
+export type displayIncomeData = {
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;
+  history: {
+    income_schedule: Date;
+    income_category_name: string;
+    income_amount: number;
+    income_repetition_type: string;
+  }[];
+};
+
 export type selectIncomeData = {
-  schedule: Date;
-  category_name: string;
-  amount: number;
-  repetition_type: string;
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;
 };
 
 // 列名を日本語に変換する辞書
 export const columnIncomeNames = {
-  schedule: "予定",
-  category_name: "カテゴリ",
-  amount: "金額",
-  repetition_type: "繰り返し",
+  classification_name: "分類",
+  classification_amount: "合計金額",
+  clsasfication_account: "支払い口座",
+  history: {
+    income_schedule: "日付",
+    income_category_name: "カテゴリ",
+    income_amount: "金額",
+    income_repetition_type: "繰り返し",
+  },
 };
 
 // Rowコンポーネントで使用する Props の型を定義

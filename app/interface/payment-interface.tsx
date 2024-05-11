@@ -14,19 +14,35 @@ export type paymentData = {
 };
 
 // ヘッダーに表示するTaskの型定義
+export type displayPaymentData = {
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;
+  history: {
+    payment_schedule: Date;
+    payment_category_name: string;
+    payment_amount: number;
+    payment_repetition_type: string;
+  }[];
+};
+
 export type selectPaymentData = {
-  schedule: Date;
-  category_name: string;
-  amount: number;
-  repetition_type: string;
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;
 };
 
 // 列名を日本語に変換する辞書
 export const columnPaymentNames = {
-  schedule: "予定",
-  category_name: "カテゴリ",
-  amount: "金額",
-  repetition_type: "繰り返し",
+  classification_name: "分類",
+  classification_amount: "合計金額",
+  clsasfication_account: "支払い口座",
+  history: {
+    payment_schedule: "日付",
+    payment_category_name: "カテゴリ",
+    payment_amount: "金額",
+    payment_repetition_type: "繰り返し",
+  },
 };
 
 // Rowコンポーネントで使用する Props の型を定義

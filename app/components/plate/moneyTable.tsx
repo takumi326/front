@@ -25,34 +25,27 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import {
-  paymentGetData,
-  paymentDelete,
-} from "@/lib/api/payment-api";
+import { paymentGetData, paymentDelete } from "@/lib/api/payment-api";
 import {
   paymentData,
   columnPaymentNames,
+  displayPaymentData,
   selectPaymentData,
 } from "@/interface/payment-interface";
 import { PaymentRow } from "@/components/payment/row";
 import { PaymentNew } from "@/components/payment/new";
 
-import {
-  incomeGetData,
-  incomeDelete,
-} from "@/lib/api/income-api";
+import { incomeGetData, incomeDelete } from "@/lib/api/income-api";
 import {
   incomeData,
   columnIncomeNames,
+  displayIncomeData,
   selectIncomeData,
 } from "@/interface/income-interface";
 import { IncomeRow } from "@/components/income/row";
 import { IncomeNew } from "@/components/income/new";
 
-import {
-  transferGetData,
-  transferDelete,
-} from "@/lib/api/transfer-api";
+import { transferGetData, transferDelete } from "@/lib/api/transfer-api";
 import {
   transferData,
   columnTransferNames,
@@ -61,22 +54,17 @@ import {
 import { TransferRow } from "@/components/transfer/row";
 import { TransferNew } from "@/components/transfer/new";
 
-import {
-  accountGetData,
-  accountDelete,
-} from "@/lib/api/account-api";
+import { accountGetData, accountDelete } from "@/lib/api/account-api";
 import {
   accountData,
   columnAccountNames,
+  displayAccountData,
   selectAccountData,
 } from "@/interface/account-interface";
 import { AccountRow } from "@/components/account/row";
 import { AccountNew } from "@/components/account/new";
 
-import {
-  categoryGetData,
-  categoryDelete,
-} from "@/lib/api/category-api";
+import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
 import {
   categoryData,
   columnCategoryNames,
@@ -84,7 +72,6 @@ import {
 } from "@/interface/category-interface";
 import { CategoryRow } from "@/components/category/row";
 import { CategoryNew } from "@/components/category/new";
-
 
 import {
   classificationGetData,
@@ -114,8 +101,9 @@ export const MoneyTable: React.FC = () => {
     setTransfers,
   } = useContext(moneyContext);
 
-  const [rows, setRows] = useState<accountData[]>([]);
-  const [selectrows, setSelectRows] = useState<selectAccountData[]>([]);
+  const [rows, setRows] = useState<
+    displayPaymentData[] | displayIncomeData[] | displayAccountData[]
+  >([]);
   const [completedAccounts, setCompletedAccounts] = useState<accountData[]>([]);
   const [incompleteAccounts, setIncompleteAccounts] = useState<accountData[]>(
     []
@@ -133,131 +121,144 @@ export const MoneyTable: React.FC = () => {
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
-  useEffect(() => {
-    const updaterows =
-      filter === "payment"
-        ? accounts.map((item) => ({
-            id: item.id,
-            name: item.name,
-            amount: item.amount,
-            body: item.body,
-          }))
-        : filter === "income"
-        ? accounts.map((item) => ({
-            id: item.id,
-            name: item.name,
-            amount: item.amount,
-            body: item.body,
-          }))
-        : accounts.map((item) => ({
-            id: item.id,
-            name: item.name,
-            amount: item.amount,
-            body: item.body,
-          }));
-    setRows(updaterows);
-  }, [filter]);
-
-  useEffect(() => {
-    const updateselectrows =
-      filter === "payment"
-        ? accounts.map((item) => ({
-            name: item.name,
-            amount: item.amount,
-          }))
-        : filter === "income"
-        ? accounts.map((item) => ({
-            name: item.name,
-            amount: item.amount,
-          }))
-        : accounts.map((item) => ({
-            name: item.name,
-            amount: item.amount,
-          }));
-    setSelectRows(updateselectrows);
-  }, [filter]);
-
-  const [orderBy, setOrderBy] = useState<keyof (typeof selectrows)[0]>("name");
+  const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>(() => {
+    if (filter === "payment") {
+      return "classification_name";
+    } else if (filter === "income") {
+      return "classification_name";
+    } else {
+      return "account_name";
+    }
+  });
 
   const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
   }>({
-    name: "default",
-    amount: "default",
+    classification_name: "default",
+    classification_amount: "default",
+    classification_account: "default",
   });
-
-  useEffect(() => {
-    const updateorderBy: {
-      [key: string]: "asc" | "desc" | "default";
-    } =
-      filter === "payment"
-        ? {
-            name: "default",
-            amount: "default",
-          }
-        : filter === "income"
-        ? {
-            name: "default",
-            amount: "default",
-          }
-        : {
-            name: "default",
-            amount: "default",
-          };
-    setOrder(updateorderBy);
-  }, [filter]);
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (selectrows.length > 0) {
+    if (rows.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(selectrows[0]).forEach((key) => {
+      Object.keys(rows[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
     } else {
-      // rows が空の場合は適切な初期設定を行う
       return {
-        name: true,
-        amount: true,
+        classification_name: true,
+        classification_amount: true,
+        clsasfication_account: true,
       };
     }
   });
 
   useEffect(() => {
-    getData().then((data) => {
+    let initialColumnSettings: { [key: string]: boolean } = {};
+    let updateRows:
+      | displayPaymentData[]
+      | displayIncomeData[]
+      | displayAccountData[];
+    let updateOrder = {};
+
+    if (filter === "payment") {
+      initialColumnSettings = {
+        classification_name: true,
+        classification_amount: true,
+        clsasfication_account: true,
+      };
+      updateRows = classifications.map((cItem) => ({
+        classification_name: cItem.name,
+        classification_amount: cItem.amount,
+        clsasfication_account: cItem.account_name,
+        history: payments.map((pItem) => ({
+          payment_schedule: pItem.schedule,
+          payment_category_name: pItem.category_name,
+          payment_amount: pItem.amount,
+          payment_repetition_type: pItem.repetition_type,
+        })),
+      }));
+      updateOrder = {
+        classification_name: "default",
+        classification_amount: "default",
+        classification_account: "default",
+      };
+    } else if (filter === "income") {
+      initialColumnSettings = {
+        classification_name: true,
+        classification_amount: true,
+        clsasfication_account: true,
+      };
+      updateRows = classifications.map((cItem) => ({
+        classification_name: cItem.name,
+        classification_amount: cItem.amount,
+        clsasfication_account: cItem.account_name,
+        history: payments.map((iItem) => ({
+          income_schedule: iItem.schedule,
+          income_category_name: iItem.category_name,
+          income_amount: iItem.amount,
+          income_repetition_type: iItem.repetition_type,
+        })),
+      }));
+      updateOrder = {
+        classification_name: "default",
+        classification_amount: "default",
+        classification_account: "default",
+      };
+    } else {
+      initialColumnSettings = {
+        account_name: true,
+        account_amount: true,
+      };
+      updateRows = accounts.map((aItem) => ({
+        account_name: aItem.name,
+        account_amount: aItem.amount,
+        history: transfers.map((tItem) => ({
+          transfer_schedule: tItem.schedule,
+          transfer_before_account_name: tItem.before_account_name,
+          transfer_amount: tItem.amount,
+          transfer_repetition_type: tItem.repetition_type,
+        })),
+      }));
+      updateOrder = { account_name: "default", account_amount: "default" };
+    }
+
+    setColumnSettings(initialColumnSettings);
+    setRows(updateRows);
+    setOrder(updateOrder);
+  }, [filter]);
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    paymentGetData().then((data) => {
+      setPayments(data);
+    });
+    incomeGetData().then((data) => {
+      setIncomes(data);
+    });
+    accountGetData().then((data) => {
       setAccounts(data);
-      console.log(accounts);
+    });
+    categoryGetData().then((data) => {
+      setCategories(data);
+    });
+    classificationGetData().then((data) => {
+      setClassifications(data);
+    });
+    transferGetData().then((data) => {
+      setTransfers(data);
     });
   }, [isEditing, isAdding]);
 
   useEffect(() => {
     setIsEditing(false);
     setIsAdding(false);
-  }, [accounts]);
-
-  useEffect(() => {
-    const completed = accounts.filter((account) => account.completed);
-    const incomplete = accounts.filter((account) => !account.completed);
-    setDisplayedAccounts(accounts);
-    console.log(2);
-  }, [accounts, isEditing, isAdding]);
-
-  useEffect(() => {
-    let filteredAccounts: accountData[] = [];
-    if (filter === "payment") {
-      filteredAccounts = accounts;
-    } else if (filter === "income") {
-      filteredAccounts = completedAccounts;
-    } else if (filter === "account") {
-      filteredAccounts = incompleteAccounts;
-    }
-    // 表示される目的を設定
-    setDisplayedAccounts(filteredAccounts);
-  }, [filter, accounts, completedAccounts, incompleteAccounts]);
+  }, [payments, incomes, accounts, categories, classifications, transfers]);
 
   const handleFilterChange = (value: "payment" | "income" | "account") => {
     setFilter(value);
@@ -271,29 +272,58 @@ export const MoneyTable: React.FC = () => {
     setIsNewModalOpen(false);
   };
 
-  // TableShow コンポーネント内での更新処理
-  const newAccount = (newAccount: accountData) => {
-    setAccounts([...accounts, newAccount]);
+  const newPayment = (newData: paymentData) => {
+    setPayments([...payments, newData]);
     setIsEditing(true);
   };
 
-  // TableShow コンポーネント内での更新処理
+  const newIncome = (newData: incomeData) => {
+    setIncomes([...incomes, newData]);
+    setIsEditing(true);
+  };
+
+  const newAccount = (newData: accountData) => {
+    setAccounts([...accounts, newData]);
+    setIsEditing(true);
+  };
+
+  const updatePayment = (updatePayment: paymentData) => {
+    const updatedPayments = payments.map((payment) => {
+      if (payment.id === updatePayment.id) {
+        return updatePayment;
+      }
+      return payment;
+    });
+    setPayments(updatedPayments);
+    setIsAdding(true);
+  };
+
+  const updateIncome = (updateIncome: incomeData) => {
+    const updatedIncomes = incomes.map((income) => {
+      if (income.id === updateIncome.id) {
+        return updateIncome;
+      }
+      return income;
+    });
+    setIncomes(updatedIncomes);
+    setIsAdding(true);
+  };
+
   const updateAccount = (updateAccount: accountData) => {
     const updatedAccounts = accounts.map((account) => {
       if (account.id === updateAccount.id) {
-        return updateAccount; // 編集されたデータで該当の目的を更新
+        return updateAccount;
       }
       return account;
     });
-    setAccounts(updatedAccounts); // 更新された accounts ステートを設定
+    setAccounts(updatedAccounts);
     setIsAdding(true);
   };
 
   const deleteAccount = async (id: string) => {
     try {
-      console.log(id);
-      await Delete(id);
-      setAccounts(accounts.filter((account) => account.id !== id)); // UIからも削除
+      await accountDelete(id);
+      setAccounts(accounts.filter((account) => account.id !== id));
     } catch (error) {
       console.error("Failed to delete todo:", error);
     }
@@ -327,7 +357,7 @@ export const MoneyTable: React.FC = () => {
   };
 
   // データをソートする関数
-  const sortedRows = displayedAccounts.slice().sort((a, b) => {
+  const sortedRows = rows.slice().sort((a, b) => {
     const compare = (key: keyof (typeof rows)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
@@ -450,7 +480,7 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <AccountNew onAdd={newAccount} onClose={handleNewCloseModal} />
+            <AccountNew onAdd={newData} onClose={handleNewCloseModal} />
           </div>
         </div>
       )}

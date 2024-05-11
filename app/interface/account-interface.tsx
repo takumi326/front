@@ -6,16 +6,33 @@ export type accountData = {
   body: string;
 };
 
-// ヘッダーに表示するTaskの型定義
-export type selectAccountData = {
-  name: string;
-  amount: number;
+export type displayAccountData = {
+  account_name: string;
+  account_amount: number;
+  history: {
+    transfer_schedule: Date;
+    transfer_before_account_name: string;
+    transfer_amount: number;
+    transfer_repetition_type: string;
+  }[];
 };
+
+export type selectAccountData = {
+  account_name: string;
+  account_amount: number;
+};
+
 
 // 列名を日本語に変換する辞書
 export const columnAccountNames = {
-  name: "口座名",
-  amount: "金額",
+  account_name: "口座名",
+  account_amount: "金額",
+  history: {
+    transfer_schedule: "日付",
+    transfer_before_account_name: "入金された口座",
+    transfer_amount: "金額",
+    transfer_repetition_type: "繰り返し",
+  },
 };
 
 // Rowコンポーネントで使用する Props の型を定義
