@@ -55,28 +55,28 @@ export const TaskTable: React.FC = () => {
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
-  const rows = tasks.map((item) => ({
-    id: item.id,
-    title: item.title,
-    purpose_id: item.purpose_id,
-    purpose_title: item.purpose_title,
-    schedule: item.schedule,
-    repetition: item.repetition,
-    repetition_type: item.repetition_type,
-    repetition_settings: item.repetition_settings,
-    body: item.body,
-    completed: item.completed,
-  }));
+  // const rows = tasks.map((item) => ({
+  //   id: item.id,
+  //   title: item.title,
+  //   purpose_id: item.purpose_id,
+  //   purpose_title: item.purpose_title,
+  //   schedule: item.schedule,
+  //   repetition: item.repetition,
+  //   repetition_type: item.repetition_type,
+  //   repetition_settings: item.repetition_settings,
+  //   body: item.body,
+  //   completed: item.completed,
+  // }));
 
-  const selectrows: selectTaskData[] = tasks.map((item) => ({
-    title: item.title,
-    purpose_title: item.purpose_title,
-    schedule: item.schedule,
-    repetition_type: item.repetition_type,
-  }));
+  // const selectrows: selectTaskData[] = tasks.map((item) => ({
+  //   title: item.title,
+  //   purpose_title: item.purpose_title,
+  //   schedule: item.schedule,
+  //   repetition_type: item.repetition_type,
+  // }));
 
   const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof rows)[0]>("schedule");
+    React.useState<keyof (typeof tasks)[0]>("schedule");
 
   const [order, setOrder] = React.useState<{
     [key: string]: "asc" | "desc" | "default";
@@ -93,9 +93,9 @@ export const TaskTable: React.FC = () => {
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (selectrows.length > 0) {
+    if (tasks.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(selectrows[0]).forEach((key) => {
+      Object.keys(tasks[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
@@ -195,7 +195,7 @@ export const TaskTable: React.FC = () => {
     }
   };
 
-  const handleRequestSort = (property: keyof (typeof rows)[0]) => {
+  const handleRequestSort = (property: keyof (typeof tasks)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
       // すでにソートされているカラムをクリックした場合、ソート順を切り替える
@@ -213,7 +213,7 @@ export const TaskTable: React.FC = () => {
 
   // データをソートする関数
   const sortedRows = displayedTasks.slice().sort((a, b) => {
-    const compare = (key: keyof (typeof rows)[0]) => {
+    const compare = (key: keyof (typeof tasks)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
       } else if (order[key] === "desc") {
@@ -392,8 +392,8 @@ export const TaskTable: React.FC = () => {
           horizontal: "left",
         }}
       >
-        {rows.length > 0 &&
-          Object.keys(selectrows[0]).map((key) => (
+        {tasks.length > 0 &&
+          Object.keys(tasks[0]).map((key) => (
             <MenuItem
               key={key}
               onClick={() => handleColumnToggle(key as keyof selectTaskData)}
@@ -413,26 +413,26 @@ export const TaskTable: React.FC = () => {
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length <
-                          rows.filter((row) => !row.completed).length
+                          tasks.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length <
-                          rows.filter((row) => row.completed).length
+                          tasks.filter((row) => row.completed).length
                       : filter === "all"
-                      ? selected.length > 0 && selected.length < rows.length
+                      ? selected.length > 0 && selected.length < tasks.length
                       : false
                   }
                   checked={
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length ===
-                          rows.filter((row) => !row.completed).length
+                          tasks.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length ===
-                          rows.filter((row) => row.completed).length
+                          tasks.filter((row) => row.completed).length
                       : filter === "all"
-                      ? selected.length > 0 && selected.length === rows.length
+                      ? selected.length > 0 && selected.length === tasks.length
                       : false
                   }
                   onChange={handleSelectAllClick}
@@ -447,7 +447,7 @@ export const TaskTable: React.FC = () => {
 
                     <IconButton
                       onClick={() =>
-                        handleRequestSort(key as keyof (typeof rows)[0])
+                        handleRequestSort(key as keyof (typeof tasks)[0])
                       }
                     >
                       {orderBy === key ? (

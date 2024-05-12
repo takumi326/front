@@ -14,29 +14,48 @@ export type paymentData = {
 };
 
 // ヘッダーに表示するTaskの型定義
+export type displayPaymentData = {
+  id: string;
+  classification_account_id: string;
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;  
+  history: {
+    payment_id: string;
+    payment_category_id: string;
+    payment_category_name: string;
+    payment_classification_id: string;
+    payment_classification_name: string;
+    payment_amount: number;
+    payment_schedule: Date;
+    payment_repetition: boolean;
+    payment_repetition_type: string;
+    payment_repetition_settings: [];
+    payment_body: string;
+  }[];
+};
+
 export type selectPaymentData = {
-  schedule: Date;
-  category_name: string;
-  amount: number;
-  repetition_type: string;
+  classification_name: string;
+  classification_amount: number;
+  clsasfication_account: string;
 };
 
 // 列名を日本語に変換する辞書
 export const columnPaymentNames = {
-  schedule: "予定",
-  category_name: "カテゴリ",
-  amount: "金額",
-  repetition_type: "繰り返し",
+  classification_name: "分類",
+  classification_amount: "合計金額",
+  clsasfication_account: "支払い口座",
 };
 
 // Rowコンポーネントで使用する Props の型を定義
 export interface paymentRowProps {
-  row: paymentData; // row に Task 型を適用
-  onSelect: (id: string) => void; // onSelect の型を指定
+  row: displayPaymentData; 
+  onSelect: (id: string) => void; 
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
   onUpdate: (updatedPayment: paymentData) => void;
-  onDelete: (id: string) => void; // onDelete の型を指定
+  onDelete: (id: string) => void;
 }
 
 // Showコンポーネントで使用する Props の型を定義

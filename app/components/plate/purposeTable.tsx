@@ -57,23 +57,23 @@ export const PurposeTable: React.FC = () => {
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
-  const rows = purposes.map((item) => ({
-    id: item.id,
-    title: item.title,
-    result: item.result,
-    deadline: item.deadline,
-    body: item.body,
-    completed: item.completed,
-  }));
+  // const rows = purposes.map((item) => ({
+  //   id: item.id,
+  //   title: item.title,
+  //   result: item.result,
+  //   deadline: item.deadline,
+  //   body: item.body,
+  //   completed: item.completed,
+  // }));
 
-  const selectrows: selectPurposeData[] = purposes.map((item) => ({
-    title: item.title,
-    result: item.result,
-    deadline: item.deadline,
-  }));
+  // const selectrows: selectPurposeData[] = purposes.map((item) => ({
+  //   title: item.title,
+  //   result: item.result,
+  //   deadline: item.deadline,
+  // }));
 
   const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof rows)[0]>("deadline");
+    React.useState<keyof (typeof  purposes)[0]>("deadline");
 
   const [order, setOrder] = React.useState<{
     [key: string]: "asc" | "desc" | "default";
@@ -88,9 +88,9 @@ export const PurposeTable: React.FC = () => {
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (selectrows.length > 0) {
+    if (purposes.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(selectrows[0]).forEach((key) => {
+      Object.keys(purposes[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
@@ -189,7 +189,7 @@ export const PurposeTable: React.FC = () => {
     }
   };
 
-  const handleRequestSort = (property: keyof (typeof rows)[0]) => {
+  const handleRequestSort = (property: keyof (typeof purposes)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
       // すでにソートされているカラムをクリックした場合、ソート順を切り替える
@@ -207,7 +207,7 @@ export const PurposeTable: React.FC = () => {
 
   // データをソートする関数
   const sortedRows = displayedPurposes.slice().sort((a, b) => {
-    const compare = (key: keyof (typeof rows)[0]) => {
+    const compare = (key: keyof (typeof purposes)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
       } else if (order[key] === "desc") {
@@ -388,8 +388,8 @@ export const PurposeTable: React.FC = () => {
           horizontal: "left",
         }}
       >
-        {rows.length > 0 &&
-          Object.keys(selectrows[0]).map((key) => (
+        {purposes.length > 0 &&
+          Object.keys(purposes[0]).map((key) => (
             <MenuItem
               key={key}
               onClick={() => handleColumnToggle(key as keyof selectPurposeData)}
@@ -409,26 +409,26 @@ export const PurposeTable: React.FC = () => {
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length <
-                          rows.filter((row) => !row.completed).length
+                          purposes.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length <
-                          rows.filter((row) => row.completed).length
+                          purposes.filter((row) => row.completed).length
                       : filter === "all"
-                      ? selected.length > 0 && selected.length < rows.length
+                      ? selected.length > 0 && selected.length < purposes.length
                       : false
                   }
                   checked={
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length ===
-                          rows.filter((row) => !row.completed).length
+                          purposes.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length ===
-                          rows.filter((row) => row.completed).length
+                          purposes.filter((row) => row.completed).length
                       : filter === "all"
-                      ? selected.length > 0 && selected.length === rows.length
+                      ? selected.length > 0 && selected.length === purposes.length
                       : false
                   }
                   onChange={handleSelectAllClick}
@@ -443,7 +443,7 @@ export const PurposeTable: React.FC = () => {
 
                     <IconButton
                       onClick={() =>
-                        handleRequestSort(key as keyof (typeof rows)[0])
+                        handleRequestSort(key as keyof (typeof purposes)[0])
                       }
                     >
                       {orderBy === key ? (

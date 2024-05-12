@@ -6,26 +6,44 @@ export type accountData = {
   body: string;
 };
 
-// ヘッダーに表示するTaskの型定義
+export type displayAccountData = {
+  id: string;
+  account_name: string;
+  account_amount: number;
+  account_body: string;
+  history: {
+    transfer_id: string;
+    transfer_before_account_id: string;
+    transfer_before_account_name: string;
+    transfer_after_account_id: string;
+    transfer_amount: number;
+    transfer_schedule: Date;
+    transfer_repetition: boolean;
+    transfer_repetition_type: string;
+    transfer_repetition_settings: [];
+    transfer_body: string;
+  }[];
+};
+
 export type selectAccountData = {
-  name: string;
-  amount: number;
+  account_name: string;
+  account_amount: number;
 };
 
 // 列名を日本語に変換する辞書
 export const columnAccountNames = {
-  name: "口座名",
-  amount: "金額",
+  account_name: "口座名",
+  account_amount: "金額",
 };
 
 // Rowコンポーネントで使用する Props の型を定義
 export interface accountRowProps {
-  row: accountData; // row に Task 型を適用
-  onSelect: (id: string) => void; // onSelect の型を指定
+  row: displayAccountData;
+  onSelect: (id: string) => void;
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
   onUpdate: (updatedAccount: accountData) => void;
-  onDelete: (id: string) => void; // onDelete の型を指定
+  onDelete: (id: string) => void;
 }
 
 // Showコンポーネントで使用する Props の型を定義
