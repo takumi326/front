@@ -26,6 +26,8 @@ import {
 import { MoneyCalendar } from "@/components/plate/moneyCalendar";
 import { MoneyTable } from "@/components/plate/moneyTable";
 
+// import { PurposeTable } from "@/components/plate/purposeTable";
+
 import { MoneyProvider } from "@/context/money-context";
 
 ChartJS.register(ArcElement, Tooltip, Legend);

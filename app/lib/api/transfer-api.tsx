@@ -13,6 +13,7 @@ export const transferGetData = async () => {
       },
     });
     console.log("get成功");
+    console.log(response.data);
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
