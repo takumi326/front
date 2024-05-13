@@ -28,19 +28,11 @@ import { MoneyTable } from "@/components/plate/moneyTable";
 
 // import { PurposeTable } from "@/components/plate/purposeTable";
 
-import { MoneyProvider } from "@/context/money-context";
+import { MoneyProvider, moneyContext } from "@/context/money-context";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Money: React.FC = () => {
-  const [filter, setFilter] = useState<"payment" | "income" | "account">(
-    "payment"
-  );
-
-  const handleFilterChange = (value: "payment" | "income" | "account") => {
-    setFilter(value);
-  };
-
   const data = {
     datasets: [
       {
@@ -117,8 +109,7 @@ const Money: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="pr-10">
-              <p className="font-bold text-lg">収支/預金一覧</p>
+            <div className="pr-10 pt-5">
               <MoneyTable />
             </div>
           </div>

@@ -1,61 +1,39 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
+// import NumberFormat from "react-number-format";
 
 import {
   Box,
-  Checkbox,
   TextField,
   IconButton,
   Button,
   Typography,
   Stack,
+  InputAdornment,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { accountEdit as Edit } from "@/lib/api/account-api";
 import { accountShowProps } from "@/interface/account-interface";
 
-import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
-
 export const AccountShow: React.FC<accountShowProps> = (props) => {
-  const {
-    id,
-    title,
-    result,
-    deadline,
-    body,
-    completed,
-    onUpdate,
-    onClose,
-    onDelete,
-  } = props;
-  const [editTitle, setEditTitle] = useState(title);
-  const [editResult, setEditResult] = useState(result);
-  const [editDeadline, setEditDeadline] = useState<Date>(deadline);
+  const { id, name, amount, body, onUpdate, onClose, onDelete } = props;
+  const [editName, setEditName] = useState(name);
+  const [editAmount, setEditAmount] = useState(amount);
   const [editBody, setEditBody] = useState(body);
-  const [editCompleted, setEditCompleted] = useState<boolean>(completed);
 
   const editAccount = async (id: string) => {
     try {
-      await Edit(
-        id,
-        editTitle,
-        editResult,
-        editDeadline,
-        editBody,
-        editCompleted
-      );
+      await Edit(id, editName, editAmount, editBody);
       const editedData = {
         id: id,
-        title: editTitle,
-        result: editResult,
-        deadline: editDeadline,
+        name: editName,
+        amount: editAmount,
         body: editBody,
-        completed: editCompleted,
       };
       onUpdate(editedData);
     } catch (error) {
-      console.error("Failed to edit todo:", error);
+      console.error("Failed to edit account:", error);
     }
   };
 
@@ -65,10 +43,10 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
     // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
-        setEditTitle(value);
+        setEditName(value);
         break;
-      case "result":
-        setEditResult(value);
+      case "amount":
+        setEditAmount(value === "" ? 0 : parseInt(value, 100));
         break;
       case "body":
         setEditBody(value);
@@ -78,14 +56,20 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
     }
   };
 
-  const handleCheckboxChange = () => {
-    setEditCompleted(!editCompleted); // 現在の値を反転させて更新
+  const formatAmountCommas = (number: number) => {
+    const integerPart = Math.floor(number);
+    const decimalPart = (number - integerPart).toFixed(0).slice(1);
+    return integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // 日付が変更されたときのハンドラ
-  const handleDateChange = (date: Date) => {
-    setEditDeadline(date);
-  };
+  // const handleCheckboxChange = () => {
+  //   setEditCompleted(!editCompleted); // 現在の値を反転させて更新
+  // };
+
+  // // 日付が変更されたときのハンドラ
+  // const handleDateChange = (date: Date) => {
+  //   setEditDeadline(date);
+  // };
 
   const handleSave = () => {
     editAccount(id);
@@ -93,50 +77,44 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={600}>
+    <Box width={560} height={550}>
       <ul className="w-full">
-        <li className="flex items-center">
+        {/* <li className="flex items-center">
           <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
           <Checkbox
             checked={editCompleted}
             onChange={handleCheckboxChange}
             color="primary"
           />
-        </li>
+        </li> */}
         <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
+          <Typography variant="subtitle1">口座名</Typography>
           <TextField
             fullWidth
             variant="outlined"
             name="title"
-            value={editTitle}
+            value={editName}
             onChange={handleChange}
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">目標</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="result"
-            value={editResult}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">期限</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={editDeadline}
-              onChange={handleDateChange}
+          <Typography variant="subtitle1">金額</Typography>
+          <div className="flex items-center">
+            <TextField
+              variant="outlined"
+              type="number"
+              name="amount"
+              value={editAmount}
+              onChange={handleChange}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              }}
+              required
             />
-          </Box>
+            {/* <NumberFormat value={123456789} thousandSeparator={true} /> */}
+            <span>円</span>
+          </div>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>

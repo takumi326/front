@@ -6,6 +6,20 @@ export type accountData = {
   body: string;
 };
 
+// Taskの型定義
+export type transferData = {
+  id: string;
+  before_account_id: string;
+  before_account_name: string;
+  after_account_id: string;
+  amount: number;
+  schedule: Date;
+  repetition: boolean;
+  repetition_type: string;
+  repetition_settings: [];
+  body: string;
+};
+
 export type displayAccountData = {
   id: string;
   account_name: string;
@@ -42,7 +56,8 @@ export interface accountRowProps {
   onSelect: (id: string) => void;
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
-  onUpdate: (updatedAccount: accountData) => void;
+  onAccountUpdate: (updatedAccount: accountData) => void;
+  onTransferUpdate: (updatedTransfer: transferData) => void;
   onDelete: (id: string) => void;
 }
 
@@ -54,6 +69,7 @@ export interface accountShowProps {
   body: string;
   onUpdate: (updatedAccount: accountData) => void;
   onClose: () => void;
+  onDelete: (id: string) => void;
 }
 
 // Newコンポーネントで使用する Props の型を定義

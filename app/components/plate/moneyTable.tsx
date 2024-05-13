@@ -104,7 +104,7 @@ export const MoneyTable: React.FC = () => {
   >([]);
   // const [completedAccounts, setCompletedAccounts] = useState<accountData[]>([]);
   // const [incompleteAccounts, setIncompleteAccounts] = useState<accountData[]>(
-    // []
+  // []
   // );
 
   const [filter, setFilter] = useState<"payment" | "income" | "account">(
@@ -154,6 +154,28 @@ export const MoneyTable: React.FC = () => {
       };
     }
   });
+
+  useEffect(() => {
+    // paymentGetData().then((data) => {
+    //   setPayments(data);
+    // });
+    // incomeGetData().then((data) => {
+    //   setIncomes(data);
+    // });
+    accountGetData().then((data) => {
+      setAccounts(data);
+    });
+    // categoryGetData().then((data) => {
+    //   setCategories(data);
+    // });
+    // classificationGetData().then((data) => {
+    //   setClassifications(data);
+    // });
+    transferGetData().then((data) => {
+      setTransfers(data);
+    });
+    console.log(2);
+  }, [isEditing, isAdding]);
 
   useEffect(() => {
     let initialColumnSettings: { [key: string]: boolean } = {};
@@ -261,30 +283,17 @@ export const MoneyTable: React.FC = () => {
     setRows(updateRows);
     setOrder(updateOrder);
     setSelected([]);
-  }, [filter]);
+  }, [
+    filter,
+    payments,
+    incomes,
+    accounts,
+    categories,
+    classifications,
+    transfers,
+  ]);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  useEffect(() => {
-    // paymentGetData().then((data) => {
-    //   setPayments(data);
-    // });
-    // incomeGetData().then((data) => {
-    //   setIncomes(data);
-    // });
-    accountGetData().then((data) => {
-      setAccounts(data);
-    });
-    // categoryGetData().then((data) => {
-    //   setCategories(data);
-    // });
-    // classificationGetData().then((data) => {
-    //   setClassifications(data);
-    // });
-    transferGetData().then((data) => {
-      setTransfers(data);
-    });
-  }, [isEditing, isAdding]);
 
   useEffect(() => {
     setIsEditing(false);
@@ -315,6 +324,11 @@ export const MoneyTable: React.FC = () => {
 
   const newAccount = (newData: accountData) => {
     setAccounts([...accounts, newData]);
+    setIsEditing(true);
+  };
+
+  const newTransfer = (newData: transferData) => {
+    setTransfers([...transfers, newData]);
     setIsEditing(true);
   };
 
@@ -351,6 +365,17 @@ export const MoneyTable: React.FC = () => {
     setIsAdding(true);
   };
 
+  const updateTransfer = (updateTransfer: transferData) => {
+    const updatedTransfers = transfers.map((transfer) => {
+      if (transfer.id === updateTransfer.id) {
+        return updateTransfer;
+      }
+      return transfer;
+    });
+    setTransfers(updatedTransfers);
+    setIsAdding(true);
+  };
+
   const deleteData = async (id: string) => {
     if (filter === "payment") {
       try {
@@ -373,6 +398,15 @@ export const MoneyTable: React.FC = () => {
       } catch (error) {
         console.error("Failed to delete account:", error);
       }
+    }
+  };
+
+  const deleteTransfer = async (id: string) => {
+    try {
+      await transferDelete(id);
+      setTransfers(transfers.filter((transfer) => transfer.id !== id));
+    } catch (error) {
+      console.error("Failed to delete transfer:", error);
     }
   };
 
@@ -435,7 +469,7 @@ export const MoneyTable: React.FC = () => {
     return compare(orderBy);
   });
 
-  const handleSelectAllClick = () => {
+  const handleAllSelect = () => {
     if (filter === "payment") {
       if (selected.length === rows.length) {
         setSelected([]);
@@ -458,41 +492,69 @@ export const MoneyTable: React.FC = () => {
         setSelected(allIds);
       }
     }
+  };
 
-    const handleSelect = (id: string) => {
-      if (selected.includes(id)) {
-        setSelected(selected.filter((item) => item !== id));
-      } else {
-        setSelected([...selected, id]);
-      }
-    };
+  const handleSelect = (id: string) => {
+    if (selected.includes(id)) {
+      setSelected(selected.filter((item) => item !== id));
+    } else {
+      setSelected([...selected, id]);
+    }
+  };
 
-    const isSelected = (id: string) => selected.includes(id);
+  const isSelected = (id: string) => selected.includes(id);
 
-    const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) =>
-      setAnchorEl(event.currentTarget);
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) =>
+    setAnchorEl(event.currentTarget);
 
-    const handleClose = () => setAnchorEl(null);
+  const handleClose = () => setAnchorEl(null);
 
-    const handleColumnToggle = (
-      property:
-        | keyof selectPaymentData
-        | keyof selectIncomeData
-        | keyof selectAccountData
-    ) => {
-      setColumnSettings((prevSettings) => ({
-        ...prevSettings,
-        [property]: !prevSettings[property],
-      }));
-    };
+  const handleColumnToggle = (
+    property:
+      | keyof selectPaymentData
+      | keyof selectIncomeData
+      | keyof selectAccountData
+  ) => {
+    setColumnSettings((prevSettings) => ({
+      ...prevSettings,
+      [property]: !prevSettings[property],
+    }));
+  };
 
-    const visibleColumns = Object.fromEntries(
-      Object.entries(columnSettings).filter(([key, value]) => value)
-    );
+  const visibleColumns = Object.fromEntries(
+    Object.entries(columnSettings).filter(([key, value]) => value)
+  );
 
-    return (
-      <Box>
-        {isNewModalOpen && filter === "payment" ? (
+  return (
+    <Box>
+      {isNewModalOpen && filter === "payment" ? (
+        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+            <button
+              onClick={handleCloseNewModal}
+              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+            >
+              <CloseIcon />
+            </button>
+            <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
+          </div>
+        </div>
+      ) : isNewModalOpen && filter === "income" ? (
+        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+            <button
+              onClick={handleCloseNewModal}
+              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+            >
+              <CloseIcon />
+            </button>
+            <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
+          </div>
+        </div>
+      ) : (
+        isNewModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 ">
             <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
             <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
@@ -505,91 +567,94 @@ export const MoneyTable: React.FC = () => {
               <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
             </div>
           </div>
-        ) : filter === "income" ? (
-          <div className="fixed inset-0 flex items-center justify-center z-50 ">
-            <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
-            <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
-              <button
-                onClick={handleCloseNewModal}
-                className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
-              >
-                <CloseIcon />
-              </button>
-              <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
-            </div>
+        )
+      )}
+
+      {isNewModalOpen && filter === "account" && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+            <button
+              onClick={handleCloseNewModal}
+              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+            >
+              <CloseIcon />
+            </button>
+            <TransferNew onAdd={newTransfer} onClose={handleCloseNewModal} />
           </div>
-        ) : (
-          <div className="fixed inset-0 flex items-center justify-center z-50 ">
-            <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
-            <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
-              <button
-                onClick={handleCloseNewModal}
-                className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
-              >
-                <CloseIcon />
-              </button>
-              <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
-            </div>
-          </div>
-        )}
-        <Stack direction="row" alignItems="center">
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Button
-              variant={filter === "payment" ? "contained" : "outlined"}
-              onClick={() => handleFilterChange("payment")}
-            >
-              支出
-            </Button>
-            <Button
-              variant={filter === "income" ? "contained" : "outlined"}
-              onClick={() => handleFilterChange("income")}
-            >
-              収入
-            </Button>
-            <Button
-              variant={filter === "account" ? "contained" : "outlined"}
-              onClick={() => handleFilterChange("account")}
-            >
-              預金
-            </Button>
-          </Stack>
+        </div>
+      )}
+
+      <Stack direction="row" alignItems="center">
+        <Stack direction="row" alignItems="center" spacing={2}>
           <Button
-            aria-controls="column-menu"
-            aria-haspopup="true"
-            onClick={selected.length > 0 ? undefined : handleMenuClick}
+            variant={filter === "payment" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("payment")}
           >
-            {selected.length > 0 ? (
-              <DeleteIcon onClick={() => handleAllDelete()} />
-            ) : (
-              <KeyboardArrowDownIcon />
-            )}
+            支出
           </Button>
+          <Button
+            variant={filter === "income" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("income")}
+          >
+            収入
+          </Button>
+          <Button
+            variant={filter === "account" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("account")}
+          >
+            預金
+          </Button>
+        </Stack>
+        <Button
+          aria-controls="column-menu"
+          aria-haspopup="true"
+          onClick={selected.length > 0 ? undefined : handleMenuClick}
+        >
+          {selected.length > 0 ? (
+            <DeleteIcon onClick={() => handleAllDelete()} />
+          ) : (
+            <KeyboardArrowDownIcon />
+          )}
+        </Button>
+        <div className="ml-auto">
+          {filter === "account" && (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleOpenNewModal}
+              className="mr-5"
+            >
+              自分口座への振込
+            </Button>
+          )}
           <Button
             variant="contained"
             color="primary"
             onClick={handleOpenNewModal}
-            className="ml-auto"
           >
             新規作成
           </Button>
-        </Stack>
-        <Menu
-          id="column-menu"
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
-          }}
-        >
-          {rows.length > 0 &&
-            Object.keys(rows[0]).map((key) =>
-              filter === "payment" ? (
+        </div>
+      </Stack>
+      <Menu
+        id="column-menu"
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+      >
+        {rows.length > 0 &&
+          Object.keys(rows[0]).map((key) =>
+            filter === "payment" ? (
+              columnPaymentNames[key as keyof selectPaymentData] ? (
                 <MenuItem
                   key={key}
                   onClick={() =>
@@ -599,7 +664,9 @@ export const MoneyTable: React.FC = () => {
                   <Checkbox checked={columnSettings[key]} />
                   {columnPaymentNames[key as keyof selectPaymentData]}
                 </MenuItem>
-              ) : filter === "income" ? (
+              ) : null
+            ) : filter === "income" ? (
+              columnIncomeNames[key as keyof selectIncomeData] ? (
                 <MenuItem
                   key={key}
                   onClick={() =>
@@ -609,106 +676,110 @@ export const MoneyTable: React.FC = () => {
                   <Checkbox checked={columnSettings[key]} />
                   {columnIncomeNames[key as keyof selectIncomeData]}
                 </MenuItem>
-              ) : (
-                <MenuItem
-                  key={key}
-                  onClick={() =>
-                    handleColumnToggle(key as keyof selectAccountData)
+              ) : null
+            ) : columnAccountNames[key as keyof selectAccountData] ? (
+              <MenuItem
+                key={key}
+                onClick={() =>
+                  handleColumnToggle(key as keyof selectAccountData)
+                }
+              >
+                <Checkbox checked={columnSettings[key]} />
+                {columnAccountNames[key as keyof selectAccountData]}
+              </MenuItem>
+            ) : null
+          )}
+      </Menu>
+      <TableContainer component={Paper} sx={{ maxHeight: 413 }}>
+        <Table stickyHeader aria-label="collapsible table sticky table">
+          <TableHead>
+            <TableRow>
+              {/* <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={
+                    selected.length > 0 && selected.length < rows.length
                   }
-                >
-                  <Checkbox checked={columnSettings[key]} />
-                  {columnAccountNames[key as keyof selectAccountData]}
-                </MenuItem>
-              )
-            )}
-        </Menu>
-        <TableContainer component={Paper} sx={{ maxHeight: 620 }}>
-          <Table stickyHeader aria-label="collapsible table sticky table">
-            <TableHead>
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    indeterminate={
-                      selected.length > 0 && selected.length < rows.length
-                    }
-                    checked={
-                      selected.length > 0 && selected.length === rows.length
-                    }
-                    onChange={handleSelectAllClick}
-                  />
-                </TableCell>
-                {Object.keys(visibleColumns).map((key) => (
-                  <TableCell key={key}>
-                    <Stack direction="row" alignItems="center">
-                      <Typography>
-                        {filter === "payment"
-                          ? columnPaymentNames[key as keyof selectPaymentData]
-                          : filter === "income"
-                          ? columnIncomeNames[key as keyof selectIncomeData]
-                          : columnAccountNames[key as keyof selectAccountData]}
-                      </Typography>
-                      <IconButton
-                        onClick={() =>
-                          handleRequestSort(key as keyof (typeof rows)[0])
-                        }
-                      >
-                        {orderBy === key ? (
-                          order[key] === "asc" ? (
-                            <KeyboardArrowUpIcon />
-                          ) : order[key] === "desc" ? (
-                            <KeyboardArrowDownIcon />
-                          ) : (
-                            <span>〇</span>
-                          )
+                  checked={
+                    selected.length > 0 && selected.length === rows.length
+                  }
+                  onChange={handleSelectAllClick}
+                />
+              </TableCell> */}
+              <TableCell />
+              {Object.keys(visibleColumns).map((key) => (
+                <TableCell key={key}>
+                  <Stack direction="row" alignItems="center">
+                    <Typography>
+                      {filter === "payment"
+                        ? columnPaymentNames[key as keyof selectPaymentData]
+                        : filter === "income"
+                        ? columnIncomeNames[key as keyof selectIncomeData]
+                        : columnAccountNames[key as keyof selectAccountData]}
+                    </Typography>
+                    <IconButton
+                      onClick={() =>
+                        handleRequestSort(key as keyof (typeof rows)[0])
+                      }
+                    >
+                      {orderBy === key ? (
+                        order[key] === "asc" ? (
+                          <KeyboardArrowUpIcon />
+                        ) : order[key] === "desc" ? (
+                          <KeyboardArrowDownIcon />
                         ) : (
                           <span>〇</span>
-                        )}
-                      </IconButton>
-                    </Stack>
-                  </TableCell>
+                        )
+                      ) : (
+                        <span>〇</span>
+                      )}
+                    </IconButton>
+                  </Stack>
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filter === "payment"
+              ? sortedRows.map((row) => (
+                  <AccountRow
+                    key={row.id}
+                    row={row}
+                    onSelect={handleSelect}
+                    isSelected={isSelected(row.id)}
+                    visibleColumns={visibleColumns}
+                    onUpdate={updateAccount}
+                    onDelete={deleteData}
+                  />
+                ))
+              : filter === "income"
+              ? sortedRows.map((row) => (
+                  <AccountRow
+                    key={row.id}
+                    row={row}
+                    onSelect={handleSelect}
+                    isSelected={isSelected(row.id)}
+                    visibleColumns={visibleColumns}
+                    onUpdate={updateAccount}
+                    onDelete={deleteData}
+                  />
+                ))
+              : sortedRows.map((row) => (
+                  <AccountRow
+                    key={row.id}
+                    row={row}
+                    // onSelect={handleSelect}
+                    // onAllSelect={handleAllSelect}
+                    // isSelected={isSelected(row.history.transfer_id)}
+                    visibleColumns={visibleColumns}
+                    onAccountUpdate={updateAccount}
+                    onTransferUpdate={updateTransfer}
+                    onAccountDelete={deleteData}
+                    onTransferDelete={deleteTransfer}
+                  />
                 ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filter === "payment"
-                ? sortedRows.map((row) => (
-                    <AccountRow
-                      key={row.id}
-                      row={row}
-                      onSelect={handleSelect}
-                      isSelected={isSelected(row.id)}
-                      visibleColumns={visibleColumns}
-                      onUpdate={updateAccount}
-                      onDelete={deleteData}
-                    />
-                  ))
-                : filter === "income"
-                ? sortedRows.map((row) => (
-                    <AccountRow
-                      key={row.id}
-                      row={row}
-                      onSelect={handleSelect}
-                      isSelected={isSelected(row.id)}
-                      visibleColumns={visibleColumns}
-                      onUpdate={updateAccount}
-                      onDelete={deleteData}
-                    />
-                  ))
-                : sortedRows.map((row) => (
-                    <AccountRow
-                      key={row.id}
-                      row={row}
-                      onSelect={handleSelect}
-                      isSelected={isSelected(row.id)}
-                      visibleColumns={visibleColumns}
-                      onUpdate={updateAccount}
-                      onDelete={deleteData}
-                    />
-                  ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    );
-  };
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
 };

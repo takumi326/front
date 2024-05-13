@@ -68,12 +68,12 @@ export const TaskTable: React.FC = () => {
   //   completed: item.completed,
   // }));
 
-  // const selectrows: selectTaskData[] = tasks.map((item) => ({
-  //   title: item.title,
-  //   purpose_title: item.purpose_title,
-  //   schedule: item.schedule,
-  //   repetition_type: item.repetition_type,
-  // }));
+  const selectrows: selectTaskData[] = tasks.map((item) => ({
+    title: item.title,
+    purpose_title: item.purpose_title,
+    schedule: item.schedule,
+    repetition_type: item.repetition_type,
+  }));
 
   const [orderBy, setOrderBy] =
     React.useState<keyof (typeof tasks)[0]>("schedule");
@@ -393,15 +393,17 @@ export const TaskTable: React.FC = () => {
         }}
       >
         {tasks.length > 0 &&
-          Object.keys(tasks[0]).map((key) => (
-            <MenuItem
-              key={key}
-              onClick={() => handleColumnToggle(key as keyof selectTaskData)}
-            >
-              <Checkbox checked={columnSettings[key]} />
-              {columnTaskNames[key as keyof selectTaskData]}
-            </MenuItem>
-          ))}
+          Object.keys(tasks[0]).map((key) =>
+            columnTaskNames[key as keyof selectTaskData] ? (
+              <MenuItem
+                key={key}
+                onClick={() => handleColumnToggle(key as keyof selectTaskData)}
+              >
+                <Checkbox checked={columnSettings[key]} />
+                {columnTaskNames[key as keyof selectTaskData]}
+              </MenuItem>
+            ) : null
+          )}
       </Menu>
       <TableContainer component={Paper} sx={{ maxHeight: 620 }}>
         <Table stickyHeader aria-label="collapsible table sticky table">

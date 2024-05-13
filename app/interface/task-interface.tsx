@@ -52,6 +52,7 @@ export interface taskShowProps {
   completed: boolean;
   onUpdate: (updatedTask: taskData) => void;
   onClose: () => void;
+  onDelete: (id: string) => void; 
 }
 
 // Newコンポーネントで使用する Props の型を定義

@@ -66,14 +66,14 @@ export const PurposeTable: React.FC = () => {
   //   completed: item.completed,
   // }));
 
-  // const selectrows: selectPurposeData[] = purposes.map((item) => ({
-  //   title: item.title,
-  //   result: item.result,
-  //   deadline: item.deadline,
-  // }));
+  const selectrows: selectPurposeData[] = purposes.map((item) => ({
+    title: item.title,
+    result: item.result,
+    deadline: item.deadline,
+  }));
 
   const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof  purposes)[0]>("deadline");
+    React.useState<keyof (typeof purposes)[0]>("deadline");
 
   const [order, setOrder] = React.useState<{
     [key: string]: "asc" | "desc" | "default";
@@ -107,7 +107,6 @@ export const PurposeTable: React.FC = () => {
   useEffect(() => {
     getData().then((data) => {
       setPurposes(data);
-      console.log(purposes)
     });
   }, [isEditing, isAdding]);
 
@@ -122,7 +121,6 @@ export const PurposeTable: React.FC = () => {
     setCompletedPurposes(completed);
     setIncompletePurposes(incomplete);
     setDisplayedPurposes(purposes);
-    console.log(2)
   }, [purposes, isEditing, isAdding]);
 
   useEffect(() => {
@@ -389,15 +387,19 @@ export const PurposeTable: React.FC = () => {
         }}
       >
         {purposes.length > 0 &&
-          Object.keys(purposes[0]).map((key) => (
-            <MenuItem
-              key={key}
-              onClick={() => handleColumnToggle(key as keyof selectPurposeData)}
-            >
-              <Checkbox checked={columnSettings[key]} />
-              {columnPurposeNames[key as keyof selectPurposeData]}
-            </MenuItem>
-          ))}
+          Object.keys(purposes[0]).map((key) =>
+            columnPurposeNames[key as keyof selectPurposeData] ? (
+              <MenuItem
+                key={key}
+                onClick={() =>
+                  handleColumnToggle(key as keyof selectPurposeData)
+                }
+              >
+                <Checkbox checked={columnSettings[key]} />
+                {columnPurposeNames[key as keyof selectPurposeData]}
+              </MenuItem>
+            ) : null
+          )}
       </Menu>
       <TableContainer component={Paper} sx={{ maxHeight: 620 }}>
         <Table stickyHeader aria-label="collapsible table sticky table">
@@ -428,7 +430,8 @@ export const PurposeTable: React.FC = () => {
                         completedSelected.length ===
                           purposes.filter((row) => row.completed).length
                       : filter === "all"
-                      ? selected.length > 0 && selected.length === purposes.length
+                      ? selected.length > 0 &&
+                        selected.length === purposes.length
                       : false
                   }
                   onChange={handleSelectAllClick}

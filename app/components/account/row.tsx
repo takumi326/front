@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
@@ -19,6 +19,8 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
+import { moneyContext } from "@/context/money-context";
+
 import { accountEdit as Edit } from "@/lib/api/account-api";
 import { accountRowProps, accountData } from "@/interface/account-interface";
 import {
@@ -26,17 +28,51 @@ import {
   displayAccountData,
   selectAccountData,
 } from "@/interface/account-interface";
-
 import { AccountShow } from "@/components/account/show";
+
+import {
+  transferData,
+  columnTransferNames,
+  selectTransferData,
+} from "@/interface/transfer-interface";
 
 // 表の行コンポーネント
 export const AccountRow: React.FC<accountRowProps> = (props) => {
-  const { row, onSelect, isSelected, visibleColumns, onUpdate, onDelete } =
-    props;
+  const {
+    row,
+    // onSelect,
+    // onAllSelect,
+    // isSelected,
+    visibleColumns,
+    onAccountUpdate,
+    onTransferUpdate,
+    onAccountDelete,
+    onTransferDelete,
+  } = props;
+  const {
+    classifications,
+    setClassifications,
+    categories,
+    setCategories,
+    payments,
+    setPayments,
+    incomes,
+    setIncomes,
+    accounts,
+    setAccounts,
+    transfers,
+    setTransfers,
+  } = useContext(moneyContext);
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
   const [isEditTransferModalOpen, setIsEditTransferModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   // const [isChecked, setIsChecked] = useState(row.completed);
+
+  //   const [openRowId, setOpenRowId] = useState<string | null>(null);
+
+  // const handleToggleRow = (rowId: string) => {
+  //   setOpenRowId(openRowId === rowId ? null : rowId);
+  // };
 
   const handleOpenEditAccountModal = () => {
     setIsEditAccountModalOpen(true);
@@ -54,14 +90,20 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     setIsEditTransferModalOpen(false);
   };
 
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onSelect(row.id);
-  };
+  // const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   e.stopPropagation();
+  //   onSelect(row.history.transfer_id);
+  // };
 
-  function formatAmountCommas(number) {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  }
+  const formatAmountCommas = (number: number) => {
+    const integerPart = Math.floor(number);
+    const decimalPart = (number - integerPart).toFixed(0).slice(1);
+    return (
+      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      decimalPart +
+      "円"
+    );
+  };
 
   const formatDate = (date: Date | undefined): string => {
     if (!date) return "";
@@ -83,14 +125,12 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
             </button>
             <AccountShow
               id={row.id}
-              title={row.title}
-              result={row.result}
-              deadline={row.deadline}
-              body={row.body}
-              completed={row.completed}
-              onUpdate={onUpdate}
-              onClose={handleEditCloseModal}
-              onDelete={onDelete}
+              name={row.account_name}
+              amount={row.account_amount}
+              body={row.account_body}
+              onUpdate={onAccountUpdate}
+              onClose={handleCloseEditAccountModal}
+              onDelete={onAccountDelete}
             />
           </div>
         </div>
@@ -101,21 +141,25 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
           <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
           <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
             <button
-              onClick={handleCloseEditTansferModal}
+              onClick={handleCloseEditTransferModal}
               className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
             >
               <CloseIcon />
             </button>
             <TransferShow
-              id={row.id}
-              title={row.title}
-              result={row.result}
-              deadline={row.deadline}
-              body={row.body}
-              completed={row.completed}
-              onUpdate={onUpdate}
-              onClose={handleEditCloseModal}
-              onDelete={onDelete}
+              id={row.history.transfer_id}
+              before_account_id={row.history.transfer_before_account_id}
+              before_account_name={row.history.transfer_before_account_nam}
+              after_account_id={row.history.transfer_after_account_id}
+              amount={row.history.transfer_amount}
+              schedule={row.history.transfer_schedule}
+              repetition={row.history.transfer_repetition}
+              repetition_type={row.history.transfer_repetition_type}
+              repetition_settings={row.history.transfer_repetition_settings}
+              body={row.history.transfer_body}
+              onUpdate={onTransferUpdate}
+              onClose={handleCloseEditTransferModal}
+              onDelete={onTransferDelete}
             />
           </div>
         </div>
@@ -125,7 +169,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
         sx={{
           "& > *": {
             borderBottom: "unset",
-            backgroundColor: isSelected ? "#f5f5f5" : "transparent",
+            backgroundColor: isHistoryOpen ? "#f5f5f5" : "transparent",
           },
         }}
       >
@@ -165,46 +209,70 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          <IconButton onClick={() => onDelete(row.id)}>
+          <IconButton onClick={() => onAccountDelete(row.id)}>
             <DeleteIcon />
           </IconButton>
         </TableCell>
       </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={isHistoryOpen} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography variant="h6" gutterBottom component="div">
-                History
-              </Typography>
-              <Table size="small" aria-label="purchases">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Customer</TableCell>
-                    <TableCell align="right">Amount</TableCell>
-                    <TableCell align="right">Total price ($)</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {row.history.map((historyRow) => (
-                    <TableRow key={historyRow.date}>
-                      <TableCell component="th" scope="row">
-                        {historyRow.date}
-                      </TableCell>
-                      <TableCell>{historyRow.customerId}</TableCell>
-                      <TableCell align="right">{historyRow.amount}</TableCell>
-                      <TableCell align="right">
-                        {Math.round(historyRow.amount * row.price * 100) / 100}
-                      </TableCell>
+      {row.history.length > 0 && (
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+            <Collapse in={isHistoryOpen} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom component="div">
+                  自分口座間の入金履歴
+                </Typography>
+                <Table size="small" aria-label="purchases">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>日付</TableCell>
+                      <TableCell>入金元口座</TableCell>
+                      <TableCell align="right">金額</TableCell>
+                      <TableCell align="right">繰り返し</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {row.history.map((historyRow) => (
+                      <TableRow key={historyRow.transfer_id}>
+                        <TableCell component="th" scope="row">
+                          {formatDate(historyRow.transfer_schedule)}
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            style={{
+                              color: "blue",
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                            }}
+                            onClick={handleOpenEditTransferModal}
+                          >
+                            {historyRow.transfer_before_account_name}
+                          </button>
+                        </TableCell>
+                        <TableCell align="right">
+                          {historyRow.transfer_amount}
+                        </TableCell>
+                        <TableCell align="right">
+                          {historyRow.transfer_repetition_type}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            onClick={() =>
+                              onTransferDelete(historyRow.transfer_id)
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      )}
     </React.Fragment>
   );
 };
