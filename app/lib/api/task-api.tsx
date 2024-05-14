@@ -25,7 +25,7 @@ export const taskNew = async (
   schedule: Date,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: string,
+  repetition_settings: [],
   body: string
 ): Promise<taskData> => {
   try {

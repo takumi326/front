@@ -53,7 +53,7 @@ export const Header: React.FC = () => {
             タスマネ
           </Link>
         </div>
-        <ul className="ml-24 grid grid-cols-5 gap-24">
+        <ul className="ml-64 grid grid-cols-5 gap-24">
           {authenticated ? (
             <>
               <li className="">
@@ -68,9 +68,9 @@ export const Header: React.FC = () => {
               <li className="">
                 <Link href="/task">タスク管理</Link>
               </li>
-              <li className="">
+              {/* <li className="">
                 <Link href="/top">タイマー</Link>
-              </li>
+              </li> */}
             </>
           ) : (
             <>

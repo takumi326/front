@@ -6,37 +6,43 @@ import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 import { accountNew as New } from "@/lib/api/account-api";
 import { accountNewProps } from "@/interface/account-interface";
 
-import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
-
 export const AccountNew: React.FC<accountNewProps> = (props) => {
   const { onAdd, onClose } = props;
-  const undifindDateObject = new Date();
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newResult, setNewResult] = useState("");
-  const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
+  const [newName, setNewName] = useState("");
+  const [newAmount, setNewAmount] = useState<number>(0);
+  const [newAmountString, setNewAmountString] = useState("0");
   const [newBody, setNewBody] = useState("");
 
   const newAccount = async () => {
     try {
-      const response = await New(newTitle, newResult, newDeadline, newBody);
-      console.log(newTitle);
+      const response = await New(newName, newAmount, newBody);
       onAdd(response);
     } catch (error) {
-      console.error("Failed to create todo:", error);
+      console.error("Failed to create account:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
-      case "title":
-        setNewTitle(value);
+      case "name":
+        setNewName(value);
         break;
-      case "result":
-        setNewResult(value);
+      case "amount":
+        setNewAmountString(
+          value.startsWith("0") && value.length > 1
+            ? value
+                .replace(/^0+/, "")
+                .replace(/,/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : value === ""
+            ? ""
+            : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        setNewAmount(
+          value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
+        );
         break;
       case "body":
         setNewBody(value);
@@ -48,51 +54,37 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
 
   const handleSave = () => {
     newAccount();
-    console.log(newTitle);
     onClose();
   };
 
-  const handleDateChange = (date: Date) => {
-    setNewDeadline(date);
-  };
-
   return (
-    <Box width={560} height={600}>
+    <Box width={560} height={450}>
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
+          <Typography variant="subtitle1">口座名</Typography>
           <TextField
             fullWidth
             variant="outlined"
-            name="title"
-            value={newTitle}
+            name="name"
+            value={newName}
             onChange={handleChange}
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">目標</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="result"
-            value={newResult}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">期限</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={newDeadline}
-              onChange={handleDateChange}
+          <Typography variant="subtitle1">金額</Typography>
+          <div className="flex items-center">
+            <TextField
+              variant="outlined"
+              name="amount"
+              value={newAmountString}
+              onChange={handleChange}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              }}
             />
-          </Box>
+            <span>円</span>
+          </div>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>

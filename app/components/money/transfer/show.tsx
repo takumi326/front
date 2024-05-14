@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
   Box,
-  Checkbox,
   TextField,
   Button,
   Typography,
@@ -23,31 +22,30 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
-import { taskEdit as Edit } from "@/lib/api/task-api";
-import { taskShowProps } from "@/interface/task-interface";
+import { moneyContext } from "@/context/money-context";
 
-import { purposeGetData } from "@/lib/api/purpose-api";
-import { purposeData } from "@/interface/purpose-interface";
+import { transferEdit as Edit } from "@/lib/api/transfer-api";
+import { transferShowProps } from "@/interface/account-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const TaskShow: React.FC<taskShowProps> = (props) => {
+export const TransferShow: React.FC<transferShowProps> = (props) => {
   const {
     id,
-    title,
-    purpose_id,
-    purpose_title,
+    before_account_id,
+    before_account_name,
+    after_account_id,
+    amount,
     schedule,
     repetition,
     repetition_type,
     repetition_settings,
     body,
-    completed,
     onUpdate,
     onClose,
     onDelete,
   } = props;
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
+  const { accounts } = useContext(moneyContext);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
   const [frequency, setFrequency] = useState(
@@ -60,63 +58,72 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
-  const [editTitle, setEditTitle] = useState(title);
-  const [editPurposeId, setEditPurposeId] = useState(purpose_id);
-  const [editPurposeTitle, setEditPurposeTitle] = useState(purpose_title);
+  const [editBeforeAccountId, setEditBeforeAccountId] =
+    useState(before_account_id);
+  const [editBeforeAccountName, setEditBeforeAccountName] =
+    useState(before_account_name);
+  const [editAfterAccountId, setEditAfterAccountId] =
+    useState(after_account_id);
+  const [editAmount, setEditAmount] = useState(amount);
+  const [editAmountString, setEditAmountString] = useState<string>(
+    String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  );
   const [editSchedule, setEditSchedule] = useState<Date>(schedule);
   const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
   const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
   const [editRepetitionSettings, setEditRepetitionSettings] =
     useState(repetition_settings);
-  // const [editTime, setEditTime] = useState(time);
   const [editBody, setEditBody] = useState(body);
-  const [editCompleted, setEditCompleted] = useState<boolean>(completed);
 
-  useEffect(() => {
-    purposeGetData().then((data) => {
-      setPurposes(data);
-    });
-  }, []);
-
-  const editTask = async (id: string) => {
+  const editTransfer = async (id: string) => {
     try {
       await Edit(
         id,
-        editTitle,
-        editPurposeId,
+        editBeforeAccountId,
+        editAfterAccountId,
+        editAmount,
         editSchedule,
         editRepetition,
         editRepetitionType,
         editRepetitionSettings,
-        editBody,
-        editCompleted
+        editBody
       );
       const editedData = {
         id: id,
-        title: editTitle,
-        purpose_id: editPurposeId,
-        purpose_title: editPurposeTitle,
+        before_account_id: editBeforeAccountId,
+        before_account_name: editBeforeAccountName,
+        after_account_id: editAfterAccountId,
+        amount: editAmount,
         schedule: editSchedule,
         repetition: editRepetition,
         repetition_type: editRepetitionType,
         repetition_settings: editRepetitionSettings,
         body: editBody,
-        completed: editCompleted,
       };
-      console.log(editedData);
       onUpdate(editedData);
     } catch (error) {
-      console.error("Failed to edit task:", error);
+      console.error("Failed to edit transfer:", error);
     }
   };
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
-      case "title":
-        setEditTitle(value);
+      case "amount":
+        setEditAmountString(
+          value.startsWith("0") && value.length > 1
+            ? value
+                .replace(/^0+/, "")
+                .replace(/,/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : value === ""
+            ? ""
+            : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        setEditAmount(
+          value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
+        );
         break;
       case "body":
         setEditBody(value);
@@ -126,21 +133,22 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     }
   };
 
-  const handlePurposeChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleBeforeAccountChange = (
+    event: ChangeEvent<{ value: unknown }>
+  ) => {
     const value = event.target.value as string;
-    setEditPurposeId(value);
-
-    // purposes リストから対応する目標を探し、その目標のタイトルをセットする
-    const selectedPurpose = purposes.find((purpose) => purpose.id === value);
-    if (selectedPurpose) {
-      setEditPurposeTitle(selectedPurpose.title);
+    setEditBeforeAccountId(value);
+    const selectedAccount = accounts.find((account) => account.id === value);
+    if (selectedAccount) {
+      setEditBeforeAccountName(selectedAccount.name);
     } else {
-      setEditPurposeTitle(""); // 目標が見つからない場合は空文字をセットするなど、適切な処理を行う
+      setEditBeforeAccountName("");
     }
   };
 
-  const handleCheckboxChange = () => {
-    setEditCompleted(!editCompleted); // 現在の値を反転させて更新
+  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+    const value = event.target.value as string;
+    setEditAfterAccountId(value);
   };
 
   // 「繰り返し」を押されたとき
@@ -191,8 +199,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
 
   // 保存ボタン押したとき
   const handleSave = () => {
-    editTask(id);
-    console.log(editRepetition);
+    editTransfer(id);
     onClose();
   };
 
@@ -321,44 +328,127 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={700}>
+    <Box width={560} height={770}>
+      <Dialog
+        open={repetitionDialogOpen}
+        onClose={handleRepetitionDialogCancel}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ textAlign: "center" }}>繰り返しの設定</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton onClick={() => handleFrequencyChange(-1)}>
+                <RemoveIcon />
+              </IconButton>
+              <Typography>{frequency}</Typography>
+              <IconButton onClick={() => handleFrequencyChange(1)}>
+                <AddIcon />
+              </IconButton>
+              <ToggleButtonGroup
+                value={period}
+                exclusive
+                onChange={handlePeriodChange}
+                aria-label="period"
+              >
+                <ToggleButton value="daily">日</ToggleButton>
+                <ToggleButton value="weekly">週</ToggleButton>
+                <ToggleButton value="monthly">月</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+            {period === "weekly" && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                {["月", "火", "水", "木", "金", "土", "日"].map(
+                  (day, index) => (
+                    <ToggleButton
+                      key={day}
+                      value={day}
+                      selected={selectedDays.includes(day)}
+                      onChange={() => toggleDay(day)}
+                    >
+                      {day}
+                    </ToggleButton>
+                  )
+                )}
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }}>
+          <Button
+            onClick={handleRepetitionDialogDelete}
+            sx={{
+              minWidth: 120,
+              border: "1px solid #f44336",
+              color: "#f44336",
+            }}
+          >
+            削除
+          </Button>
+          <Button
+            onClick={handleRepetitionSave}
+            sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+          >
+            設定
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <ul className="w-full">
-        <li className="flex items-center">
-          <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-          <Checkbox
-            checked={editCompleted}
-            onChange={handleCheckboxChange}
-            color="primary"
-          />
-        </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="title"
-            value={editTitle}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">関連する目標</Typography>
+          <Typography variant="subtitle1">送金元口座</Typography>
           <Select
             fullWidth
-            value={editPurposeId}
-            onChange={handlePurposeChange}
+            value={editBeforeAccountId}
+            onChange={handleBeforeAccountChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {purposes.map((purpose) => (
-              <MenuItem key={purpose.id} value={purpose.id}>
-                {purpose.title}
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
               </MenuItem>
             ))}
           </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">送金先口座</Typography>
+          <Select
+            fullWidth
+            value={editAfterAccountId}
+            onChange={handleAfterAccountChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">金額</Typography>
+          <div className="flex items-center">
+            <TextField
+              variant="outlined"
+              name="amount"
+              value={editAmountString}
+              onChange={handleChange}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              }}
+            />
+            <span>円</span>
+          </div>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">予定</Typography>
@@ -436,79 +526,6 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
           </IconButton>
         </li>
       </ul>
-
-      {/* 繰り返し設定ダイアログ */}
-      <Dialog
-        open={repetitionDialogOpen}
-        onClose={handleRepetitionDialogCancel}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle sx={{ textAlign: "center" }}>繰り返しの設定</DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton onClick={() => handleFrequencyChange(-1)}>
-                <RemoveIcon />
-              </IconButton>
-              <Typography>{frequency}</Typography>
-              <IconButton onClick={() => handleFrequencyChange(1)}>
-                <AddIcon />
-              </IconButton>
-              <ToggleButtonGroup
-                value={period}
-                exclusive
-                onChange={handlePeriodChange}
-                aria-label="period"
-              >
-                <ToggleButton value="daily">日</ToggleButton>
-                <ToggleButton value="weekly">週</ToggleButton>
-                <ToggleButton value="monthly">月</ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-            {period === "weekly" && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                {["月", "火", "水", "木", "金", "土", "日"].map(
-                  (day, index) => (
-                    <ToggleButton
-                      key={day}
-                      value={day}
-                      selected={selectedDays.includes(day)}
-                      onChange={() => toggleDay(day)}
-                    >
-                      {day}
-                    </ToggleButton>
-                  )
-                )}
-              </Box>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "center" }}>
-          <Button
-            onClick={handleRepetitionDialogDelete}
-            sx={{
-              minWidth: 120,
-              border: "1px solid #f44336",
-              color: "#f44336",
-            }}
-          >
-            削除
-          </Button>
-          <Button
-            onClick={handleRepetitionSave}
-            sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
-          >
-            設定
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
