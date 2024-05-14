@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
-// import NumberFormat from "react-number-format";
 
 import {
   Box,
@@ -9,7 +8,6 @@ import {
   Button,
   Typography,
   Stack,
-  InputAdornment,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -18,9 +16,12 @@ import { accountShowProps } from "@/interface/account-interface";
 
 export const AccountShow: React.FC<accountShowProps> = (props) => {
   const { id, name, amount, body, onUpdate, onClose, onDelete } = props;
-  const [editName, setEditName] = useState(name);
-  const [editAmount, setEditAmount] = useState(amount);
-  const [editBody, setEditBody] = useState(body);
+  const [editName, setEditName] = useState<string>(name);
+  const [editAmount, setEditAmount] = useState<number>(amount);
+  const [editAmountString, setEditAmountString] = useState<string>(
+    String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  );
+  const [editBody, setEditBody] = useState<string>(body);
 
   const editAccount = async (id: string) => {
     try {
@@ -46,7 +47,19 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
         setEditName(value);
         break;
       case "amount":
-        setEditAmount(value === "" ? 0 : parseInt(value, 100));
+        setEditAmountString(
+          value.startsWith("0") && value.length > 1
+            ? value
+                .replace(/^0+/, "")
+                .replace(/,/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : value === ""
+            ? ""
+            : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        setEditAmount(
+          value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
+        );
         break;
       case "body":
         setEditBody(value);
@@ -56,37 +69,14 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
     }
   };
 
-  const formatAmountCommas = (number: number) => {
-    const integerPart = Math.floor(number);
-    const decimalPart = (number - integerPart).toFixed(0).slice(1);
-    return integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-
-  // const handleCheckboxChange = () => {
-  //   setEditCompleted(!editCompleted); // 現在の値を反転させて更新
-  // };
-
-  // // 日付が変更されたときのハンドラ
-  // const handleDateChange = (date: Date) => {
-  //   setEditDeadline(date);
-  // };
-
   const handleSave = () => {
     editAccount(id);
     onClose();
   };
 
   return (
-    <Box width={560} height={550}>
+    <Box width={560} height={450}>
       <ul className="w-full">
-        {/* <li className="flex items-center">
-          <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-          <Checkbox
-            checked={editCompleted}
-            onChange={handleCheckboxChange}
-            color="primary"
-          />
-        </li> */}
         <li className="pt-10">
           <Typography variant="subtitle1">口座名</Typography>
           <TextField
@@ -102,17 +92,14 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
           <div className="flex items-center">
             <TextField
               variant="outlined"
-              type="number"
               name="amount"
-              value={editAmount}
+              value={editAmountString}
               onChange={handleChange}
               inputProps={{
                 inputMode: "numeric",
                 pattern: "[0-9]*",
               }}
-              required
             />
-            {/* <NumberFormat value={123456789} thousandSeparator={true} /> */}
             <span>円</span>
           </div>
         </li>

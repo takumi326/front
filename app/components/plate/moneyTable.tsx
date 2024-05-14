@@ -51,6 +51,7 @@ import {
   columnTransferNames,
   selectTransferData,
 } from "@/interface/transfer-interface";
+import { TransferNew } from "@/components/money/transfer/new";
 
 import { accountGetData, accountDelete } from "@/lib/api/account-api";
 import {
@@ -59,8 +60,8 @@ import {
   displayAccountData,
   selectAccountData,
 } from "@/interface/account-interface";
-import { AccountRow } from "@/components/account/row";
-import { AccountNew } from "@/components/account/new";
+import { AccountRow } from "@/components/money/account/row";
+import { AccountNew } from "@/components/money/account/new";
 
 import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
 import {
@@ -115,6 +116,7 @@ export const MoneyTable: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   // const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   // const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
@@ -174,7 +176,6 @@ export const MoneyTable: React.FC = () => {
     transferGetData().then((data) => {
       setTransfers(data);
     });
-    console.log(2);
   }, [isEditing, isAdding]);
 
   useEffect(() => {
@@ -310,6 +311,14 @@ export const MoneyTable: React.FC = () => {
 
   const handleCloseNewModal = () => {
     setIsNewModalOpen(false);
+  };
+
+  const handleOpenNewTransferModal = () => {
+    setIsTransferModalOpen(true);
+  };
+
+  const handleCloseNewTransferModal = () => {
+    setIsTransferModalOpen(false);
   };
 
   const newPayment = (newData: paymentData) => {
@@ -570,17 +579,17 @@ export const MoneyTable: React.FC = () => {
         )
       )}
 
-      {isNewModalOpen && filter === "account" && (
+      {isTransferModalOpen && filter === "account" && (
         <div className="fixed inset-0 flex items-center justify-center z-50 ">
           <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
           <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
             <button
-              onClick={handleCloseNewModal}
+              onClick={handleCloseNewTransferModal}
               className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
             >
               <CloseIcon />
             </button>
-            <TransferNew onAdd={newTransfer} onClose={handleCloseNewModal} />
+            <TransferNew onAdd={newTransfer} onClose={handleCloseNewTransferModal} />
           </div>
         </div>
       )}
@@ -622,7 +631,7 @@ export const MoneyTable: React.FC = () => {
             <Button
               variant="outlined"
               color="primary"
-              onClick={handleOpenNewModal}
+              onClick={handleOpenNewTransferModal}
               className="mr-5"
             >
               自分口座への振込

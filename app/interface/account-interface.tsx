@@ -72,8 +72,32 @@ export interface accountShowProps {
   onDelete: (id: string) => void;
 }
 
+// Showコンポーネントで使用する Props の型を定義
+export interface transferShowProps {
+  id: string;
+  before_account_id: string;
+  before_account_name: string;
+  after_account_id: string;
+  after_account_name: string;
+  amount: number;
+  schedule: Date;
+  repetition: boolean;
+  repetition_type: string;
+  repetition_settings: [];
+  body: string;
+  onUpdate: (updatedTransfer: transferData) => void;
+  onClose: () => void;
+  onDelete: (id: string) => void;
+}
+
 // Newコンポーネントで使用する Props の型を定義
 export interface accountNewProps {
   onAdd: (newAccount: accountData) => void;
+  onClose: () => void;
+}
+
+// Newコンポーネントで使用する Props の型を定義
+export interface transferNewProps {
+  onAdd: (newTransfer: transferData) => void;
   onClose: () => void;
 }

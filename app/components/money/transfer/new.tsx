@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
   Box,
-  Checkbox,
   TextField,
   Button,
   Typography,
@@ -15,51 +14,47 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
-
-import { taskNew as New } from "@/lib/api/task-api";
-import { taskNewProps } from "@/interface/task-interface";
-
-import { purposeGetData } from "@/lib/api/purpose-api";
-import { purposeData } from "@/interface/purpose-interface";
-
-import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
-
-import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
-export const TaskNew: React.FC<taskNewProps> = (props) => {
+import { moneyContext } from "@/context/money-context";
+
+import { transferNew as New } from "@/lib/api/transfer-api";
+import { transferNewProps } from "@/interface/account-interface";
+
+import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
+
+export const TransferNew: React.FC<transferNewProps> = (props) => {
   const { onAdd, onClose } = props;
+  const { accounts } = useContext(moneyContext);
   const initialDateObject = new Date();
 
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
   const [frequency, setFrequency] = useState(1);
   const [selectedDays, setSelectedDays] = useState([]);
   const [period, setPeriod] = useState("");
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newPurposeId, setNewPurposeId] = useState("");
-  const [newPurposeTitle, setNewPurposeTitle] = useState("");
+  const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
+  const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
+  const [newAfterAccountId, setNewAfterAccountId] = useState("");
+  const [newAmount, setNewAmount] = useState<number>(0);
+  const [newAmountString, setNewAmountString] = useState("0");
   const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
-  // const [newTime, setNewTime] = useState("");
   const [newBody, setNewBody] = useState("");
 
-  useEffect(() => {
-    purposeGetData().then((data) => {
-      setPurposes(data);
-    });
-  }, []);
-
-  const newTask = async () => {
+  const newTransfer = async () => {
     try {
       const response = await New(
-        newTitle,
-        newPurposeId,
+        newBeforeAccountId,
+        newAfterAccountId,
+        newAmount,
         newSchedule,
         newRepetition,
         newRepetitionType,
@@ -68,29 +63,40 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
       );
       const newData = {
         id: response.id,
-        title: response.title,
-        purpose_id: response.purpose_id,
-        purpose_title: newPurposeTitle,
+        before_account_id: response.before_account_id,
+        before_account_name: newBeforeAccountName,
+        after_account_id: response.after_account_id,
+        amount: response.amount,
         schedule: response.schedule,
         repetition: response.repetition,
         repetition_type: response.repetition_type,
         repetition_settings: response.repetition_settings,
         body: response.body,
-        completed: response.completed,
       };
       onAdd(newData);
     } catch (error) {
-      console.error("Failed to create task:", error);
+      console.error("Failed to create transfer:", error);
     }
   };
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
-      case "title":
-        setNewTitle(value);
+      case "amount":
+        setNewAmountString(
+          value.startsWith("0") && value.length > 1
+            ? value
+                .replace(/^0+/, "")
+                .replace(/,/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : value === ""
+            ? ""
+            : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        setNewAmount(
+          value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
+        );
         break;
       case "body":
         setNewBody(value);
@@ -100,21 +106,22 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
   };
 
-  const handlePurposeChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleBeforeAccountChange = (
+    event: ChangeEvent<{ value: unknown }>
+  ) => {
     const value = event.target.value as string;
-    setNewPurposeId(value);
-
-    // purposes リストから対応する目標を探し、その目標のタイトルをセットする
-    const selectedPurpose = purposes.find((purpose) => purpose.id === value);
-    if (selectedPurpose) {
-      setNewPurposeTitle(selectedPurpose.title);
+    setNewBeforeAccountId(value);
+    const selectedAccount = accounts.find((account) => account.id === value);
+    if (selectedAccount) {
+      setNewBeforeAccountName(selectedAccount.name);
     } else {
-      setNewPurposeTitle(""); // 目標が見つからない場合は空文字をセットするなど、適切な処理を行う
+      setNewBeforeAccountName("");
     }
   };
 
-  const handleCheckboxChange = () => {
-    setNewCompleted(!newCompleted); // 現在の値を反転させて更新
+  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+    const value = event.target.value as string;
+    setNewAfterAccountId(value);
   };
 
   // 「繰り返し」を押されたとき
@@ -165,7 +172,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
 
   // 保存ボタン押したとき
   const handleSave = () => {
-    newTask();
+    newTransfer();
     onClose();
   };
 
@@ -294,109 +301,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={700}>
-      <ul className="w-full">
-        <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="title"
-            value={newTitle}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">関連する目標</Typography>
-          <Select
-            fullWidth
-            value={newPurposeId}
-            onChange={handlePurposeChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {purposes.map((purpose) => (
-              <MenuItem key={purpose.id} value={purpose.id}>
-                {purpose.title}
-              </MenuItem>
-            ))}
-          </Select>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">予定</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={newSchedule}
-              onChange={handleSchedulChange}
-            />
-          </Box>
-        </li>
-        <li
-          className="pt-10"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
-          <Typography>
-            {newRepetitionSettings && (
-              <>
-                {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎日`}
-                {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
-                {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎月`}
-                {newRepetitionSettings[0] > 1 &&
-                  newRepetitionSettings &&
-                  `毎${newRepetitionSettings[0]}${
-                    newRepetitionType === "daily"
-                      ? "日"
-                      : newRepetitionType === "weekly"
-                      ? `週 ${newRepetitionSettings.slice(1).join(" ")}`
-                      : "月"
-                  }`}
-              </>
-            )}
-          </Typography>
-          <Typography>
-            {newRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">備考</Typography>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            name="body"
-            value={newBody}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
-              作成
-            </Button>
-          </Stack>
-        </li>
-      </ul>
-
-      {/* 繰り返し設定ダイアログ */}
+    <Box width={560} height={770}>
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -468,6 +373,126 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ul className="w-full">
+        <li className="pt-10">
+          <Typography variant="subtitle1">送金元口座</Typography>
+          <Select
+            fullWidth
+            value={newBeforeAccountId}
+            onChange={handleBeforeAccountChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">送金先口座</Typography>
+          <Select
+            fullWidth
+            value={newAfterAccountId}
+            onChange={handleAfterAccountChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">金額</Typography>
+          <div className="flex items-center">
+            <TextField
+              variant="outlined"
+              name="amount"
+              value={newAmountString}
+              onChange={handleChange}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              }}
+            />
+            <span>円</span>
+          </div>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">予定</Typography>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={newSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
+        </li>
+        <li
+          className="pt-10"
+          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
+          style={{ cursor: "pointer" }}
+        >
+          <Typography variant="subtitle1">繰り返し</Typography>
+          <Typography>
+            {newRepetitionSettings && (
+              <>
+                {newRepetitionType === "daily" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎日`}
+                {newRepetitionType === "weekly" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
+                {newRepetitionType === "monthly" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎月`}
+                {newRepetitionSettings[0] > 1 &&
+                  newRepetitionSettings &&
+                  `毎${newRepetitionSettings[0]}${
+                    newRepetitionType === "daily"
+                      ? "日"
+                      : newRepetitionType === "weekly"
+                      ? `週 ${newRepetitionSettings.slice(1).join(" ")}`
+                      : "月"
+                  }`}
+              </>
+            )}
+          </Typography>
+          <Typography>
+            {newRepetition === true && (
+              <>次回の予定：{formatDate(nextSchedule)}</>
+            )}
+          </Typography>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">備考</Typography>
+          <TextField
+            fullWidth
+            multiline
+            variant="outlined"
+            name="body"
+            value={newBody}
+            onChange={handleChange}
+          />
+        </li>
+        <li className="pt-10">
+          <Stack direction="row" justifyContent="center">
+            <Button variant="contained" onClick={handleSave} color="primary">
+              作成
+            </Button>
+          </Stack>
+        </li>
+      </ul>
     </Box>
   );
 };
