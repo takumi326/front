@@ -10,6 +10,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TableFooter,
   TableRow,
   Typography,
   Paper,
@@ -45,23 +46,18 @@ import {
 // import { IncomeRow } from "@/components/income/row";
 // import { IncomeNew } from "@/components/income/new";
 
-import { transferGetData, transferDelete } from "@/lib/api/transfer-api";
-import {
-  transferData,
-  columnTransferNames,
-  selectTransferData,
-} from "@/interface/transfer-interface";
-import { TransferNew } from "@/components/money/transfer/new";
-
 import { accountGetData, accountDelete } from "@/lib/api/account-api";
+import { transferGetData, transferDelete } from "@/lib/api/transfer-api";
 import {
   accountData,
   columnAccountNames,
   displayAccountData,
   selectAccountData,
+  transferData,
 } from "@/interface/account-interface";
 import { AccountRow } from "@/components/money/account/row";
 import { AccountNew } from "@/components/money/account/new";
+import { TransferNew } from "@/components/money/transfer/new";
 
 import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
 import {
@@ -263,12 +259,12 @@ export const MoneyTable: React.FC = () => {
         account_amount: aItem.amount,
         account_body: aItem.body,
         history: transfers
-          .filter((tItem) => tItem.after_account_id === aItem.id)
+          .filter((tItem) => tItem.before_account_id === aItem.id)
           .map((tItem) => ({
             transfer_id: tItem.id,
             transfer_before_account_id: tItem.before_account_id,
-            transfer_before_account_name: tItem.before_account_name,
             transfer_after_account_id: tItem.after_account_id,
+            transfer_after_account_name: tItem.after_account_name,
             transfer_amount: tItem.amount,
             transfer_schedule: tItem.schedule,
             transfer_repetition: tItem.repetition,
@@ -277,7 +273,7 @@ export const MoneyTable: React.FC = () => {
             transfer_body: tItem.body,
           })),
       }));
-      updateOrder = { account_name: "default", account_amount: "default" };
+      updateOrder = { account_name: "asc", account_amount: "default" };
     }
 
     setColumnSettings(initialColumnSettings);
@@ -534,6 +530,26 @@ export const MoneyTable: React.FC = () => {
     Object.entries(columnSettings).filter(([key, value]) => value)
   );
 
+  const formatAmountCommas = (number: number) => {
+    const integerPart = Math.floor(number);
+    const decimalPart = (number - integerPart).toFixed(0).slice(1);
+    return (
+      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      decimalPart +
+      "円"
+    );
+  };
+
+  const calculateAccountAllMoney = () => {
+    let allMoney = 0;
+    accounts.map((account) => {
+      allMoney += parseFloat(String(account.amount));
+    });
+    return allMoney;
+  };
+
+  const totalAccountMoney = calculateAccountAllMoney();
+
   return (
     <Box>
       {isNewModalOpen && filter === "payment" ? (
@@ -589,7 +605,11 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <TransferNew onAdd={newTransfer} onClose={handleCloseNewTransferModal} />
+            <TransferNew
+              onAccountUpdate={updateAccount}
+              onTransferAdd={newTransfer}
+              onClose={handleCloseNewTransferModal}
+            />
           </div>
         </div>
       )}
@@ -634,7 +654,7 @@ export const MoneyTable: React.FC = () => {
               onClick={handleOpenNewTransferModal}
               className="mr-5"
             >
-              自分口座への振込
+              自分口座への送金
             </Button>
           )}
           <Button
@@ -699,7 +719,7 @@ export const MoneyTable: React.FC = () => {
             ) : null
           )}
       </Menu>
-      <TableContainer component={Paper} sx={{ maxHeight: 413 }}>
+      <TableContainer component={Paper} sx={{ maxHeight: 355 }}>
         <Table stickyHeader aria-label="collapsible table sticky table">
           <TableHead>
             <TableRow>
@@ -786,6 +806,25 @@ export const MoneyTable: React.FC = () => {
                     onTransferDelete={deleteTransfer}
                   />
                 ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell align="center">
+                {filter === "payment" ? (
+                  <Typography>今月合計： 1</Typography>
+                ) : filter === "income" ? (
+                  <Typography>今月合計： 1</Typography>
+                ) : (
+                  <Typography>
+                    合計金額： {formatAmountCommas(totalAccountMoney)}
+                  </Typography>
+                )}
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </TableContainer>

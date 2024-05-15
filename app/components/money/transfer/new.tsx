@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
@@ -23,13 +23,14 @@ import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
-import { transferNew as New } from "@/lib/api/transfer-api";
+import { transferNew } from "@/lib/api/transfer-api";
+import { accountEdit } from "@/lib/api/account-api";
 import { transferNewProps } from "@/interface/account-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TransferNew: React.FC<transferNewProps> = (props) => {
-  const { onAdd, onClose } = props;
+  const { onAccountUpdate, onTransferAdd, onClose } = props;
   const { accounts } = useContext(moneyContext);
   const initialDateObject = new Date();
 
@@ -40,9 +41,16 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
   const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
   const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
+  const [newBeforeAccountAmount, setNewBeforeAccountAmount] = useState(0);
+  const [newBeforeAccountBody, setNewBeforeAccountBody] = useState("");
   const [newAfterAccountId, setNewAfterAccountId] = useState("");
+  const [newAfterAccountName, setNewAfterAccountName] = useState("");
+  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState(0);
+  const [newAfterAccountBody, setNewAfterAccountBody] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
+  const [newAmountError, setNewAmountError] = useState<boolean>(false);
+  const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
   const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
@@ -51,7 +59,14 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
   const newTransfer = async () => {
     try {
-      const response = await New(
+      const beforeAccountEditedAmount =
+        parseFloat(String(newBeforeAccountAmount)) -
+        parseFloat(String(newAmount));
+      const afterAccountEditedAmount =
+        parseFloat(String(newAfterAccountAmount)) +
+        parseFloat(String(newAmount));
+
+      const transferResponse = await transferNew(
         newBeforeAccountId,
         newAfterAccountId,
         newAmount,
@@ -61,23 +76,64 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         newRepetitionSettings,
         newBody
       );
-      const newData = {
-        id: response.id,
-        before_account_id: response.before_account_id,
-        before_account_name: newBeforeAccountName,
-        after_account_id: response.after_account_id,
-        amount: response.amount,
-        schedule: response.schedule,
-        repetition: response.repetition,
-        repetition_type: response.repetition_type,
-        repetition_settings: response.repetition_settings,
-        body: response.body,
+      await accountEdit(
+        newBeforeAccountId,
+        newBeforeAccountName,
+        beforeAccountEditedAmount,
+        newBeforeAccountBody
+      );
+      await accountEdit(
+        newAfterAccountId,
+        newAfterAccountName,
+        afterAccountEditedAmount,
+        newAfterAccountBody
+      );
+
+      const newTransfer = {
+        id: transferResponse.id,
+        before_account_id: transferResponse.before_account_id,
+        after_account_id: transferResponse.after_account_id,
+        after_account_name: newAfterAccountName,
+        amount: transferResponse.amount,
+        schedule: transferResponse.schedule,
+        repetition: transferResponse.repetition,
+        repetition_type: transferResponse.repetition_type,
+        repetition_settings: transferResponse.repetition_settings,
+        body: transferResponse.body,
       };
-      onAdd(newData);
+      const beforeAccount = {
+        id: newBeforeAccountId,
+        name: newBeforeAccountName,
+        amount: beforeAccountEditedAmount,
+        body: newBeforeAccountBody,
+      };
+      const afterAccount = {
+        id: newAfterAccountId,
+        name: newAfterAccountName,
+        amount: afterAccountEditedAmount,
+        body: newAfterAccountBody,
+      };
+
+      onAccountUpdate(beforeAccount);
+      onAccountUpdate(afterAccount);
+      onTransferAdd(newTransfer);
     } catch (error) {
       console.error("Failed to create transfer:", error);
     }
   };
+
+  useEffect(() => {
+    if (newAmount > 0) {
+      setNewAmountError(false);
+    } else {
+      setNewAmountError(true);
+    }
+    if (newBeforeAccountAmount >= newAmount) {
+      setNewAmountOverError(false);
+    } else {
+      setNewAmountOverError(true);
+    }
+  }, [newAmount]);
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -114,14 +170,38 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
       setNewBeforeAccountName(selectedAccount.name);
+      setNewBeforeAccountAmount(selectedAccount.amount);
+      setNewBeforeAccountBody(selectedAccount.body);
     } else {
       setNewBeforeAccountName("");
+      setNewBeforeAccountAmount(0);
+      setNewBeforeAccountBody("");
     }
   };
 
   const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
     const value = event.target.value as string;
     setNewAfterAccountId(value);
+    const selectedAccount = accounts.find((account) => account.id === value);
+    if (selectedAccount) {
+      setNewAfterAccountName(selectedAccount.name);
+      setNewAfterAccountAmount(selectedAccount.amount);
+      setNewAfterAccountBody(selectedAccount.body);
+    } else {
+      setNewAfterAccountName("");
+      setNewAfterAccountAmount(0);
+      setNewAfterAccountBody("");
+    }
+  };
+
+  const formatAmountCommas = (number: number) => {
+    const integerPart = Math.floor(number);
+    const decimalPart = (number - integerPart).toFixed(0).slice(1);
+    return (
+      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      decimalPart +
+      "円"
+    );
   };
 
   // 「繰り返し」を押されたとき
@@ -384,14 +464,23 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.name}
-              </MenuItem>
-            ))}
+            {accounts
+              .filter((account) => account.id !== newAfterAccountId)
+              .map((account) => (
+                <MenuItem key={account.id} value={account.id}>
+                  {account.name}
+                </MenuItem>
+              ))}
           </Select>
+          {accounts
+            .filter((account) => account.id === newBeforeAccountId)
+            .map((account) => (
+              <Typography key={account.id} align="left" variant="subtitle1">
+                口座金額：{formatAmountCommas(account.amount)}
+              </Typography>
+            ))}
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">送金先口座</Typography>
           <Select
             fullWidth
@@ -400,14 +489,23 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.name}
-              </MenuItem>
-            ))}
+            {accounts
+              .filter((account) => account.id !== newBeforeAccountId)
+              .map((account) => (
+                <MenuItem key={account.id} value={account.id}>
+                  {account.name}
+                </MenuItem>
+              ))}
           </Select>
+          {accounts
+            .filter((account) => account.id === newAfterAccountId)
+            .map((account) => (
+              <Typography key={account.id} align="left" variant="subtitle1">
+                口座金額：{formatAmountCommas(account.amount)}
+              </Typography>
+            ))}
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
           <div className="flex items-center">
             <TextField
@@ -423,7 +521,19 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             <span>円</span>
           </div>
         </li>
-        <li className="pt-10">
+        <li>
+          {newAmountError && (
+            <Typography align="left" variant="subtitle1">
+              金額を0以上にして下さい
+            </Typography>
+          )}
+          {newAmountOverError && (
+            <Typography align="left" variant="subtitle1">
+              送金元口座に入っているお金以下にして下さい
+            </Typography>
+          )}
+        </li>
+        <li className="pt-5">
           <Typography variant="subtitle1">予定</Typography>
           <Box
             sx={{
@@ -439,7 +549,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           </Box>
         </li>
         <li
-          className="pt-10"
+          className="pt-5"
           onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
           style={{ cursor: "pointer" }}
         >
@@ -474,7 +584,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             )}
           </Typography>
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>
           <TextField
             fullWidth

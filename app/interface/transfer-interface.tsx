@@ -2,8 +2,8 @@
 export type transferData = {
   id: string;
   before_account_id: string;
-  before_account_name: string;
   after_account_id: string;
+  after_account_name: string;
   amount: number;
   schedule: Date;
   repetition: boolean;

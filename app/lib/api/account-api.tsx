@@ -57,6 +57,10 @@ export const accountEdit = async (
   amount: number,
   body: string
 ) => {
+  if (!name) {
+    console.error("Name field is empty. Request not sent.");
+    throw new Error("Name field cannot be empty.");
+  }
   try {
     const response = await axios.patch(
       `http://localhost:3000/accounts/${id}`,

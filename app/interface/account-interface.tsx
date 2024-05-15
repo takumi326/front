@@ -10,8 +10,8 @@ export type accountData = {
 export type transferData = {
   id: string;
   before_account_id: string;
-  before_account_name: string;
   after_account_id: string;
+  after_account_name: string;
   amount: number;
   schedule: Date;
   repetition: boolean;
@@ -28,8 +28,8 @@ export type displayAccountData = {
   history: {
     transfer_id: string;
     transfer_before_account_id: string;
-    transfer_before_account_name: string;
     transfer_after_account_id: string;
+    transfer_after_account_name: string;
     transfer_amount: number;
     transfer_schedule: Date;
     transfer_repetition: boolean;
@@ -58,7 +58,8 @@ export interface accountRowProps {
   visibleColumns: { [key: string]: boolean };
   onAccountUpdate: (updatedAccount: accountData) => void;
   onTransferUpdate: (updatedTransfer: transferData) => void;
-  onDelete: (id: string) => void;
+  onAccountDelete: (id: string) => void;
+  onTransferDelete: (id: string) => void;
 }
 
 // Showコンポーネントで使用する Props の型を定義
@@ -76,7 +77,6 @@ export interface accountShowProps {
 export interface transferShowProps {
   id: string;
   before_account_id: string;
-  before_account_name: string;
   after_account_id: string;
   after_account_name: string;
   amount: number;
@@ -85,7 +85,8 @@ export interface transferShowProps {
   repetition_type: string;
   repetition_settings: [];
   body: string;
-  onUpdate: (updatedTransfer: transferData) => void;
+  onAccountUpdate: (updatedAccount: accountData) => void;
+  onTransferUpdate: (updatedTransfer: transferData) => void;
   onClose: () => void;
   onDelete: (id: string) => void;
 }
@@ -98,6 +99,7 @@ export interface accountNewProps {
 
 // Newコンポーネントで使用する Props の型を定義
 export interface transferNewProps {
-  onAdd: (newTransfer: transferData) => void;
+  onAccountUpdate: (newAccount: accountData) => void;
+  onTransferAdd: (newTransfer: transferData) => void;
   onClose: () => void;
 }
