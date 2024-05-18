@@ -13,13 +13,21 @@ export type paymentData = {
   body: string;
 };
 
+export type classificationData = {
+  id: string;
+  account_id: string;
+  account_name: string;
+  name: string;
+  amount: number;
+};
+
 // ヘッダーに表示するTaskの型定義
 export type displayPaymentData = {
   id: string;
   classification_account_id: string;
   classification_name: string;
   classification_amount: number;
-  clsasfication_account: string;  
+  clsasfication_account: string;
   history: {
     payment_id: string;
     payment_category_id: string;
@@ -50,12 +58,12 @@ export const columnPaymentNames = {
 
 // Rowコンポーネントで使用する Props の型を定義
 export interface paymentRowProps {
-  row: displayPaymentData; 
-  onSelect: (id: string) => void; 
-  isSelected: boolean;
+  row: displayPaymentData;
+  // onSelect: (id: string) => void;
+  // isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
-  onUpdate: (updatedPayment: paymentData) => void;
-  onDelete: (id: string) => void;
+  onPaymentUpdate: (updatedPayment: paymentData) => void;
+  onPaymentDelete: (id: string) => void;
 }
 
 // Showコンポーネントで使用する Props の型を定義

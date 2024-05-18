@@ -5,7 +5,7 @@ import { categoryData } from "@/interface/category-interface";
 
 export const categoryGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/categorys", {
+    const response = await axios.get("http://localhost:3000/categories", {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),
@@ -25,7 +25,7 @@ export const categoryNew = async (
 ): Promise<categoryData> => {
   try {
     const response = await axios.post(
-      "http://localhost:3000/categorys",
+      "http://localhost:3000/categories",
       {
         category: {
           name: name,
@@ -55,7 +55,7 @@ export const categoryEdit = async (
 ) => {
   try {
     const response = await axios.patch(
-      `http://localhost:3000/categorys/${id}`,
+      `http://localhost:3000/categories/${id}`,
       {
         category: {
           name: name,
@@ -80,7 +80,7 @@ export const categoryEdit = async (
 
 export const categoryDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/categorys/${id}`, {
+    await axios.delete(`http://localhost:3000/categories/${id}`, {
       headers: {
         "access-token": Cookies.get("_access_token"),
         client: Cookies.get("_client"),

@@ -23,15 +23,15 @@ import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
-import { transferNew } from "@/lib/api/transfer-api";
-import { accountEdit } from "@/lib/api/account-api";
-import { transferNewProps } from "@/interface/account-interface";
+import { paymentNew } from "@/lib/api/payment-api";
+// import { accountEdit } from "@/lib/api/account-api";
+import { paymentNewProps } from "@/interface/payment-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const TransferNew: React.FC<transferNewProps> = (props) => {
-  const { onAccountUpdate, onTransferAdd, onClose } = props;
-  const { accounts } = useContext(moneyContext);
+export const PaymentNew: React.FC<paymentNewProps> = (props) => {
+  const { onPaymentAdd,onCategoryUpdate,onClassificationUpdate,  onClose } = props;
+  const { classifications, categories } = useContext(moneyContext);
   const initialDateObject = new Date();
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
@@ -39,25 +39,22 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [period, setPeriod] = useState("");
 
-  const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
-  const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
-  const [newBeforeAccountAmount, setNewBeforeAccountAmount] = useState(0);
-  const [newBeforeAccountBody, setNewBeforeAccountBody] = useState("");
-  const [newAfterAccountId, setNewAfterAccountId] = useState("");
-  const [newAfterAccountName, setNewAfterAccountName] = useState("");
-  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState(0);
-  const [newAfterAccountBody, setNewAfterAccountBody] = useState("");
+  const [newCategoryId, setNewCategoryId] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newClassificationId, setNewClassificationId] = useState("");
+  const [newClassificationName, setNewClassificationName] = useState("");
+
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newAmountError, setNewAmountError] = useState<boolean>(false);
-  const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
+  // const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
   const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   const [newBody, setNewBody] = useState("");
 
-  const newTransfer = async () => {
+  const newPayment = async () => {
     try {
       const beforeAccountEditedAmount =
         parseFloat(String(newBeforeAccountAmount)) -
@@ -66,7 +63,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         parseFloat(String(newAfterAccountAmount)) +
         parseFloat(String(newAmount));
 
-      const transferResponse = await transferNew(
+      const paymentResponse = await paymentNew(
         newBeforeAccountId,
         newAfterAccountId,
         newAmount,
@@ -82,43 +79,30 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         beforeAccountEditedAmount,
         newBeforeAccountBody
       );
-      await accountEdit(
-        newAfterAccountId,
-        newAfterAccountName,
-        afterAccountEditedAmount,
-        newAfterAccountBody
-      );
 
-      const newTransfer = {
-        id: transferResponse.id,
-        before_account_id: transferResponse.before_account_id,
-        after_account_id: transferResponse.after_account_id,
+      const newPayment = {
+        id: paymentResponse.id,
+        before_account_id: paymentResponse.before_account_id,
+        after_account_id: paymentResponse.after_account_id,
         after_account_name: newAfterAccountName,
-        amount: transferResponse.amount,
-        schedule: transferResponse.schedule,
-        repetition: transferResponse.repetition,
-        repetition_type: transferResponse.repetition_type,
-        repetition_settings: transferResponse.repetition_settings,
-        body: transferResponse.body,
+        amount: paymentResponse.amount,
+        schedule: paymentResponse.schedule,
+        repetition: paymentResponse.repetition,
+        repetition_type: paymentResponse.repetition_type,
+        repetition_settings: paymentResponse.repetition_settings,
+        body: paymentResponse.body,
       };
-      const beforeAccount = {
+      const newClassification = {
         id: newBeforeAccountId,
         name: newBeforeAccountName,
         amount: beforeAccountEditedAmount,
         body: newBeforeAccountBody,
       };
-      const afterAccount = {
-        id: newAfterAccountId,
-        name: newAfterAccountName,
-        amount: afterAccountEditedAmount,
-        body: newAfterAccountBody,
-      };
 
-      onAccountUpdate(beforeAccount);
-      onAccountUpdate(afterAccount);
-      onTransferAdd(newTransfer);
+      onAccountUpdate(newClassification);
+      onPaymentAdd(newPayment);
     } catch (error) {
-      console.error("Failed to create transfer:", error);
+      console.error("Failed to create payment:", error);
     }
   };
 
@@ -128,12 +112,12 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     } else {
       setNewAmountError(true);
     }
-    if (newBeforeAccountAmount >= newAmount) {
-      setNewAmountOverError(false);
-    } else {
-      setNewAmountOverError(true);
-    }
-  }, [newAmount, newBeforeAccountId]);
+    // if (newBeforeAccountAmount >= newAmount) {
+    //   setNewAmountOverError(false);
+    // } else {
+    //   setNewAmountOverError(true);
+    // }
+  }, [newAmount]);
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -162,35 +146,31 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     }
   };
 
-  const handleBeforeAccountChange = (
+  const handleClassificationChange = (
     event: ChangeEvent<{ value: unknown }>
   ) => {
     const value = event.target.value as string;
-    setNewBeforeAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setNewBeforeAccountName(selectedAccount.name);
-      setNewBeforeAccountAmount(selectedAccount.amount);
-      setNewBeforeAccountBody(selectedAccount.body);
+    setNewClassificationId(value);
+    const selectedClassification = classifications.find(
+      (classification) => classification.id === value
+    );
+    if (selectedClassification) {
+      setNewClassificationName(selectedClassification.name);
     } else {
-      setNewBeforeAccountName("");
-      setNewBeforeAccountAmount(0);
-      setNewBeforeAccountBody("");
+      setNewClassificationName("");
     }
   };
 
-  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleCategoryChange = (event: ChangeEvent<{ value: unknown }>) => {
     const value = event.target.value as string;
-    setNewAfterAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setNewAfterAccountName(selectedAccount.name);
-      setNewAfterAccountAmount(selectedAccount.amount);
-      setNewAfterAccountBody(selectedAccount.body);
+    setNewCategoryId(value);
+    const selectedCategory = categories.find(
+      (category) => category.id === value
+    );
+    if (selectedCategory) {
+      setNewCategoryName(selectedCategory.name);
     } else {
-      setNewAfterAccountName("");
-      setNewAfterAccountAmount(0);
-      setNewAfterAccountBody("");
+      setNewCategoryName("");
     }
   };
 
@@ -252,7 +232,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
   // 保存ボタン押したとき
   const handleSave = () => {
-    newTransfer();
+    newPayment();
     onClose();
   };
 
@@ -456,54 +436,43 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">送金元口座</Typography>
+          <Typography variant="subtitle1">分類</Typography>
           <Select
             fullWidth
-            value={newBeforeAccountId}
-            onChange={handleBeforeAccountChange}
+            value={newClassificationId}
+            onChange={handleClassificationChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== newAfterAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
+            {classifications.map((classification) => (
+              <MenuItem key={classification.id} value={classification.id}>
+                {classification.name}
+              </MenuItem>
+            ))}
           </Select>
-          {accounts
+          {/* {accounts
             .filter((account) => account.id === newBeforeAccountId)
             .map((account) => (
               <Typography key={account.id} align="left" variant="subtitle1">
                 口座金額：{formatAmountCommas(account.amount)}
               </Typography>
-            ))}
+            ))} */}
         </li>
         <li className="pt-5">
-          <Typography variant="subtitle1">送金先口座</Typography>
+          <Typography variant="subtitle1">カテゴリ</Typography>
           <Select
             fullWidth
-            value={newAfterAccountId}
-            onChange={handleAfterAccountChange}
+            value={newCategoryId}
+            onChange={handleCategoryChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== newBeforeAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
-          </Select>
-          {accounts
-            .filter((account) => account.id === newAfterAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
-              </Typography>
+            {categories.map((category) => (
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
+              </MenuItem>
             ))}
+          </Select>
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
@@ -525,11 +494,6 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           {newAmountError && (
             <Typography align="left" variant="subtitle1">
               金額を0以上にして下さい
-            </Typography>
-          )}
-          {newAmountOverError && (
-            <Typography align="left" variant="subtitle1">
-              送金元口座に入っているお金以下にして下さい
             </Typography>
           )}
         </li>
