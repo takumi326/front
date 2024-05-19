@@ -21,6 +21,12 @@ export type classificationData = {
   amount: number;
 };
 
+export type categoryData = {
+  id: string;
+  name: string;
+  category_type: string;
+};
+
 // ヘッダーに表示するTaskの型定義
 export type displayPaymentData = {
   id: string;
@@ -63,7 +69,11 @@ export interface paymentRowProps {
   // isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
   onPaymentUpdate: (updatedPayment: paymentData) => void;
+  onClassificationUpdate: (updatedPayment: classificationData) => void;
+  onCategoryUpdate: (updatedPayment: categoryData) => void;
   onPaymentDelete: (id: string) => void;
+  onClassificationDelete: (id: string) => void;
+  onCategoryDelete: (id: string) => void;
 }
 
 // Showコンポーネントで使用する Props の型を定義

@@ -41,11 +41,12 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
   const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
   const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
-  const [newBeforeAccountAmount, setNewBeforeAccountAmount] = useState(0);
+  const [newBeforeAccountAmount, setNewBeforeAccountAmount] =
+    useState<number>(0);
   const [newBeforeAccountBody, setNewBeforeAccountBody] = useState("");
   const [newAfterAccountId, setNewAfterAccountId] = useState("");
   const [newAfterAccountName, setNewAfterAccountName] = useState("");
-  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState(0);
+  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState<number>(0);
   const [newAfterAccountBody, setNewAfterAccountBody] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");

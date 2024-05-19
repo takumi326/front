@@ -24,13 +24,15 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import { moneyContext } from "@/context/money-context";
 
 import { paymentNew } from "@/lib/api/payment-api";
-// import { accountEdit } from "@/lib/api/account-api";
+import { classificationEdit } from "@/lib/api/classification-api";
+
 import { paymentNewProps } from "@/interface/payment-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PaymentNew: React.FC<paymentNewProps> = (props) => {
-  const { onPaymentAdd,onCategoryUpdate,onClassificationUpdate,  onClose } = props;
+  const { onPaymentAdd, onClassificationUpdate, onCategoryUpdate, onClose } =
+    props;
   const { classifications, categories } = useContext(moneyContext);
   const initialDateObject = new Date();
 
@@ -41,13 +43,19 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
 
   const [newCategoryId, setNewCategoryId] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
+
   const [newClassificationId, setNewClassificationId] = useState("");
+  const [newClassificationAccountId, setNewClassificationAccountId] =
+    useState("");
+  const [newClassificationAccountName, setNewClassificationAccountName] =
+    useState("");
   const [newClassificationName, setNewClassificationName] = useState("");
+  const [newClassificationAmount, setNewClassificationAmount] =
+    useState<number>(0);
 
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newAmountError, setNewAmountError] = useState<boolean>(false);
-  // const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
   const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
@@ -56,16 +64,13 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
 
   const newPayment = async () => {
     try {
-      const beforeAccountEditedAmount =
-        parseFloat(String(newBeforeAccountAmount)) -
-        parseFloat(String(newAmount));
-      const afterAccountEditedAmount =
-        parseFloat(String(newAfterAccountAmount)) +
+      const editedClassificationAmount =
+        parseFloat(String(newClassificationAmount)) +
         parseFloat(String(newAmount));
 
       const paymentResponse = await paymentNew(
-        newBeforeAccountId,
-        newAfterAccountId,
+        newCategoryId,
+        newClassificationId,
         newAmount,
         newSchedule,
         newRepetition,
@@ -73,18 +78,19 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         newRepetitionSettings,
         newBody
       );
-      await accountEdit(
-        newBeforeAccountId,
-        newBeforeAccountName,
-        beforeAccountEditedAmount,
-        newBeforeAccountBody
+      await classificationEdit(
+        newClassificationId,
+        newClassificationAccountId,
+        newClassificationName,
+        editedClassificationAmount
       );
 
       const newPayment = {
         id: paymentResponse.id,
-        before_account_id: paymentResponse.before_account_id,
-        after_account_id: paymentResponse.after_account_id,
-        after_account_name: newAfterAccountName,
+        category_id: paymentResponse.category_id,
+        category_name: newCategoryName,
+        classification_id: paymentResponse.classification_id,
+        classification_name: newClassificationAccountName,
         amount: paymentResponse.amount,
         schedule: paymentResponse.schedule,
         repetition: paymentResponse.repetition,
@@ -93,13 +99,14 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         body: paymentResponse.body,
       };
       const newClassification = {
-        id: newBeforeAccountId,
-        name: newBeforeAccountName,
-        amount: beforeAccountEditedAmount,
-        body: newBeforeAccountBody,
+        id: newClassificationId,
+        account_id: newClassificationAccountId,
+        account_name: newClassificationAccountName,
+        name: newClassificationName,
+        amount: editedClassificationAmount,
       };
 
-      onAccountUpdate(newClassification);
+      onClassificationUpdate(newClassification);
       onPaymentAdd(newPayment);
     } catch (error) {
       console.error("Failed to create payment:", error);
@@ -155,9 +162,15 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
       (classification) => classification.id === value
     );
     if (selectedClassification) {
+      setNewClassificationAccountId(selectedClassification.account_id);
+      setNewClassificationAccountName(selectedClassification.account_name);
       setNewClassificationName(selectedClassification.name);
+      setNewClassificationAmount(selectedClassification.amount);
     } else {
+      setNewClassificationAccountId("");
+      setNewClassificationAccountName("");
       setNewClassificationName("");
+      setNewClassificationAmount(0);
     }
   };
 
@@ -450,13 +463,6 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
               </MenuItem>
             ))}
           </Select>
-          {/* {accounts
-            .filter((account) => account.id === newBeforeAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
-              </Typography>
-            ))} */}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">カテゴリ</Typography>
@@ -467,11 +473,13 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {categories.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
-              </MenuItem>
-            ))}
+            {categories
+              .filter((category) => category.category_type === "payment")
+              .map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
           </Select>
         </li>
         <li className="pt-5">

@@ -391,6 +391,28 @@ export const MoneyTable: React.FC = () => {
     setIsEditing(true);
   };
 
+  const updateClassification = (updateClassification: classificationData) => {
+    // const updatedTransfers = transfers.map((transfer) => {
+    //   if (transfer.id === updateTransfer.id) {
+    //     return updateTransfer;
+    //   }
+    //   return transfer;
+    // });
+    // setTransfers(updatedTransfers);
+    setIsEditing(true);
+  };
+
+  const updateCategory = (updateCategory: categoryData) => {
+    // const updatedTransfers = transfers.map((transfer) => {
+    //   if (transfer.id === updateTransfer.id) {
+    //     return updateTransfer;
+    //   }
+    //   return transfer;
+    // });
+    // setTransfers(updatedTransfers);
+    setIsEditing(true);
+  };
+
   const deleteData = async (id: string) => {
     if (filter === "payment") {
       try {
@@ -423,6 +445,26 @@ export const MoneyTable: React.FC = () => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete transfer:", error);
+    }
+  };
+
+  const deleteClassification = async (id: string) => {
+    try {
+      await classificationDelete(id);
+      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete classification:", error);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    try {
+      await categoryDelete(id);
+      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete category :", error);
     }
   };
 
@@ -791,10 +833,12 @@ export const MoneyTable: React.FC = () => {
                     // onSelect={handleSelect}
                     // isSelected={isSelected(row.id)}
                     visibleColumns={visibleColumns}
-                    onPaymentUpdate={updateAccount}
-                    // onTransferUpdate={updateTransfer}
+                    onPaymentUpdate={updatePayment}
+                    onClassificationUpdate={updateClassification}
+                    onCategoryUpdate={updateCategory}
                     onPaymnetDelete={deleteData}
-                    // onTransferDelete={deleteTransfer}
+                    onClassificationDelete={deleteClassification}
+                    onCategoryDelete={deleteCategory}
                   />
                 ))
               : filter === "income"
