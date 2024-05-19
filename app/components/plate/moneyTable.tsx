@@ -33,8 +33,8 @@ import {
   displayPaymentData,
   selectPaymentData,
 } from "@/interface/payment-interface";
-// import { PaymentRow } from "@/components/payment/row";
-// import { PaymentNew } from "@/components/payment/new";
+import { PaymentRow } from "@/components/money/payment/row";
+import { PaymentNew } from "@/components/money/payment/new";
 
 import { incomeGetData, incomeDelete } from "@/lib/api/income-api";
 import {
@@ -154,21 +154,21 @@ export const MoneyTable: React.FC = () => {
   });
 
   useEffect(() => {
-    // paymentGetData().then((data) => {
-    //   setPayments(data);
-    // });
+    paymentGetData().then((data) => {
+      setPayments(data);
+    });
     // incomeGetData().then((data) => {
     //   setIncomes(data);
     // });
     accountGetData().then((data) => {
       setAccounts(data);
     });
-    // categoryGetData().then((data) => {
-    //   setCategories(data);
-    // });
-    // classificationGetData().then((data) => {
-    //   setClassifications(data);
-    // });
+    categoryGetData().then((data) => {
+      setCategories(data);
+    });
+    classificationGetData().then((data) => {
+      setClassifications(data);
+    });
     transferGetData().then((data) => {
       setTransfers(data);
     });
@@ -319,22 +319,32 @@ export const MoneyTable: React.FC = () => {
 
   const newPayment = (newData: paymentData) => {
     setPayments([...payments, newData]);
-    setIsEditing(true);
+    setIsAdding(true);
   };
 
   const newIncome = (newData: incomeData) => {
     setIncomes([...incomes, newData]);
-    setIsEditing(true);
+    setIsAdding(true);
+  };
+
+  const newClassification = (newData: classificationData) => {
+    setClassifications([...classifications, newData]);
+    setIsAdding(true);
+  };
+
+  const newCategory = (newData: categoryData) => {
+    setCategories([...categories, newData]);
+    setIsAdding(true);
   };
 
   const newAccount = (newData: accountData) => {
     setAccounts([...accounts, newData]);
-    setIsEditing(true);
+    setIsAdding(true);
   };
 
   const newTransfer = (newData: transferData) => {
-    setTransfers([...transfers, newData]);
-    setIsEditing(true);
+    // setTransfers([...transfers, newData]);
+    setIsAdding(true);
   };
 
   const updatePayment = (updatePayment: paymentData) => {
@@ -345,7 +355,7 @@ export const MoneyTable: React.FC = () => {
       return payment;
     });
     setPayments(updatedPayments);
-    setIsAdding(true);
+    setIsEditing(true);
   };
 
   const updateIncome = (updateIncome: incomeData) => {
@@ -356,7 +366,7 @@ export const MoneyTable: React.FC = () => {
       return income;
     });
     setIncomes(updatedIncomes);
-    setIsAdding(true);
+    setIsEditing(true);
   };
 
   const updateAccount = (updateAccount: accountData) => {
@@ -367,18 +377,40 @@ export const MoneyTable: React.FC = () => {
       return account;
     });
     setAccounts(updatedAccounts);
-    setIsAdding(true);
+    setIsEditing(true);
   };
 
   const updateTransfer = (updateTransfer: transferData) => {
-    const updatedTransfers = transfers.map((transfer) => {
-      if (transfer.id === updateTransfer.id) {
-        return updateTransfer;
-      }
-      return transfer;
-    });
-    setTransfers(updatedTransfers);
-    setIsAdding(true);
+    // const updatedTransfers = transfers.map((transfer) => {
+    //   if (transfer.id === updateTransfer.id) {
+    //     return updateTransfer;
+    //   }
+    //   return transfer;
+    // });
+    // setTransfers(updatedTransfers);
+    setIsEditing(true);
+  };
+
+  const updateClassification = (updateClassification: classificationData) => {
+    // const updatedTransfers = transfers.map((transfer) => {
+    //   if (transfer.id === updateTransfer.id) {
+    //     return updateTransfer;
+    //   }
+    //   return transfer;
+    // });
+    // setTransfers(updatedTransfers);
+    setIsEditing(true);
+  };
+
+  const updateCategory = (updateCategory: categoryData) => {
+    // const updatedTransfers = transfers.map((transfer) => {
+    //   if (transfer.id === updateTransfer.id) {
+    //     return updateTransfer;
+    //   }
+    //   return transfer;
+    // });
+    // setTransfers(updatedTransfers);
+    setIsEditing(true);
   };
 
   const deleteData = async (id: string) => {
@@ -409,9 +441,30 @@ export const MoneyTable: React.FC = () => {
   const deleteTransfer = async (id: string) => {
     try {
       await transferDelete(id);
-      setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete transfer:", error);
+    }
+  };
+
+  const deleteClassification = async (id: string) => {
+    try {
+      await classificationDelete(id);
+      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete classification:", error);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    try {
+      await categoryDelete(id);
+      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete category :", error);
     }
   };
 
@@ -562,7 +615,12 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
+            <PaymentNew
+              onPaymentAdd={newPayment}
+              onClassificationUpdate={newClassification}
+              onCategoryUpdate={newCategory}
+              onClose={handleCloseNewModal}
+            />
           </div>
         </div>
       ) : isNewModalOpen && filter === "income" ? (
@@ -632,7 +690,7 @@ export const MoneyTable: React.FC = () => {
             variant={filter === "account" ? "contained" : "outlined"}
             onClick={() => handleFilterChange("account")}
           >
-            預金
+            口座
           </Button>
         </Stack>
         <Button
@@ -652,7 +710,6 @@ export const MoneyTable: React.FC = () => {
               variant="outlined"
               color="primary"
               onClick={handleOpenNewTransferModal}
-              className="mr-5"
             >
               自分口座への送金
             </Button>
@@ -770,14 +827,18 @@ export const MoneyTable: React.FC = () => {
           <TableBody>
             {filter === "payment"
               ? sortedRows.map((row) => (
-                  <AccountRow
+                  <PaymentRow
                     key={row.id}
                     row={row}
-                    onSelect={handleSelect}
-                    isSelected={isSelected(row.id)}
+                    // onSelect={handleSelect}
+                    // isSelected={isSelected(row.id)}
                     visibleColumns={visibleColumns}
-                    onUpdate={updateAccount}
-                    onDelete={deleteData}
+                    onPaymentUpdate={updatePayment}
+                    onClassificationUpdate={updateClassification}
+                    onCategoryUpdate={updateCategory}
+                    onPaymnetDelete={deleteData}
+                    onClassificationDelete={deleteClassification}
+                    onCategoryDelete={deleteCategory}
                   />
                 ))
               : filter === "income"

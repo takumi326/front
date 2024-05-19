@@ -66,8 +66,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     useState(0);
   const [initialBeforeAccountBody, setInitialBeforeAccountBody] = useState("");
   const initialAfterAccountId = after_account_id;
-  const [initialAfterAccountName, setInitialAfterAccountName] =
-    useState(after_account_name);
+  const initialAfterAccountName = after_account_name;
   const [initialAfterAccountAmount, setInitialAfterAccountAmount] = useState(0);
   const [initialAfterAccountBody, setInitialAfterAccountBody] = useState("");
 
@@ -76,12 +75,14 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   const [editBeforeAccountName, setEditBeforeAccountName] = useState("");
   const [editBeforeAccountAmount, setEditBeforeAccountAmount] = useState(0);
   const [editBeforeAccountBody, setEditBeforeAccountBody] = useState("");
+
   const [editAfterAccountId, setEditAfterAccountId] =
     useState(after_account_id);
   const [editAfterAccountName, setEditAfterAccountName] =
     useState(after_account_name);
   const [editAfterAccountAmount, setEditAfterAccountAmount] = useState(0);
   const [editAfterAccountBody, setEditAfterAccountBody] = useState("");
+
   const [editAmount, setEditAmount] = useState(amount);
   const initialAmount = amount;
   const [editAmountString, setEditAmountString] = useState<string>(
@@ -112,6 +113,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       setInitialAfterAccountAmount(selectedAfterAccount.amount);
       setInitialAfterAccountBody(selectedAfterAccount.body);
 
+      console.log(typeof selectedBeforeAccount.amount);
       setEditBeforeAccountName(selectedBeforeAccount.name);
       setEditBeforeAccountAmount(selectedBeforeAccount.amount);
       setEditBeforeAccountBody(selectedBeforeAccount.body);
@@ -460,12 +462,22 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     } else {
       setEditAmountError(true);
     }
-    if (editBeforeAccountAmount >= editAmount) {
+
+    if (
+      parseFloat(String(editBeforeAccountAmount)) >=
+      parseFloat(String(editAmount))
+    ) {
+      console.log(123456789);
+      console.log(typeof editBeforeAccountAmount);
+      console.log(typeof editAmount);
       setEditAmountOverError(false);
     } else {
+      console.log(987654321);
+      console.log(typeof editBeforeAccountAmount);
+      console.log(typeof editAmount);
       setEditAmountOverError(true);
     }
-  }, [editAmount]);
+  }, [editBeforeAccountAmount, editAmount]);
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -499,9 +511,9 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   ) => {
     const value = event.target.value as string;
     setEditBeforeAccountId(value);
+    console.log(editBeforeAccountAmount);
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
-      console.log(selectedAccount.name);
       setEditBeforeAccountName(selectedAccount.name);
       setEditBeforeAccountAmount(selectedAccount.amount);
       setEditBeforeAccountBody(selectedAccount.body);
@@ -863,7 +875,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
           <Typography align="left" variant="subtitle1">
             {editAmountError && (
               <Typography align="left" variant="subtitle1">
-                金額を0以上にしてください
+                金額を0より上にしてください
               </Typography>
             )}
             {editAmountOverError && (

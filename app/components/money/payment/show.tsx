@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent, useContext } from "react";
+import React, { useState, ChangeEvent, useContext, useEffect } from "react";
 import moment from "moment";
 
 import {
@@ -18,58 +18,121 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
-import { transferNew } from "@/lib/api/transfer-api";
-import { accountEdit } from "@/lib/api/account-api";
-import { transferNewProps } from "@/interface/account-interface";
+import { paymentEdit } from "@/lib/api/payment-api";
+import { classificationEdit } from "@/lib/api/classification-api";
+
+import { paymentNewProps } from "@/interface/payment-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const TransferNew: React.FC<transferNewProps> = (props) => {
-  const { onAccountUpdate, onTransferAdd, onClose } = props;
-  const { accounts } = useContext(moneyContext);
-  const initialDateObject = new Date();
+export const PaymentShow: React.FC<transferShowProps> = (props) => {
+  const {
+    id,
+    before_account_id,
+    after_account_id,
+    after_account_name,
+    amount,
+    schedule,
+    repetition,
+    repetition_type,
+    repetition_settings,
+    body,
+    onAccountUpdate,
+    onTransferUpdate,
+    onClose,
+    onDelete,
+  } = props;
+  const { classifications, categories } = useContext(moneyContext);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(1);
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [period, setPeriod] = useState("");
+  const [frequency, setFrequency] = useState(
+    repetition_settings && repetition_settings[0] ? repetition_settings[0] : 1
+  );
+  const [selectedDays, setSelectedDays] = useState(
+    repetition_settings && repetition_settings.length > 1
+      ? repetition_settings.slice(1)
+      : []
+  );
+  const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
-  const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
-  const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
-  const [newBeforeAccountAmount, setNewBeforeAccountAmount] =
-    useState<number>(0);
-  const [newBeforeAccountBody, setNewBeforeAccountBody] = useState("");
-  const [newAfterAccountId, setNewAfterAccountId] = useState("");
-  const [newAfterAccountName, setNewAfterAccountName] = useState("");
-  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState<number>(0);
-  const [newAfterAccountBody, setNewAfterAccountBody] = useState("");
-  const [newAmount, setNewAmount] = useState<number>(0);
-  const [newAmountString, setNewAmountString] = useState("0");
-  const [newAmountError, setNewAmountError] = useState<boolean>(false);
-  const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
-  const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
-  const [newRepetition, setNewRepetition] = useState<boolean>(false);
-  const [newRepetitionType, setNewRepetitionType] = useState("");
-  const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
-  const [newBody, setNewBody] = useState("");
+  const initialBeforeAccountId = before_account_id;
+  const [initialBeforeAccountName, setInitialBeforeAccountName] = useState("");
+  const [initialBeforeAccountAmount, setInitialBeforeAccountAmount] =
+    useState(0);
+  const [initialBeforeAccountBody, setInitialBeforeAccountBody] = useState("");
+  const initialAfterAccountId = after_account_id;
+  const initialAfterAccountName = after_account_name;
+  const [initialAfterAccountAmount, setInitialAfterAccountAmount] = useState(0);
+  const [initialAfterAccountBody, setInitialAfterAccountBody] = useState("");
 
-  const newTransfer = async () => {
+  const [editBeforeAccountId, setEditBeforeAccountId] =
+    useState(before_account_id);
+  const [editBeforeAccountName, setEditBeforeAccountName] = useState("");
+  const [editBeforeAccountAmount, setEditBeforeAccountAmount] = useState(0);
+  const [editBeforeAccountBody, setEditBeforeAccountBody] = useState("");
+
+  const [editAfterAccountId, setEditAfterAccountId] =
+    useState(after_account_id);
+  const [editAfterAccountName, setEditAfterAccountName] =
+    useState(after_account_name);
+  const [editAfterAccountAmount, setEditAfterAccountAmount] = useState(0);
+  const [editAfterAccountBody, setEditAfterAccountBody] = useState("");
+
+  const [editAmount, setEditAmount] = useState(amount);
+  const initialAmount = amount;
+  const [editAmountString, setEditAmountString] = useState<string>(
+    String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  );
+  const [editAmountError, setEditAmountError] = useState<boolean>(false);
+  const [editAmountOverError, setEditAmountOverError] =
+    useState<boolean>(false);
+  const [editSchedule, setEditSchedule] = useState<Date>(schedule);
+  const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
+  const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
+  const [editRepetitionSettings, setEditRepetitionSettings] =
+    useState(repetition_settings);
+  const [editBody, setEditBody] = useState(body);
+
+  useEffect(() => {
+    const selectedBeforeAccount = accounts.find(
+      (account) => account.id === initialBeforeAccountId
+    );
+    const selectedAfterAccount = accounts.find(
+      (account) => account.id === initialAfterAccountId
+    );
+    if (selectedBeforeAccount && selectedAfterAccount) {
+      setInitialBeforeAccountName(selectedBeforeAccount.name);
+      setInitialBeforeAccountAmount(selectedBeforeAccount.amount);
+      setInitialBeforeAccountBody(selectedBeforeAccount.body);
+
+      setInitialAfterAccountAmount(selectedAfterAccount.amount);
+      setInitialAfterAccountBody(selectedAfterAccount.body);
+
+      console.log(typeof selectedBeforeAccount.amount);
+      setEditBeforeAccountName(selectedBeforeAccount.name);
+      setEditBeforeAccountAmount(selectedBeforeAccount.amount);
+      setEditBeforeAccountBody(selectedBeforeAccount.body);
+
+      setEditAfterAccountAmount(selectedAfterAccount.amount);
+      setEditAfterAccountBody(selectedAfterAccount.body);
+    }
+  }, []);
+
+  const editTransfer = async (id: string) => {
     try {
-      const beforeAccountEditedAmount =
-        parseFloat(String(newBeforeAccountAmount)) -
-        parseFloat(String(newAmount));
-      const afterAccountEditedAmount =
-        parseFloat(String(newAfterAccountAmount)) +
+      const editedClassificationAmount =
+        parseFloat(String(newClassificationAmount)) +
         parseFloat(String(newAmount));
 
-      const transferResponse = await transferNew(
-        newBeforeAccountId,
-        newAfterAccountId,
+      const paymentResponse = await paymentNew(
+        newCategoryId,
+        newClassificationId,
         newAmount,
         newSchedule,
         newRepetition,
@@ -77,71 +140,70 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         newRepetitionSettings,
         newBody
       );
-      await accountEdit(
-        newBeforeAccountId,
-        newBeforeAccountName,
-        beforeAccountEditedAmount,
-        newBeforeAccountBody
-      );
-      await accountEdit(
-        newAfterAccountId,
-        newAfterAccountName,
-        afterAccountEditedAmount,
-        newAfterAccountBody
+      await classificationEdit(
+        newClassificationId,
+        newClassificationAccountId,
+        newClassificationName,
+        editedClassificationAmount
       );
 
-      const newTransfer = {
-        id: transferResponse.id,
-        before_account_id: transferResponse.before_account_id,
-        after_account_id: transferResponse.after_account_id,
-        after_account_name: newAfterAccountName,
-        amount: transferResponse.amount,
-        schedule: transferResponse.schedule,
-        repetition: transferResponse.repetition,
-        repetition_type: transferResponse.repetition_type,
-        repetition_settings: transferResponse.repetition_settings,
-        body: transferResponse.body,
+      const newPayment = {
+        id: paymentResponse.id,
+        category_id: paymentResponse.category_id,
+        category_name: newCategoryName,
+        classification_id: paymentResponse.classification_id,
+        classification_name: newClassificationAccountName,
+        amount: paymentResponse.amount,
+        schedule: paymentResponse.schedule,
+        repetition: paymentResponse.repetition,
+        repetition_type: paymentResponse.repetition_type,
+        repetition_settings: paymentResponse.repetition_settings,
+        body: paymentResponse.body,
       };
-      const beforeAccount = {
-        id: newBeforeAccountId,
-        name: newBeforeAccountName,
-        amount: beforeAccountEditedAmount,
-        body: newBeforeAccountBody,
-      };
-      const afterAccount = {
-        id: newAfterAccountId,
-        name: newAfterAccountName,
-        amount: afterAccountEditedAmount,
-        body: newAfterAccountBody,
+      const newClassification = {
+        id: newClassificationId,
+        account_id: newClassificationAccountId,
+        account_name: newClassificationAccountName,
+        name: newClassificationName,
+        amount: editedClassificationAmount,
       };
 
-      onAccountUpdate(beforeAccount);
-      onAccountUpdate(afterAccount);
-      onTransferAdd(newTransfer);
+      onClassificationUpdate(newClassification);
+      onPaymentAdd(newPayment);
     } catch (error) {
-      console.error("Failed to create transfer:", error);
+      console.error("Failed to edit transfer:", error);
     }
   };
 
   useEffect(() => {
-    if (newAmount > 0) {
-      setNewAmountError(false);
+    if (editAmount > 0) {
+      setEditAmountError(false);
     } else {
-      setNewAmountError(true);
+      setEditAmountError(true);
     }
-    if (newBeforeAccountAmount >= newAmount) {
-      setNewAmountOverError(false);
+
+    if (
+      parseFloat(String(editBeforeAccountAmount)) >=
+      parseFloat(String(editAmount))
+    ) {
+      console.log(123456789);
+      console.log(typeof editBeforeAccountAmount);
+      console.log(typeof editAmount);
+      setEditAmountOverError(false);
     } else {
-      setNewAmountOverError(true);
+      console.log(987654321);
+      console.log(typeof editBeforeAccountAmount);
+      console.log(typeof editAmount);
+      setEditAmountOverError(true);
     }
-  }, [newAmount, newBeforeAccountId]);
+  }, [editBeforeAccountAmount, editAmount]);
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
-        setNewAmountString(
+        setEditAmountString(
           value.startsWith("0") && value.length > 1
             ? value
                 .replace(/^0+/, "")
@@ -151,12 +213,12 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             ? ""
             : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
         );
-        setNewAmount(
+        setEditAmount(
           value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
         );
         break;
       case "body":
-        setNewBody(value);
+        setEditBody(value);
         break;
       default:
         break;
@@ -167,31 +229,32 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     event: ChangeEvent<{ value: unknown }>
   ) => {
     const value = event.target.value as string;
-    setNewBeforeAccountId(value);
+    setEditBeforeAccountId(value);
+    console.log(editBeforeAccountAmount);
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
-      setNewBeforeAccountName(selectedAccount.name);
-      setNewBeforeAccountAmount(selectedAccount.amount);
-      setNewBeforeAccountBody(selectedAccount.body);
+      setEditBeforeAccountName(selectedAccount.name);
+      setEditBeforeAccountAmount(selectedAccount.amount);
+      setEditBeforeAccountBody(selectedAccount.body);
     } else {
-      setNewBeforeAccountName("");
-      setNewBeforeAccountAmount(0);
-      setNewBeforeAccountBody("");
+      setEditBeforeAccountName("");
+      setEditBeforeAccountAmount(0);
+      setEditBeforeAccountBody("");
     }
   };
 
   const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
     const value = event.target.value as string;
-    setNewAfterAccountId(value);
+    setEditAfterAccountId(value);
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
-      setNewAfterAccountName(selectedAccount.name);
-      setNewAfterAccountAmount(selectedAccount.amount);
-      setNewAfterAccountBody(selectedAccount.body);
+      setEditAfterAccountName(selectedAccount.name);
+      setEditAfterAccountAmount(selectedAccount.amount);
+      setEditAfterAccountBody(selectedAccount.body);
     } else {
-      setNewAfterAccountName("");
-      setNewAfterAccountAmount(0);
-      setNewAfterAccountBody("");
+      setEditAfterAccountName("");
+      setEditAfterAccountAmount(0);
+      setEditAfterAccountBody("");
     }
   };
 
@@ -215,24 +278,24 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
-      newRepetitionSettings && newRepetitionSettings[0]
-        ? newRepetitionSettings[0]
+      editRepetitionSettings && editRepetitionSettings[0]
+        ? editRepetitionSettings[0]
         : 1
     );
     setSelectedDays(
-      newRepetitionSettings && newRepetitionSettings.length > 1
-        ? newRepetitionSettings.slice(1)
+      editRepetitionSettings && editRepetitionSettings.length > 1
+        ? editRepetitionSettings.slice(1)
         : []
     );
-    setPeriod(newRepetitionType ? newRepetitionType : "");
+    setPeriod(editRepetitionType ? editRepetitionType : "");
   };
 
   // 繰り返しダイアログの削除ボタン押されたとき
   const handleRepetitionDialogDelete = () => {
     setRepetitionDialogOpen(false);
-    setNewRepetition(false);
-    setNewRepetitionType("");
-    setNewRepetitionSettings([]);
+    setEditRepetition(false);
+    setEditRepetitionType("");
+    setEditRepetitionSettings([]);
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("");
@@ -241,20 +304,24 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
-    setNewRepetition(true);
-    setNewRepetitionType(period);
-    setNewRepetitionSettings([frequency, ...selectedDays]);
+    setEditRepetition(true);
+    setEditRepetitionType(period);
+    setEditRepetitionSettings([frequency, ...selectedDays]);
   };
 
   // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setNewSchedule(date);
+    setEditSchedule(date);
   };
 
   // 保存ボタン押したとき
   const handleSave = () => {
-    newTransfer();
-    onClose();
+    if (editAmount > 0) {
+      editTransfer(id);
+      onClose();
+    } else {
+      setEditAmountError(true);
+    }
   };
 
   const handleFrequencyChange = (delta) => {
@@ -282,7 +349,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   };
 
   const calculateNextSchedule = () => {
-    if (!newRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
+    if (!editRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
 
     // 曜日名を整数にマッピングする関数
     const mapDayOfWeekToInt = (dayOfWeek) => {
@@ -306,20 +373,20 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       }
     };
 
-    const date = new Date(newSchedule);
+    const date = new Date(editSchedule);
     const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
     const currentMonth = date.getMonth(); // 予定の日付の月を取得
     const currentYear = date.getFullYear(); // 予定の日付の年を取得
     let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
 
-    switch (newRepetitionType) {
+    switch (editRepetitionType) {
       case "daily":
-        nextSchedule += newRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
+        nextSchedule += editRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
         break;
 
       case "weekly":
-        if (newRepetitionSettings.length > 1) {
-          const targetDaysOfWeek = newRepetitionSettings
+        if (editRepetitionSettings.length > 1) {
+          const targetDaysOfWeek = editRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
           const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
@@ -341,7 +408,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           }
 
           nextSchedule +=
-            (daysUntilNextSchedule + (newRepetitionSettings[0] - 1) * 7) *
+            (daysUntilNextSchedule + (editRepetitionSettings[0] - 1) * 7) *
             24 *
             60 *
             60 *
@@ -352,7 +419,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       case "monthly":
         // 次の予定日の年と月を計算
         let nextYear = currentYear;
-        let nextMonth = currentMonth + newRepetitionSettings[0];
+        let nextMonth = currentMonth + editRepetitionSettings[0];
         if (nextMonth === 12) {
           nextYear++;
           nextMonth = 0; // 0 は 1 月を表す
@@ -460,13 +527,13 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           <Typography variant="subtitle1">送金元口座</Typography>
           <Select
             fullWidth
-            value={newBeforeAccountId}
+            value={editBeforeAccountId}
             onChange={handleBeforeAccountChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
             {accounts
-              .filter((account) => account.id !== newAfterAccountId)
+              .filter((account) => account.id !== editAfterAccountId)
               .map((account) => (
                 <MenuItem key={account.id} value={account.id}>
                   {account.name}
@@ -474,7 +541,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
               ))}
           </Select>
           {accounts
-            .filter((account) => account.id === newBeforeAccountId)
+            .filter((account) => account.id === editBeforeAccountId)
             .map((account) => (
               <Typography key={account.id} align="left" variant="subtitle1">
                 口座金額：{formatAmountCommas(account.amount)}
@@ -485,13 +552,13 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           <Typography variant="subtitle1">送金先口座</Typography>
           <Select
             fullWidth
-            value={newAfterAccountId}
+            value={editAfterAccountId}
             onChange={handleAfterAccountChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
             {accounts
-              .filter((account) => account.id !== newBeforeAccountId)
+              .filter((account) => account.id !== editBeforeAccountId)
               .map((account) => (
                 <MenuItem key={account.id} value={account.id}>
                   {account.name}
@@ -499,7 +566,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
               ))}
           </Select>
           {accounts
-            .filter((account) => account.id === newAfterAccountId)
+            .filter((account) => account.id === editAfterAccountId)
             .map((account) => (
               <Typography key={account.id} align="left" variant="subtitle1">
                 口座金額：{formatAmountCommas(account.amount)}
@@ -512,28 +579,32 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             <TextField
               variant="outlined"
               name="amount"
-              value={newAmountString}
+              value={editAmountString}
               onChange={handleChange}
               inputProps={{
                 inputMode: "numeric",
                 pattern: "[0-9]*",
               }}
             />
+
             <span>円</span>
           </div>
         </li>
         <li>
-          {newAmountError && (
-            <Typography align="left" variant="subtitle1">
-              金額を0以上にして下さい
-            </Typography>
-          )}
-          {newAmountOverError && (
-            <Typography align="left" variant="subtitle1">
-              送金元口座に入っているお金以下にして下さい
-            </Typography>
-          )}
+          <Typography align="left" variant="subtitle1">
+            {editAmountError && (
+              <Typography align="left" variant="subtitle1">
+                金額を0より上にしてください
+              </Typography>
+            )}
+            {editAmountOverError && (
+              <Typography align="left" variant="subtitle1">
+                送金元口座に入っているお金以下にして下さい
+              </Typography>
+            )}
+          </Typography>
         </li>
+
         <li className="pt-5">
           <Typography variant="subtitle1">予定</Typography>
           <Box
@@ -544,7 +615,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             }}
           >
             <InputDateTime
-              selectedDate={newSchedule}
+              selectedDate={editSchedule}
               onChange={handleSchedulChange}
             />
           </Box>
@@ -556,31 +627,31 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         >
           <Typography variant="subtitle1">繰り返し</Typography>
           <Typography>
-            {newRepetitionSettings && (
+            {editRepetitionSettings && (
               <>
-                {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
+                {editRepetitionType === "daily" &&
+                  editRepetitionSettings[0] === 1 &&
                   `毎日`}
-                {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
-                {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
+                {editRepetitionType === "weekly" &&
+                  editRepetitionSettings[0] === 1 &&
+                  `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
+                {editRepetitionType === "monthly" &&
+                  editRepetitionSettings[0] === 1 &&
                   `毎月`}
-                {newRepetitionSettings[0] > 1 &&
-                  newRepetitionSettings &&
-                  `毎${newRepetitionSettings[0]}${
-                    newRepetitionType === "daily"
+                {editRepetitionSettings[0] > 1 &&
+                  editRepetitionSettings &&
+                  `毎${editRepetitionSettings[0]}${
+                    editRepetitionType === "daily"
                       ? "日"
-                      : newRepetitionType === "weekly"
-                      ? `週 ${newRepetitionSettings.slice(1).join(" ")}`
+                      : editRepetitionType === "weekly"
+                      ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
                       : "月"
                   }`}
               </>
             )}
           </Typography>
           <Typography>
-            {newRepetition === true && (
+            {editRepetition === true && (
               <>次回の予定：{formatDate(nextSchedule)}</>
             )}
           </Typography>
@@ -592,16 +663,22 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             multiline
             variant="outlined"
             name="body"
-            value={newBody}
+            value={editBody}
             onChange={handleChange}
           />
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button variant="contained" onClick={handleSave} color="primary">
-              作成
+              保存
             </Button>
           </Stack>
+          <IconButton
+            onClick={() => onDelete(id)}
+            className="absolute right-0 bottom-0 m-8"
+          >
+            <DeleteIcon />
+          </IconButton>
         </li>
       </ul>
     </Box>
