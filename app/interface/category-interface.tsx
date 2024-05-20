@@ -1,6 +1,7 @@
 // Classificationの型定義
 export type categoryData = {
   id: string;
+  user_id: string;
   name: string;
   category_type: string;
 };
@@ -19,12 +20,10 @@ export const columnClassificationNames = {
 
 // Rowコンポーネントで使用する Props の型を定義
 export interface categoryRowProps {
-  row: categoryData; // row に Classification 型を適用
-  onSelect: (id: string) => void; // onSelect の型を指定
-  isSelected: boolean;
-  visibleColumns: { [key: string]: boolean }; // 適切な型を指定する必要があります
-  onUpdate: (updatedClassification: categoryData) => void;
-  onDelete: (id: string) => void; // onDelete の型を指定
+  category: categoryData; // row に Classification 型を適用
+  category_type: string; // onSelect の型を指定
+  onCategoryUpdate: (updatedCategory: categoryData) => void;
+  onCategoryDelete: (id: string) => void; // onDelete の型を指定
 }
 
 // Showコンポーネントで使用する Props の型を定義
@@ -32,7 +31,7 @@ export interface categoryShowProps {
   id: string;
   name: string;
   category_type: string;
-  onUpdate: (updatedClassification: categoryData) => void;
+  onUpdate: () => void;
   onClose: () => void;
   onDelete: (id: string) => void; // onDelete の型を指定
 }

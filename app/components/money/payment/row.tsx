@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import moment from "moment";
 
 import {
@@ -29,7 +29,7 @@ import {
 } from "@/interface/Payment-interface";
 
 import { PaymentShow } from "@/components/money/payment/show";
-// import { TransferShow } from "@/components/money/transfer/show";
+import { ClassificationShow } from "@/components/money/classification/show";
 
 // 表の行コンポーネント
 export const PaymentRow: React.FC<paymentRowProps> = (props) => {
@@ -38,13 +38,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     visibleColumns,
     onPaymentUpdate,
     onClassificationUpdate,
-    onCategoryUpdate,
     onPaymentDelete,
     onClassificationDelete,
-    onCategoryDelete,
-    // onTransferDelete,
   } = props;
-  const { classifications, categories } = useContext(moneyContext);
+  const { classifications } = useContext(moneyContext);
 
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [isEditClassificationModalOpen, setIsEditClassificationModalOpen] =
@@ -52,34 +49,30 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHistory, setIsHistory] = useState(0);
 
-  const handleOpenEditPaymentModal = () => {
+  useEffect(() => {
+    console.log(row);
+  }, []);
+
+  const handleOpenEditPaymentModal = (index: number) => {
     setIsEditPaymentModalOpen(true);
+    setIsHistory(index);
   };
 
   const handleCloseEditPaymentModal = () => {
     setIsEditPaymentModalOpen(false);
   };
 
-  const handleOpenEditClassificationModal = (index: number) => {
+  const handleOpenEditClassificationModal = () => {
     setIsEditClassificationModalOpen(true);
-    setIsHistory(index);
   };
 
   const handleCloseEditClassificationModal = () => {
     setIsEditClassificationModalOpen(false);
-    setIsHistory(0);
   };
 
   const formatAmountCommas = (number: number) => {
     const integerPart = Math.floor(number);
     const decimalPart = (number - integerPart).toFixed(0).slice(1);
-    console.log(typeof integerPart);
-    console.log(integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
-    console.log(
-      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
-        decimalPart +
-        "円"
-    );
     return (
       integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
       decimalPart +
@@ -246,7 +239,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           selectedClassification.id,
           selectedClassification.account_id,
           selectedClassification.name,
-          editedClassificationAmount
+          editedClassificationAmount,
+          "payment"
         );
 
         const editedClassification = {
@@ -255,6 +249,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           account_name: selectedClassification.account_name,
           name: selectedClassification.name,
           amount: editedClassificationAmount,
+          classification_type: "payment",
         };
 
         onClassificationUpdate(editedClassification);
@@ -272,21 +267,21 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
           <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
             <button
-              onClick={handleCloseEditPaymentModal}
+              onClick={handleCloseEditClassificationModal}
               className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
             >
               <CloseIcon />
             </button>
-            <classificationShow
+            <ClassificationShow
               id={row.id}
               account_id={row.classification_account_id}
               account_name={row.classification_account_name}
               name={row.classification_name}
               amount={row.classification_amount}
-              body={row.classification_body}
-              onUpdate={onPaymentUpdate}
-              onClose={handleCloseEditPaymentModal}
-              onDelete={onPaymentDelete}
+              classification_type={"payment"}
+              onUpdate={onClassificationUpdate}
+              onClose={handleCloseEditClassificationModal}
+              onDelete={onClassificationDelete}
             />
           </div>
         </div>
@@ -323,7 +318,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               onPaymentUpdate={onPaymentUpdate}
               onClassificationUpdate={onClassificationUpdate}
               onClose={handleCloseEditPaymentModal}
-              onDelete={handlePaymentDelete}
+              onPaymentDelete={handlePaymentDelete}
             />
           </div>
         </div>
@@ -352,24 +347,42 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
         </TableCell>
         {Object.keys(visibleColumns).map((key) =>
           visibleColumns[key] ? (
-            <TableCell key={key} component="th" scope="row">
+            <>
               {key === "classification_name" ? (
-                <button
-                  style={{
-                    color: "blue",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
-                  onClick={handleOpenEditClassificationModal}
-                >
-                  {row.classification_name}
-                </button>
+                <TableCell key={key} component="th" scope="row">
+                  {row.classification_classification_type === "payment" &&
+                  row.classification_name !== "分類なし" ? (
+                    <button
+                      style={{
+                        color: "blue",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      }}
+                      onClick={handleOpenEditClassificationModal}
+                    >
+                      {row.classification_name}
+                    </button>
+                  ) : (
+                    row.classification_name
+                  )}
+                </TableCell>
               ) : key === "classification_amount" ? (
-                formatAmountCommas(row.classification_amount)
+                <TableCell
+                  key={key}
+                  component="th"
+                  scope="row"
+                  className="pl-12"
+                >
+                  {row.classification_name !== "分類なし"
+                    ? formatAmountCommas(row.classification_amount)
+                    : ""}
+                </TableCell>
               ) : (
-                String(row[key as keyof displayPaymentData])
+                <TableCell key={key} component="th" scope="row">
+                  {String(row[key as keyof displayPaymentData])}
+                </TableCell>
               )}
-            </TableCell>
+            </>
           ) : null
         )}
         <TableCell align="right">
@@ -419,7 +432,9 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                               handleOpenEditPaymentModal(historyIndex)
                             }
                           >
-                            {historyRow.payment_category_name}
+                            {historyRow.payment_category_name !== null
+                              ? historyRow.payment_category_name
+                              : "なし"}
                           </button>
                         </TableCell>
                         <TableCell>

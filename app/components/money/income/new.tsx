@@ -23,15 +23,15 @@ import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
-import { paymentNew } from "@/lib/api/payment-api";
+import { incomeNew } from "@/lib/api/income-api";
 import { classificationEdit } from "@/lib/api/classification-api";
 
-import { paymentNewProps } from "@/interface/payment-interface";
+import { incomeNewProps } from "@/interface/income-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const PaymentNew: React.FC<paymentNewProps> = (props) => {
-  const { onPaymentAdd, onClassificationUpdate, onCategoryUpdate, onClose } =
+export const IncomeNew: React.FC<incomeNewProps> = (props) => {
+  const { onIncomeAdd, onClassificationUpdate, onCategoryUpdate, onClose } =
     props;
   const { classifications, categories } = useContext(moneyContext);
   const initialDateObject = new Date();
@@ -62,13 +62,13 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   const [newBody, setNewBody] = useState("");
 
-  const newPayment = async () => {
+  const newIncome = async () => {
     try {
       const editedClassificationAmount =
         parseFloat(String(newClassificationAmount)) +
         parseFloat(String(newAmount));
 
-      const paymentResponse = await paymentNew(
+      const incomeResponse = await incomeNew(
         newCategoryId,
         newClassificationId,
         newAmount,
@@ -83,21 +83,21 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         newClassificationAccountId,
         newClassificationName,
         editedClassificationAmount,
-        "payment"
+        "income"
       );
 
-      const newPayment = {
-        id: paymentResponse.id,
-        category_id: paymentResponse.category_id,
+      const newIncome = {
+        id: incomeResponse.id,
+        category_id: incomeResponse.category_id,
         category_name: newCategoryName,
-        classification_id: paymentResponse.classification_id,
+        classification_id: incomeResponse.classification_id,
         classification_name: newClassificationAccountName,
-        amount: paymentResponse.amount,
-        schedule: paymentResponse.schedule,
-        repetition: paymentResponse.repetition,
-        repetition_type: paymentResponse.repetition_type,
-        repetition_settings: paymentResponse.repetition_settings,
-        body: paymentResponse.body,
+        amount: incomeResponse.amount,
+        schedule: incomeResponse.schedule,
+        repetition: incomeResponse.repetition,
+        repetition_type: incomeResponse.repetition_type,
+        repetition_settings: incomeResponse.repetition_settings,
+        body: incomeResponse.body,
       };
       const newClassification = {
         id: newClassificationId,
@@ -105,13 +105,13 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         account_name: newClassificationAccountName,
         name: newClassificationName,
         amount: editedClassificationAmount,
-        classification_type: "payment",
+        classification_type: "income",
       };
 
       onClassificationUpdate(newClassification);
-      onPaymentAdd(newPayment);
+      onIncomeAdd(newIncome);
     } catch (error) {
-      console.error("Failed to create payment:", error);
+      console.error("Failed to create income:", error);
     }
   };
 
@@ -247,7 +247,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
 
   // 保存ボタン押したとき
   const handleSave = () => {
-    newPayment();
+    newIncome();
     onClose();
   };
 
@@ -476,7 +476,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             inputProps={{ "aria-label": "Without label" }}
           >
             {categories
-              .filter((category) => category.category_type === "payment")
+              .filter((category) => category.category_type === "income")
               .map((category) => (
                 <MenuItem key={category.id} value={category.id}>
                   {category.name}

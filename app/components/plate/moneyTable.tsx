@@ -10,7 +10,6 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableFooter,
   TableRow,
   Typography,
   Paper,
@@ -29,6 +28,7 @@ import { moneyContext } from "@/context/money-context";
 import { paymentGetData, paymentDelete } from "@/lib/api/payment-api";
 import {
   paymentData,
+  classificationNilPaymentData,
   columnPaymentNames,
   displayPaymentData,
   selectPaymentData,
@@ -40,11 +40,12 @@ import { incomeGetData, incomeDelete } from "@/lib/api/income-api";
 import {
   incomeData,
   columnIncomeNames,
+  classificationNilIncomeData,
   displayIncomeData,
   selectIncomeData,
 } from "@/interface/income-interface";
-// import { IncomeRow } from "@/components/income/row";
-// import { IncomeNew } from "@/components/income/new";
+import { IncomeRow } from "@/components/money/income/row";
+import { IncomeNew } from "@/components/money/income/new";
 
 import { accountGetData, accountDelete } from "@/lib/api/account-api";
 import { transferGetData, transferDelete } from "@/lib/api/transfer-api";
@@ -60,25 +61,16 @@ import { AccountNew } from "@/components/money/account/new";
 import { TransferNew } from "@/components/money/transfer/new";
 
 import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
-import {
-  categoryData,
-  // columnCategoryNames,
-  // selectCategoryData,
-} from "@/interface/category-interface";
-// import { CategoryRow } from "@/components/category/row";
-// import { CategoryNew } from "@/components/category/new";
+import { categoryData } from "@/interface/category-interface";
+import { CategoryRow } from "@/components/money/category/row";
+import { CategoryNew } from "@/components/money/category/new";
 
 import {
   classificationGetData,
   classificationDelete,
 } from "@/lib/api/classification-api";
-import {
-  classificationData,
-  columnClassificationNames,
-  selectClassificationData,
-} from "@/interface/classification-interface";
-// import { ClassificationRow } from "@/components/classification/row";
-// import { ClassificationNew } from "@/components/classification/new";
+import { classificationData } from "@/interface/classification-interface";
+import { ClassificationNew } from "@/components/money/classification/new";
 
 export const MoneyTable: React.FC = () => {
   const {
@@ -99,23 +91,20 @@ export const MoneyTable: React.FC = () => {
   const [rows, setRows] = useState<
     displayPaymentData[] | displayIncomeData[] | displayAccountData[]
   >([]);
-  // const [completedAccounts, setCompletedAccounts] = useState<accountData[]>([]);
-  // const [incompleteAccounts, setIncompleteAccounts] = useState<accountData[]>(
-  // []
-  // );
 
   const [filter, setFilter] = useState<"payment" | "income" | "account">(
-    "account"
+    "payment"
   );
 
-  // const [displayedAccounts, setDisplayedAccounts] = useState<accountData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isClassificationModalOpen, setIsClassificationModalOpen] =
+    useState(false);
+  const [isCategoryRowModalOpen, setIsCategoryRowModalOpen] = useState(false);
+  const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  // const [completedSelected, setCompletedSelected] = useState<string[]>([]);
-  // const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
   const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>(() => {
     if (filter === "payment") {
@@ -130,9 +119,9 @@ export const MoneyTable: React.FC = () => {
   const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
   }>({
-    classification_name: "default",
+    classification_name: "asc",
     classification_amount: "default",
-    classification_account: "default",
+    classification_account_name: "default",
   });
 
   const [columnSettings, setColumnSettings] = useState<{
@@ -148,7 +137,7 @@ export const MoneyTable: React.FC = () => {
       return {
         classification_name: true,
         classification_amount: true,
-        clsasfication_account: true,
+        clsasfication_account_name: true,
       };
     }
   });
@@ -157,9 +146,9 @@ export const MoneyTable: React.FC = () => {
     paymentGetData().then((data) => {
       setPayments(data);
     });
-    // incomeGetData().then((data) => {
-    //   setIncomes(data);
-    // });
+    incomeGetData().then((data) => {
+      setIncomes(data);
+    });
     accountGetData().then((data) => {
       setAccounts(data);
     });
@@ -180,20 +169,28 @@ export const MoneyTable: React.FC = () => {
       | displayPaymentData[]
       | displayIncomeData[]
       | displayAccountData[];
+    let classificationNilDatas:
+      | classificationNilPaymentData[]
+      | classificationNilIncomeData[];
+    let allRows:
+      | displayPaymentData[]
+      | displayIncomeData[]
+      | displayAccountData[];
     let updateOrder = {};
 
     if (filter === "payment") {
       initialColumnSettings = {
         classification_name: true,
         classification_amount: true,
-        clsasfication_account: true,
+        classification_account_name: true,
       };
       updateRows = classifications.map((cItem) => ({
         id: cItem.id,
         classification_account_id: cItem.account_id,
-        clsasfication_account: cItem.account_name,
+        classification_account_name: cItem.account_name,
         classification_name: cItem.name,
         classification_amount: cItem.amount,
+        classification_classification_type: cItem.classification_type,
         history: payments
           .filter((pItem) => pItem.classification_id === cItem.id)
           .map((pItem) => ({
@@ -210,10 +207,37 @@ export const MoneyTable: React.FC = () => {
             payment_body: pItem.body,
           })),
       }));
+      classificationNilDatas = payments
+        .filter((payment) => payment.classification_id === null)
+        .map((payment) => ({
+          payment_id: payment.id,
+          payment_category_id: payment.category_id,
+          payment_category_name: payment.category_name,
+          payment_classification_id: payment.classification_id,
+          payment_classification_name: payment.classification_name,
+          payment_amount: payment.amount,
+          payment_schedule: payment.schedule,
+          payment_repetition: payment.repetition,
+          payment_repetition_type: payment.repetition_type,
+          payment_repetition_settings: payment.repetition_settings,
+          payment_body: payment.body,
+        }));
+      allRows = [
+        ...updateRows,
+        {
+          id: "",
+          classification_account_id: "",
+          classification_account_name: "",
+          classification_name: "分類なし",
+          classification_amount: 0,
+          classification_classification_type: "payment",
+          history: classificationNilDatas,
+        },
+      ];
       updateOrder = {
-        classification_name: "default",
+        classification_name: "asc",
         classification_amount: "default",
-        classification_account: "default",
+        classification_account_name: "default",
       };
     } else if (filter === "income") {
       initialColumnSettings = {
@@ -224,10 +248,11 @@ export const MoneyTable: React.FC = () => {
       updateRows = classifications.map((cItem) => ({
         id: cItem.id,
         classification_account_id: cItem.account_id,
-        clsasfication_account: cItem.account_name,
+        classification_account_name: cItem.account_name,
         classification_name: cItem.name,
         classification_amount: cItem.amount,
-        history: payments
+        classification_classification_type: cItem.classification_type,
+        history: incomes
           .filter((iItem) => iItem.classification_id === cItem.id)
           .map((iItem) => ({
             income_id: iItem.id,
@@ -243,17 +268,44 @@ export const MoneyTable: React.FC = () => {
             income_body: iItem.body,
           })),
       }));
+      classificationNilDatas = incomes
+        .filter((income) => income.classification_id === null)
+        .map((income) => ({
+          income_id: income.id,
+          income_category_id: income.category_id,
+          income_category_name: income.category_name,
+          income_classification_id: income.classification_id,
+          income_classification_name: income.classification_name,
+          income_amount: income.amount,
+          income_schedule: income.schedule,
+          income_repetition: income.repetition,
+          income_repetition_type: income.repetition_type,
+          income_repetition_settings: income.repetition_settings,
+          income_body: income.body,
+        }));
+      allRows = [
+        ...updateRows,
+        {
+          id: "",
+          classification_account_id: "",
+          classification_account_name: "",
+          classification_name: "分類なし",
+          classification_amount: 0,
+          classification_classification_type: "income",
+          history: classificationNilDatas,
+        },
+      ];
       updateOrder = {
-        classification_name: "default",
+        classification_name: "asc",
         classification_amount: "default",
-        classification_account: "default",
+        classification_account_name: "default",
       };
     } else {
       initialColumnSettings = {
         account_name: true,
         account_amount: true,
       };
-      updateRows = accounts.map((aItem) => ({
+      allRows = accounts.map((aItem) => ({
         id: aItem.id,
         account_name: aItem.name,
         account_amount: aItem.amount,
@@ -275,11 +327,9 @@ export const MoneyTable: React.FC = () => {
       }));
       updateOrder = { account_name: "asc", account_amount: "default" };
     }
-
     setColumnSettings(initialColumnSettings);
-    setRows(updateRows);
+    setRows(allRows);
     setOrder(updateOrder);
-    setSelected([]);
   }, [
     filter,
     payments,
@@ -315,6 +365,30 @@ export const MoneyTable: React.FC = () => {
 
   const handleCloseNewTransferModal = () => {
     setIsTransferModalOpen(false);
+  };
+
+  const handleOpenNewClassificationModal = () => {
+    setIsClassificationModalOpen(true);
+  };
+
+  const handleCloseNewClassificationModal = () => {
+    setIsClassificationModalOpen(false);
+  };
+
+  const handleOpenCategoryRowModal = () => {
+    setIsCategoryRowModalOpen(true);
+  };
+
+  const handleCloseCategoryRowModal = () => {
+    setIsCategoryRowModalOpen(false);
+  };
+
+  const handleOpenNewCategoryModal = () => {
+    setIsNewCategoryModalOpen(true);
+  };
+
+  const handleCloseNewCategoryModal = () => {
+    setIsNewCategoryModalOpen(false);
   };
 
   const newPayment = (newData: paymentData) => {
@@ -402,7 +476,7 @@ export const MoneyTable: React.FC = () => {
     setIsEditing(true);
   };
 
-  const updateCategory = (updateCategory: categoryData) => {
+  const updateCategory = () => {
     // const updatedTransfers = transfers.map((transfer) => {
     //   if (transfer.id === updateTransfer.id) {
     //     return updateTransfer;
@@ -527,6 +601,17 @@ export const MoneyTable: React.FC = () => {
     return compare(orderBy);
   });
 
+  const unclassifiedRow = sortedRows.filter(
+    (row) => row.classification_name === "分類なし" && row.history.length > 0
+  );
+
+  const sortedAllRows = [
+    ...sortedRows.filter((row) => row.classification_name !== "分類なし"),
+    ...sortedRows.filter(
+      (row) => row.classification_name === "分類なし" && row.history.length > 0
+    ),
+  ];
+
   const handleAllSelect = () => {
     if (filter === "payment") {
       if (selected.length === rows.length) {
@@ -603,6 +688,20 @@ export const MoneyTable: React.FC = () => {
 
   const totalAccountMoney = calculateAccountAllMoney();
 
+  const calculateClassificationAllMoney = () => {
+    let allMoney = 0;
+    classifications
+      .filter(
+        (classification) => classification.classification_type === "payment"
+      )
+      .map((classification) => {
+        allMoney += parseFloat(String(classification.amount));
+      });
+    return allMoney;
+  };
+
+  const totalClassificationMoney = calculateClassificationAllMoney();
+
   return (
     <Box>
       {isNewModalOpen && filter === "payment" ? (
@@ -633,7 +732,12 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
+            <IncomeNew
+              onPaymentAdd={newIncome}
+              onClassificationUpdate={newClassification}
+              onCategoryUpdate={newCategory}
+              onClose={handleCloseNewModal}
+            />
           </div>
         </div>
       ) : (
@@ -672,6 +776,93 @@ export const MoneyTable: React.FC = () => {
         </div>
       )}
 
+      {isClassificationModalOpen &&
+        (filter === "payment" || filter === "income") && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 ">
+            <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+            <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+              <button
+                onClick={handleCloseNewClassificationModal}
+                className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+              >
+                <CloseIcon />
+              </button>
+              <ClassificationNew
+                onClassificationAdd={newClassification}
+                onClose={handleCloseNewClassificationModal}
+                classification_type={filter}
+              />
+            </div>
+          </div>
+        )}
+
+      {isCategoryRowModalOpen &&
+        (filter === "payment" || filter === "income") && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 ">
+            <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+            <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+              <button
+                onClick={handleCloseCategoryRowModal}
+                className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+              >
+                <CloseIcon />
+              </button>
+              <Button
+                fullWidth
+                variant="contained"
+                color="primary"
+                onClick={handleOpenNewCategoryModal}
+                sx={{ marginY: 5 }}
+              >
+                カテゴリ新規作成
+              </Button>
+              <TableContainer
+                component={Paper}
+                sx={{ maxHeight: 700, minWidth: 500 }}
+              >
+                <Table stickyHeader aria-label="collapsible table sticky table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>カテゴリ名</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  {categories
+                    .filter((category) => category.category_type === filter)
+                    .map((category) => (
+                      <CategoryRow
+                        key={category.id}
+                        category={category}
+                        category_type={filter}
+                        onCategoryUpdate={updateCategory}
+                        onCategoryDelete={deleteCategory}
+                      />
+                    ))}
+                </Table>
+              </TableContainer>
+            </div>
+          </div>
+        )}
+
+      {isNewCategoryModalOpen &&
+        (filter === "payment" || filter === "income") && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 ">
+            <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
+            <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
+              <button
+                onClick={handleCloseNewCategoryModal}
+                className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+              >
+                <CloseIcon />
+              </button>
+              <CategoryNew
+                onClassificationAdd={newCategory}
+                onClose={handleCloseNewCategoryModal}
+                classification_type={filter}
+              />
+            </div>
+          </div>
+        )}
+
       <Stack direction="row" alignItems="center">
         <Stack direction="row" alignItems="center" spacing={2}>
           <Button
@@ -705,7 +896,7 @@ export const MoneyTable: React.FC = () => {
           )}
         </Button>
         <div className="ml-auto">
-          {filter === "account" && (
+          {filter === "account" ? (
             <Button
               variant="outlined"
               color="primary"
@@ -713,7 +904,25 @@ export const MoneyTable: React.FC = () => {
             >
               自分口座への送金
             </Button>
+          ) : (
+            <>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleOpenCategoryRowModal}
+              >
+                カテゴリ一覧
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleOpenNewClassificationModal}
+              >
+                分類作成
+              </Button>
+            </>
           )}
+
           <Button
             variant="contained"
             color="primary"
@@ -776,7 +985,7 @@ export const MoneyTable: React.FC = () => {
             ) : null
           )}
       </Menu>
-      <TableContainer component={Paper} sx={{ maxHeight: 355 }}>
+      <TableContainer component={Paper} sx={{ maxHeight: 605 }}>
         <Table stickyHeader aria-label="collapsible table sticky table">
           <TableHead>
             <TableRow>
@@ -826,40 +1035,33 @@ export const MoneyTable: React.FC = () => {
           </TableHead>
           <TableBody>
             {filter === "payment"
-              ? sortedRows.map((row) => (
+              ? sortedAllRows.map((row) => (
                   <PaymentRow
                     key={row.id}
                     row={row}
-                    // onSelect={handleSelect}
-                    // isSelected={isSelected(row.id)}
                     visibleColumns={visibleColumns}
                     onPaymentUpdate={updatePayment}
                     onClassificationUpdate={updateClassification}
-                    onCategoryUpdate={updateCategory}
-                    onPaymnetDelete={deleteData}
+                    onPaymentDelete={deleteData}
                     onClassificationDelete={deleteClassification}
-                    onCategoryDelete={deleteCategory}
                   />
                 ))
               : filter === "income"
-              ? sortedRows.map((row) => (
-                  <AccountRow
+              ? sortedAllRows.map((row) => (
+                  <IncomeRow
                     key={row.id}
                     row={row}
-                    onSelect={handleSelect}
-                    isSelected={isSelected(row.id)}
                     visibleColumns={visibleColumns}
-                    onUpdate={updateAccount}
-                    onDelete={deleteData}
+                    onIncomeUpdate={updateIncome}
+                    onClassificationUpdate={updateClassification}
+                    onPaymentDelete={deleteData}
+                    onClassificationDelete={deleteClassification}
                   />
                 ))
               : sortedRows.map((row) => (
                   <AccountRow
                     key={row.id}
                     row={row}
-                    // onSelect={handleSelect}
-                    // onAllSelect={handleAllSelect}
-                    // isSelected={isSelected(row.history.transfer_id)}
                     visibleColumns={visibleColumns}
                     onAccountUpdate={updateAccount}
                     onTransferUpdate={updateTransfer}
@@ -874,17 +1076,31 @@ export const MoneyTable: React.FC = () => {
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell align="center">
-                {filter === "payment" ? (
-                  <Typography>今月合計： 1</Typography>
-                ) : filter === "income" ? (
-                  <Typography>今月合計： 1</Typography>
-                ) : (
+              {filter === "payment" ? (
+                <>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell>
+                    <Typography>
+                      今月合計： {formatAmountCommas(totalClassificationMoney)}
+                    </Typography>
+                  </TableCell>
+                </>
+              ) : filter === "income" ? (
+                <>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell>
+                    <Typography>今月合計： 1</Typography>
+                  </TableCell>
+                </>
+              ) : (
+                <TableCell align="center">
                   <Typography>
                     合計金額： {formatAmountCommas(totalAccountMoney)}
                   </Typography>
-                )}
-              </TableCell>
+                </TableCell>
+              )}
             </TableRow>
           </TableBody>
         </Table>

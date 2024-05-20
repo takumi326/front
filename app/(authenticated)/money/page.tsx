@@ -74,7 +74,7 @@ const Money: React.FC = () => {
             </div>
           </div>
           <div className="pr-10">
-            <div className="flex">
+            {/* <div className="flex">
               <div>
                 <p className="font-bold text-center">収入一覧</p>
                 <Doughnut
@@ -108,7 +108,7 @@ const Money: React.FC = () => {
                   }}
                 />
               </div>
-            </div>
+            </div>  */}
             <div className="pr-10 pt-5">
               <MoneyTable />
             </div>

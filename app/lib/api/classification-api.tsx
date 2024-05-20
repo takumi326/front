@@ -22,7 +22,8 @@ export const classificationGetData = async () => {
 export const classificationNew = async (
   account_id: string,
   name: string,
-  amount: number
+  amount: number,
+  classification_type: string
 ): Promise<classificationData> => {
   try {
     const response = await axios.post(
@@ -32,6 +33,7 @@ export const classificationNew = async (
           account_id: account_id,
           name: name,
           amount: amount,
+          classification_type: classification_type,
         },
       },
       {
@@ -54,7 +56,8 @@ export const classificationEdit = async (
   id: string,
   account_id: string,
   name: string,
-  amount: number
+  amount: number,
+  classification_type: string
 ) => {
   try {
     const response = await axios.patch(
@@ -64,6 +67,7 @@ export const classificationEdit = async (
           account_id: account_id,
           name: name,
           amount: amount,
+          classification_type: classification_type,
         },
       },
       {
