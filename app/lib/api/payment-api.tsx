@@ -12,7 +12,6 @@ export const paymentGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");

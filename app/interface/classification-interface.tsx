@@ -5,6 +5,7 @@ export type classificationData = {
   account_name: string;
   name: string;
   amount: number;
+  classification_type: string;
 };
 
 // ヘッダーに表示するClassificationの型定義
@@ -38,6 +39,7 @@ export interface classificationShowProps {
   account_name: string;
   name: string;
   amount: number;
+  classification_type: string;
   onUpdate: (updatedClassification: classificationData) => void;
   onClose: () => void;
   onDelete: (id: string) => void; // onDelete の型を指定
@@ -45,6 +47,7 @@ export interface classificationShowProps {
 
 // Newコンポーネントで使用する Props の型を定義
 export interface classificationNewProps {
-  onAdd: (newClassification: classificationData) => void;
+  onClassificationAdd: (newClassification: classificationData) => void;
   onClose: () => void;
+  classification_type: string;
 }

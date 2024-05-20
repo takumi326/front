@@ -27,26 +27,27 @@ import { moneyContext } from "@/context/money-context";
 import { paymentEdit } from "@/lib/api/payment-api";
 import { classificationEdit } from "@/lib/api/classification-api";
 
-import { paymentNewProps } from "@/interface/payment-interface";
+import { paymentShowProps } from "@/interface/payment-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const PaymentShow: React.FC<transferShowProps> = (props) => {
+export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   const {
     id,
-    before_account_id,
-    after_account_id,
-    after_account_name,
+    category_id,
+    category_name,
+    classification_id,
+    classification_name,
     amount,
     schedule,
     repetition,
     repetition_type,
     repetition_settings,
     body,
-    onAccountUpdate,
-    onTransferUpdate,
+    onPaymentUpdate,
+    onClassificationUpdate,
     onClose,
-    onDelete,
+    onPaymentDelete,
   } = props;
   const { classifications, categories } = useContext(moneyContext);
 
@@ -61,37 +62,37 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
-  const initialBeforeAccountId = before_account_id;
-  const [initialBeforeAccountName, setInitialBeforeAccountName] = useState("");
-  const [initialBeforeAccountAmount, setInitialBeforeAccountAmount] =
-    useState(0);
-  const [initialBeforeAccountBody, setInitialBeforeAccountBody] = useState("");
-  const initialAfterAccountId = after_account_id;
-  const initialAfterAccountName = after_account_name;
-  const [initialAfterAccountAmount, setInitialAfterAccountAmount] = useState(0);
-  const [initialAfterAccountBody, setInitialAfterAccountBody] = useState("");
+  const initialClassificationId = classification_id;
+  const [initialClassificationAccountId, setInitialClassificationAccountId] =
+    useState("");
+  const [
+    initialClassificationAccountName,
+    setInitialClassificationAccountName,
+  ] = useState("");
+  const initialClassificationName = classification_name;
+  const [initialClassificationAmount, setInitialClassificationAmount] =
+    useState<number>(0);
+  const initialAmount = amount;
 
-  const [editBeforeAccountId, setEditBeforeAccountId] =
-    useState(before_account_id);
-  const [editBeforeAccountName, setEditBeforeAccountName] = useState("");
-  const [editBeforeAccountAmount, setEditBeforeAccountAmount] = useState(0);
-  const [editBeforeAccountBody, setEditBeforeAccountBody] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState(category_id);
+  const [editCategoryName, setEditCategoryName] = useState(category_name);
 
-  const [editAfterAccountId, setEditAfterAccountId] =
-    useState(after_account_id);
-  const [editAfterAccountName, setEditAfterAccountName] =
-    useState(after_account_name);
-  const [editAfterAccountAmount, setEditAfterAccountAmount] = useState(0);
-  const [editAfterAccountBody, setEditAfterAccountBody] = useState("");
+  const [editClassificationId, setEditClassificationId] =
+    useState(classification_id);
+  const [editClassificationAccountId, setEditClassificationAccountId] =
+    useState("");
+  const [editClassificationAccountName, setEditClassificationAccountName] =
+    useState("");
+  const [editClassificationName, setEditClassificationName] =
+    useState(classification_name);
+  const [editClassificationAmount, setEditClassificationAmount] =
+    useState<number>(0);
 
   const [editAmount, setEditAmount] = useState(amount);
-  const initialAmount = amount;
   const [editAmountString, setEditAmountString] = useState<string>(
     String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   );
   const [editAmountError, setEditAmountError] = useState<boolean>(false);
-  const [editAmountOverError, setEditAmountOverError] =
-    useState<boolean>(false);
   const [editSchedule, setEditSchedule] = useState<Date>(schedule);
   const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
   const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
@@ -100,78 +101,181 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
   const [editBody, setEditBody] = useState(body);
 
   useEffect(() => {
-    const selectedBeforeAccount = accounts.find(
-      (account) => account.id === initialBeforeAccountId
+    const selectedClassification = classifications.find(
+      (classification) => classification.id === initialClassificationId
     );
-    const selectedAfterAccount = accounts.find(
-      (account) => account.id === initialAfterAccountId
-    );
-    if (selectedBeforeAccount && selectedAfterAccount) {
-      setInitialBeforeAccountName(selectedBeforeAccount.name);
-      setInitialBeforeAccountAmount(selectedBeforeAccount.amount);
-      setInitialBeforeAccountBody(selectedBeforeAccount.body);
+    if (selectedClassification) {
+      setInitialClassificationAccountId(selectedClassification.account_id);
+      setInitialClassificationAccountName(selectedClassification.account_name);
+      setInitialClassificationAmount(selectedClassification.amount);
 
-      setInitialAfterAccountAmount(selectedAfterAccount.amount);
-      setInitialAfterAccountBody(selectedAfterAccount.body);
-
-      console.log(typeof selectedBeforeAccount.amount);
-      setEditBeforeAccountName(selectedBeforeAccount.name);
-      setEditBeforeAccountAmount(selectedBeforeAccount.amount);
-      setEditBeforeAccountBody(selectedBeforeAccount.body);
-
-      setEditAfterAccountAmount(selectedAfterAccount.amount);
-      setEditAfterAccountBody(selectedAfterAccount.body);
+      setEditClassificationAccountId(selectedClassification.account_id);
+      setEditClassificationAccountName(selectedClassification.account_name);
+      setEditClassificationAmount(selectedClassification.amount);
     }
   }, []);
 
-  const editTransfer = async (id: string) => {
+  const editPayment = async (id: string) => {
     try {
-      const editedClassificationAmount =
-        parseFloat(String(newClassificationAmount)) +
-        parseFloat(String(newAmount));
+      console.log(editRepetitionSettings);
+      if (editClassificationName === null) {
+        await paymentEdit(
+          id,
+          editCategoryId,
+          editClassificationId,
+          editAmount,
+          editSchedule,
+          editRepetition,
+          editRepetitionType,
+          editRepetitionSettings,
+          editBody
+        );
 
-      const paymentResponse = await paymentNew(
-        newCategoryId,
-        newClassificationId,
-        newAmount,
-        newSchedule,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-      await classificationEdit(
-        newClassificationId,
-        newClassificationAccountId,
-        newClassificationName,
-        editedClassificationAmount
-      );
+        const editPayment = {
+          id: id,
+          category_id: editCategoryId,
+          category_name: editCategoryName,
+          classification_id: editClassificationId,
+          classification_name: editClassificationName,
+          amount: editAmount,
+          schedule: editSchedule,
+          repetition: editRepetition,
+          repetition_type: editRepetitionType,
+          repetition_settings: editRepetitionSettings,
+          body: editBody,
+        };
 
-      const newPayment = {
-        id: paymentResponse.id,
-        category_id: paymentResponse.category_id,
-        category_name: newCategoryName,
-        classification_id: paymentResponse.classification_id,
-        classification_name: newClassificationAccountName,
-        amount: paymentResponse.amount,
-        schedule: paymentResponse.schedule,
-        repetition: paymentResponse.repetition,
-        repetition_type: paymentResponse.repetition_type,
-        repetition_settings: paymentResponse.repetition_settings,
-        body: paymentResponse.body,
-      };
-      const newClassification = {
-        id: newClassificationId,
-        account_id: newClassificationAccountId,
-        account_name: newClassificationAccountName,
-        name: newClassificationName,
-        amount: editedClassificationAmount,
-      };
+        onPaymentUpdate(editPayment);
+      } else {
+        if (initialClassificationName !== editClassificationName) {
+          const oldClassificationAmount = Math.max(
+            0,
+            parseFloat(String(initialClassificationAmount)) -
+              parseFloat(String(initialAmount))
+          );
+          const newClassificationAmount = Math.max(
+            0,
+            parseFloat(String(editClassificationAmount)) +
+              parseFloat(String(editAmount))
+          );
 
-      onClassificationUpdate(newClassification);
-      onPaymentAdd(newPayment);
+          await paymentEdit(
+            id,
+            editCategoryId,
+            editClassificationId,
+            editAmount,
+            editSchedule,
+            editRepetition,
+            editRepetitionType,
+            editRepetitionSettings,
+            editBody
+          );
+          if (initialClassificationName !== null) {
+            await classificationEdit(
+              initialClassificationId,
+              initialClassificationAccountId,
+              initialClassificationName,
+              oldClassificationAmount,
+              "payment"
+            );
+          }
+          await classificationEdit(
+            editClassificationId,
+            editClassificationAccountId,
+            editClassificationName,
+            newClassificationAmount,
+            "payment"
+          );
+
+          const editPayment = {
+            id: id,
+            category_id: editCategoryId,
+            category_name: editCategoryName,
+            classification_id: editClassificationId,
+            classification_name: editClassificationName,
+            amount: editAmount,
+            schedule: editSchedule,
+            repetition: editRepetition,
+            repetition_type: editRepetitionType,
+            repetition_settings: editRepetitionSettings,
+            body: editBody,
+          };
+          const oldClassification = {
+            id: initialClassificationId,
+            account_id: initialClassificationAccountId,
+            account_name: initialClassificationAccountName,
+            name: initialClassificationName,
+            amount: oldClassificationAmount,
+            classification_type: "payment",
+          };
+          const newClassification = {
+            id: editClassificationId,
+            account_id: editClassificationAccountId,
+            account_name: editClassificationAccountName,
+            name: editClassificationName,
+            amount: newClassificationAmount,
+            classification_type: "payment",
+          };
+
+          onClassificationUpdate(oldClassification);
+          onClassificationUpdate(newClassification);
+          onPaymentUpdate(editPayment);
+        } else if (initialClassificationName === editClassificationName) {
+          const newClassificationAmount = Math.max(
+            0,
+            parseFloat(String(editClassificationAmount)) -
+              parseFloat(String(initialAmount)) +
+              parseFloat(String(editAmount))
+          );
+
+          await paymentEdit(
+            id,
+            editCategoryId,
+            editClassificationId,
+            editAmount,
+            editSchedule,
+            editRepetition,
+            editRepetitionType,
+            editRepetitionSettings,
+            editBody
+          );
+
+          await classificationEdit(
+            editClassificationId,
+            editClassificationAccountId,
+            editClassificationName,
+            newClassificationAmount,
+            "payment"
+          );
+
+          const editPayment = {
+            id: id,
+            category_id: editCategoryId,
+            category_name: editCategoryName,
+            classification_id: editClassificationId,
+            classification_name: editClassificationName,
+            amount: editAmount,
+            schedule: editSchedule,
+            repetition: editRepetition,
+            repetition_type: editRepetitionType,
+            repetition_settings: editRepetitionSettings,
+            body: editBody,
+          };
+          const newClassification = {
+            id: editClassificationId,
+            account_id: editClassificationAccountId,
+            account_name: editClassificationAccountName,
+            name: editClassificationName,
+            amount: newClassificationAmount,
+            classification_type: "payment",
+          };
+
+          onClassificationUpdate(newClassification);
+          onPaymentUpdate(editPayment);
+        }
+      }
     } catch (error) {
-      console.error("Failed to edit transfer:", error);
+      console.error("Failed to edit payment:", error);
     }
   };
 
@@ -181,22 +285,7 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
     } else {
       setEditAmountError(true);
     }
-
-    if (
-      parseFloat(String(editBeforeAccountAmount)) >=
-      parseFloat(String(editAmount))
-    ) {
-      console.log(123456789);
-      console.log(typeof editBeforeAccountAmount);
-      console.log(typeof editAmount);
-      setEditAmountOverError(false);
-    } else {
-      console.log(987654321);
-      console.log(typeof editBeforeAccountAmount);
-      console.log(typeof editAmount);
-      setEditAmountOverError(true);
-    }
-  }, [editBeforeAccountAmount, editAmount]);
+  }, [editAmount]);
 
   // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -225,36 +314,37 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
-  const handleBeforeAccountChange = (
+  const handleClassificationChange = (
     event: ChangeEvent<{ value: unknown }>
   ) => {
     const value = event.target.value as string;
-    setEditBeforeAccountId(value);
-    console.log(editBeforeAccountAmount);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setEditBeforeAccountName(selectedAccount.name);
-      setEditBeforeAccountAmount(selectedAccount.amount);
-      setEditBeforeAccountBody(selectedAccount.body);
+    setEditClassificationId(value);
+    const selectedClassification = classifications.find(
+      (classification) => classification.id === value
+    );
+    if (selectedClassification) {
+      setEditClassificationAccountId(selectedClassification.account_id);
+      setEditClassificationAccountName(selectedClassification.account_name);
+      setEditClassificationName(selectedClassification.name);
+      setEditClassificationAmount(selectedClassification.amount);
     } else {
-      setEditBeforeAccountName("");
-      setEditBeforeAccountAmount(0);
-      setEditBeforeAccountBody("");
+      setEditClassificationAccountId("");
+      setEditClassificationAccountName("");
+      setEditClassificationName("");
+      setEditClassificationAmount(0);
     }
   };
 
-  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleCategoryChange = (event: ChangeEvent<{ value: unknown }>) => {
     const value = event.target.value as string;
-    setEditAfterAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setEditAfterAccountName(selectedAccount.name);
-      setEditAfterAccountAmount(selectedAccount.amount);
-      setEditAfterAccountBody(selectedAccount.body);
+    setEditCategoryId(value);
+    const selectedCategory = categories.find(
+      (category) => category.id === value
+    );
+    if (selectedCategory) {
+      setEditCategoryName(selectedCategory.name);
     } else {
-      setEditAfterAccountName("");
-      setEditAfterAccountAmount(0);
-      setEditAfterAccountBody("");
+      setEditCategoryName("");
     }
   };
 
@@ -317,7 +407,7 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
   // 保存ボタン押したとき
   const handleSave = () => {
     if (editAmount > 0) {
-      editTransfer(id);
+      editPayment(id);
       onClose();
     } else {
       setEditAmountError(true);
@@ -524,54 +614,38 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
 
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">送金元口座</Typography>
+          <Typography variant="subtitle1">分類</Typography>
           <Select
             fullWidth
-            value={editBeforeAccountId}
-            onChange={handleBeforeAccountChange}
+            value={editClassificationId}
+            onChange={handleClassificationChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== editAfterAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
-          </Select>
-          {accounts
-            .filter((account) => account.id === editBeforeAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
-              </Typography>
+            {classifications.map((classification) => (
+              <MenuItem key={classification.id} value={classification.id}>
+                {classification.name}
+              </MenuItem>
             ))}
+          </Select>
         </li>
         <li className="pt-5">
-          <Typography variant="subtitle1">送金先口座</Typography>
+          <Typography variant="subtitle1">カテゴリ</Typography>
           <Select
             fullWidth
-            value={editAfterAccountId}
-            onChange={handleAfterAccountChange}
+            value={editCategoryId}
+            onChange={handleCategoryChange}
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== editBeforeAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
+            {categories
+              .filter((category) => category.category_type === "payment")
+              .map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
                 </MenuItem>
               ))}
           </Select>
-          {accounts
-            .filter((account) => account.id === editAfterAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
-              </Typography>
-            ))}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
@@ -586,25 +660,16 @@ export const PaymentShow: React.FC<transferShowProps> = (props) => {
                 pattern: "[0-9]*",
               }}
             />
-
             <span>円</span>
           </div>
         </li>
         <li>
-          <Typography align="left" variant="subtitle1">
-            {editAmountError && (
-              <Typography align="left" variant="subtitle1">
-                金額を0より上にしてください
-              </Typography>
-            )}
-            {editAmountOverError && (
-              <Typography align="left" variant="subtitle1">
-                送金元口座に入っているお金以下にして下さい
-              </Typography>
-            )}
-          </Typography>
+          {editAmountError && (
+            <Typography align="left" variant="subtitle1">
+              金額を0以上にして下さい
+            </Typography>
+          )}
         </li>
-
         <li className="pt-5">
           <Typography variant="subtitle1">予定</Typography>
           <Box
