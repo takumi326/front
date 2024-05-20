@@ -31,8 +31,7 @@ import { paymentNewProps } from "@/interface/payment-interface";
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PaymentNew: React.FC<paymentNewProps> = (props) => {
-  const { onPaymentAdd, onClassificationUpdate, onCategoryUpdate, onClose } =
-    props;
+  const { onPaymentAdd, onClassificationUpdate, onClose } = props;
   const { classifications, categories } = useContext(moneyContext);
   const initialDateObject = new Date();
 
@@ -459,11 +458,16 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {classifications.map((classification) => (
-              <MenuItem key={classification.id} value={classification.id}>
-                {classification.name}
-              </MenuItem>
-            ))}
+            {classifications
+              .filter(
+                (classification) =>
+                  classification.classification_type === "payment"
+              )
+              .map((classification) => (
+                <MenuItem key={classification.id} value={classification.id}>
+                  {classification.name}
+                </MenuItem>
+              ))}
           </Select>
         </li>
         <li className="pt-5">
