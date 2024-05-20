@@ -31,8 +31,7 @@ import { incomeNewProps } from "@/interface/income-interface";
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const IncomeNew: React.FC<incomeNewProps> = (props) => {
-  const { onIncomeAdd, onClassificationUpdate, onCategoryUpdate, onClose } =
-    props;
+  const { onIncomeAdd, onClassificationUpdate, onClose } = props;
   const { classifications, categories } = useContext(moneyContext);
   const initialDateObject = new Date();
 
@@ -459,11 +458,16 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {classifications.map((classification) => (
-              <MenuItem key={classification.id} value={classification.id}>
-                {classification.name}
-              </MenuItem>
-            ))}
+            {classifications
+              .filter(
+                (classification) =>
+                  classification.classification_type === "income"
+              )
+              .map((classification) => (
+                <MenuItem key={classification.id} value={classification.id}>
+                  {classification.name}
+                </MenuItem>
+              ))}
           </Select>
         </li>
         <li className="pt-5">

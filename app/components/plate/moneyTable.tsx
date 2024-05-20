@@ -184,29 +184,33 @@ export const MoneyTable: React.FC = () => {
         classification_amount: true,
         classification_account_name: true,
       };
-      updateRows = classifications.map((cItem) => ({
-        id: cItem.id,
-        classification_account_id: cItem.account_id,
-        classification_account_name: cItem.account_name,
-        classification_name: cItem.name,
-        classification_amount: cItem.amount,
-        classification_classification_type: cItem.classification_type,
-        history: payments
-          .filter((pItem) => pItem.classification_id === cItem.id)
-          .map((pItem) => ({
-            payment_id: pItem.id,
-            payment_category_id: pItem.category_id,
-            payment_category_name: pItem.category_name,
-            payment_classification_id: pItem.classification_id,
-            payment_classification_name: pItem.classification_name,
-            payment_amount: pItem.amount,
-            payment_schedule: pItem.schedule,
-            payment_repetition: pItem.repetition,
-            payment_repetition_type: pItem.repetition_type,
-            payment_repetition_settings: pItem.repetition_settings,
-            payment_body: pItem.body,
-          })),
-      }));
+      updateRows = classifications
+        .filter(
+          (classification) => classification.classification_type === "payment"
+        )
+        .map((cItem) => ({
+          id: cItem.id,
+          classification_account_id: cItem.account_id,
+          classification_account_name: cItem.account_name,
+          classification_name: cItem.name,
+          classification_amount: cItem.amount,
+          classification_classification_type: cItem.classification_type,
+          history: payments
+            .filter((pItem) => pItem.classification_id === cItem.id)
+            .map((pItem) => ({
+              payment_id: pItem.id,
+              payment_category_id: pItem.category_id,
+              payment_category_name: pItem.category_name,
+              payment_classification_id: pItem.classification_id,
+              payment_classification_name: pItem.classification_name,
+              payment_amount: pItem.amount,
+              payment_schedule: pItem.schedule,
+              payment_repetition: pItem.repetition,
+              payment_repetition_type: pItem.repetition_type,
+              payment_repetition_settings: pItem.repetition_settings,
+              payment_body: pItem.body,
+            })),
+        }));
       classificationNilDatas = payments
         .filter((payment) => payment.classification_id === null)
         .map((payment) => ({
@@ -243,31 +247,35 @@ export const MoneyTable: React.FC = () => {
       initialColumnSettings = {
         classification_name: true,
         classification_amount: true,
-        clsasfication_account: true,
+        classification_account_name: true,
       };
-      updateRows = classifications.map((cItem) => ({
-        id: cItem.id,
-        classification_account_id: cItem.account_id,
-        classification_account_name: cItem.account_name,
-        classification_name: cItem.name,
-        classification_amount: cItem.amount,
-        classification_classification_type: cItem.classification_type,
-        history: incomes
-          .filter((iItem) => iItem.classification_id === cItem.id)
-          .map((iItem) => ({
-            income_id: iItem.id,
-            income_category_id: iItem.category_id,
-            income_category_name: iItem.category_name,
-            income_classification_id: iItem.classification_id,
-            income_classification_name: iItem.classification_name,
-            income_amount: iItem.amount,
-            income_schedule: iItem.schedule,
-            income_repetition: iItem.repetition,
-            income_repetition_type: iItem.repetition_type,
-            income_repetition_settings: iItem.repetition_settings,
-            income_body: iItem.body,
-          })),
-      }));
+      updateRows = classifications
+        .filter(
+          (classification) => classification.classification_type === "income"
+        )
+        .map((cItem) => ({
+          id: cItem.id,
+          classification_account_id: cItem.account_id,
+          classification_account_name: cItem.account_name,
+          classification_name: cItem.name,
+          classification_amount: cItem.amount,
+          classification_classification_type: cItem.classification_type,
+          history: incomes
+            .filter((pItem) => pItem.classification_id === cItem.id)
+            .map((pItem) => ({
+              income_id: pItem.id,
+              income_category_id: pItem.category_id,
+              income_category_name: pItem.category_name,
+              income_classification_id: pItem.classification_id,
+              income_classification_name: pItem.classification_name,
+              income_amount: pItem.amount,
+              income_schedule: pItem.schedule,
+              income_repetition: pItem.repetition,
+              income_repetition_type: pItem.repetition_type,
+              income_repetition_settings: pItem.repetition_settings,
+              income_body: pItem.body,
+            })),
+        }));
       classificationNilDatas = incomes
         .filter((income) => income.classification_id === null)
         .map((income) => ({
@@ -690,13 +698,23 @@ export const MoneyTable: React.FC = () => {
 
   const calculateClassificationAllMoney = () => {
     let allMoney = 0;
-    classifications
-      .filter(
-        (classification) => classification.classification_type === "payment"
-      )
-      .map((classification) => {
-        allMoney += parseFloat(String(classification.amount));
-      });
+    if (filter === "payment") {
+      classifications
+        .filter(
+          (classification) => classification.classification_type === "payment"
+        )
+        .map((classification) => {
+          allMoney += parseFloat(String(classification.amount));
+        });
+    } else {
+      classifications
+        .filter(
+          (classification) => classification.classification_type === "income"
+        )
+        .map((classification) => {
+          allMoney += parseFloat(String(classification.amount));
+        });
+    }
     return allMoney;
   };
 
@@ -1091,7 +1109,9 @@ export const MoneyTable: React.FC = () => {
                   <TableCell></TableCell>
                   <TableCell></TableCell>
                   <TableCell>
-                    <Typography>今月合計： 1</Typography>
+                    <Typography>
+                      今月合計： {formatAmountCommas(totalClassificationMoney)}
+                    </Typography>
                   </TableCell>
                 </>
               ) : (

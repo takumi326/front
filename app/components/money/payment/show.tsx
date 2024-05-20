@@ -622,11 +622,16 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {classifications.map((classification) => (
-              <MenuItem key={classification.id} value={classification.id}>
-                {classification.name}
-              </MenuItem>
-            ))}
+            {classifications
+              .filter(
+                (classification) =>
+                  classification.classification_type === "payment"
+              )
+              .map((classification) => (
+                <MenuItem key={classification.id} value={classification.id}>
+                  {classification.name}
+                </MenuItem>
+              ))}
           </Select>
         </li>
         <li className="pt-5">

@@ -107,7 +107,11 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
           />
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">支払い口座</Typography>
+          {classification_type === "payment" ? (
+            <Typography variant="subtitle1">支払い口座</Typography>
+          ) : (
+            <Typography variant="subtitle1">振込用口座</Typography>
+          )}
           <Select
             fullWidth
             value={newAccountId}

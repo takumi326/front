@@ -74,7 +74,7 @@ export type selectIncomeData = {
 export const columnIncomeNames = {
   classification_name: "分類",
   classification_amount: "合計金額",
-  classification_account_name: "支払い口座",
+  classification_account_name: "振込用口座",
 };
 
 // Rowコンポーネントで使用する Props の型を定義
