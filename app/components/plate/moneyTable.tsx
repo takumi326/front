@@ -86,16 +86,14 @@ export const MoneyTable: React.FC = () => {
     setAccounts,
     transfers,
     setTransfers,
+    filter,
+    setFilter,
   } = useContext(moneyContext);
 
   const [rows, setRows] = useState<
     displayPaymentData[] | displayIncomeData[] | displayAccountData[]
   >([]);
-
-  const [filter, setFilter] = useState<"payment" | "income" | "account">(
-    "payment"
-  );
-
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -751,7 +749,7 @@ export const MoneyTable: React.FC = () => {
               <CloseIcon />
             </button>
             <IncomeNew
-              onPaymentAdd={newIncome}
+              onIncomeAdd={newIncome}
               onClassificationUpdate={newClassification}
               onCategoryUpdate={newCategory}
               onClose={handleCloseNewModal}
@@ -1007,17 +1005,6 @@ export const MoneyTable: React.FC = () => {
         <Table stickyHeader aria-label="collapsible table sticky table">
           <TableHead>
             <TableRow>
-              {/* <TableCell padding="checkbox">
-                <Checkbox
-                  indeterminate={
-                    selected.length > 0 && selected.length < rows.length
-                  }
-                  checked={
-                    selected.length > 0 && selected.length === rows.length
-                  }
-                  onChange={handleSelectAllClick}
-                />
-              </TableCell> */}
               <TableCell />
               {Object.keys(visibleColumns).map((key) => (
                 <TableCell key={key}>
@@ -1072,7 +1059,7 @@ export const MoneyTable: React.FC = () => {
                     visibleColumns={visibleColumns}
                     onIncomeUpdate={updateIncome}
                     onClassificationUpdate={updateClassification}
-                    onPaymentDelete={deleteData}
+                    onIncomeDelete={deleteData}
                     onClassificationDelete={deleteClassification}
                   />
                 ))

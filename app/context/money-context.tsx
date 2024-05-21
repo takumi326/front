@@ -23,6 +23,10 @@ export const moneyContext = createContext<{
   setAccounts: React.Dispatch<React.SetStateAction<accountData[]>>;
   transfers: transferData[];
   setTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
+  filter: string;
+  setFilter: React.Dispatch<
+    React.SetStateAction<"payment" | "income" | "account">
+  >;
 }>({
   classifications: [],
   setClassifications: () => {},
@@ -36,6 +40,8 @@ export const moneyContext = createContext<{
   setAccounts: () => {},
   transfers: [],
   setTransfers: () => {},
+  filter: "payment",
+  setFilter: () => {},
 });
 
 export const MoneyProvider: React.FC = ({ children }) => {
@@ -47,6 +53,9 @@ export const MoneyProvider: React.FC = ({ children }) => {
   const [incomes, setIncomes] = useState<incomeData[]>([]);
   const [accounts, setAccounts] = useState<accountData[]>([]);
   const [transfers, setTransfers] = useState<transferData[]>([]);
+  const [filter, setFilter] = useState<"payment" | "income" | "account">(
+    "payment"
+  );
 
   return (
     <moneyContext.Provider
@@ -63,6 +72,8 @@ export const MoneyProvider: React.FC = ({ children }) => {
         setAccounts,
         transfers,
         setTransfers,
+        filter,
+        setFilter,
       }}
     >
       {children}

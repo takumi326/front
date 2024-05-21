@@ -56,9 +56,9 @@ export const Header: React.FC = () => {
         <ul className="ml-64 grid grid-cols-5 gap-24">
           {authenticated ? (
             <>
-              <li className="">
+              {/* <li className="">
                 <Link href={`/mypage`}>MYページ</Link>
-              </li>
+              </li> */}
               <li className="">
                 <Link href="/money">お金管理</Link>
               </li>
