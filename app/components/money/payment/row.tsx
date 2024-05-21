@@ -230,30 +230,35 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       (classification) => classification.id === row.id
     );
     try {
-      if (selectedClassification) {
-        const editedClassificationAmount =
-          parseFloat(String(selectedClassification.amount)) -
-          parseFloat(String(row.history[index].payment_amount));
-
-        await classificationEdit(
-          selectedClassification.id,
-          selectedClassification.account_id,
-          selectedClassification.name,
-          editedClassificationAmount,
-          "payment"
-        );
-
-        const editedClassification = {
-          id: selectedClassification.id,
-          account_id: selectedClassification.account_id,
-          account_name: selectedClassification.account_name,
-          name: selectedClassification.name,
-          amount: editedClassificationAmount,
-          classification_type: "payment",
-        };
-
-        onClassificationUpdate(editedClassification);
+      if (row.classification_name === "分類なし") {
         onPaymentDelete(id);
+      } else {
+        if (selectedClassification) {
+          console.log(1);
+          const editedClassificationAmount =
+            parseFloat(String(selectedClassification.amount)) -
+            parseFloat(String(row.history[index].payment_amount));
+
+          await classificationEdit(
+            selectedClassification.id,
+            selectedClassification.account_id,
+            selectedClassification.name,
+            editedClassificationAmount,
+            "payment"
+          );
+
+          const editedClassification = {
+            id: selectedClassification.id,
+            account_id: selectedClassification.account_id,
+            account_name: selectedClassification.account_name,
+            name: selectedClassification.name,
+            amount: editedClassificationAmount,
+            classification_type: "payment",
+          };
+
+          onClassificationUpdate(editedClassification);
+          onPaymentDelete(id);
+        }
       }
     } catch (error) {
       console.error("Failed to edit payment:", error);

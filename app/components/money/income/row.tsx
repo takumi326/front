@@ -226,30 +226,35 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
       (classification) => classification.id === row.id
     );
     try {
-      if (selectedClassification) {
-        const editedClassificationAmount =
-          parseFloat(String(selectedClassification.amount)) -
-          parseFloat(String(row.history[index].income_amount));
-
-        await classificationEdit(
-          selectedClassification.id,
-          selectedClassification.account_id,
-          selectedClassification.name,
-          editedClassificationAmount,
-          "income"
-        );
-
-        const editedClassification = {
-          id: selectedClassification.id,
-          account_id: selectedClassification.account_id,
-          account_name: selectedClassification.account_name,
-          name: selectedClassification.name,
-          amount: editedClassificationAmount,
-          classification_type: "income",
-        };
-
-        onClassificationUpdate(editedClassification);
+      if (row.classification_name === "分類なし") {
         onIncomeDelete(id);
+      } else {
+        if (selectedClassification) {
+          console.log(1);
+          const editedClassificationAmount =
+            parseFloat(String(selectedClassification.amount)) -
+            parseFloat(String(row.history[index].income_amount));
+
+          await classificationEdit(
+            selectedClassification.id,
+            selectedClassification.account_id,
+            selectedClassification.name,
+            editedClassificationAmount,
+            "income"
+          );
+
+          const editedClassification = {
+            id: selectedClassification.id,
+            account_id: selectedClassification.account_id,
+            account_name: selectedClassification.account_name,
+            name: selectedClassification.name,
+            amount: editedClassificationAmount,
+            classification_type: "income",
+          };
+
+          onClassificationUpdate(editedClassification);
+          onIncomeDelete(id);
+        }
       }
     } catch (error) {
       console.error("Failed to edit income:", error);
