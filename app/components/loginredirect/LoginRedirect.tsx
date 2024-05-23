@@ -16,7 +16,7 @@ export const LoginRedirect: React.FC<{ children: React.ReactNode }> = ({
       Cookies.get("_client") &&
       Cookies.get("_uid")
     ) {
-      router.push(`/mypage`);
+      router.push(`/money`);
     }
   }, [pathname, router]);
 

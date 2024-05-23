@@ -48,6 +48,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   // const [newTime, setNewTime] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
 
   useEffect(() => {
     purposeGetData().then((data) => {
@@ -91,6 +92,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     switch (name) {
       case "title":
         setNewTitle(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "body":
         setNewBody(value);
@@ -293,110 +295,13 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+    period === "daily" ||
+    period === "monthly" ||
+    (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={700}>
-      <ul className="w-full">
-        <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="title"
-            value={newTitle}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">関連する目標</Typography>
-          <Select
-            fullWidth
-            value={newPurposeId}
-            onChange={handlePurposeChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {purposes.map((purpose) => (
-              <MenuItem key={purpose.id} value={purpose.id}>
-                {purpose.title}
-              </MenuItem>
-            ))}
-          </Select>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">予定</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={newSchedule}
-              onChange={handleSchedulChange}
-            />
-          </Box>
-        </li>
-        <li
-          className="pt-10"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
-          <Typography>
-            {newRepetitionSettings && (
-              <>
-                {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎日`}
-                {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
-                {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
-                  `毎月`}
-                {newRepetitionSettings[0] > 1 &&
-                  newRepetitionSettings &&
-                  `毎${newRepetitionSettings[0]}${
-                    newRepetitionType === "daily"
-                      ? "日"
-                      : newRepetitionType === "weekly"
-                      ? `週 ${newRepetitionSettings.slice(1).join(" ")}`
-                      : "月"
-                  }`}
-              </>
-            )}
-          </Typography>
-          <Typography>
-            {newRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">備考</Typography>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            name="body"
-            value={newBody}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
-              作成
-            </Button>
-          </Stack>
-        </li>
-      </ul>
-
-      {/* 繰り返し設定ダイアログ */}
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -463,11 +368,123 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ul className="w-full">
+        <li className="pt-10">
+          <Typography variant="subtitle1">タイトル</Typography>
+          <TextField
+            fullWidth
+            variant="outlined"
+            name="title"
+            value={newTitle}
+            onChange={handleChange}
+          />
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">関連する目標</Typography>
+          <Select
+            fullWidth
+            value={newPurposeId}
+            onChange={handlePurposeChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {purposes.map((purpose) => (
+              <MenuItem key={purpose.id} value={purpose.id}>
+                {purpose.title}
+              </MenuItem>
+            ))}
+          </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">予定</Typography>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={newSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
+        </li>
+        <li className="pt-10">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
+          <Typography>
+            {newRepetitionSettings && (
+              <>
+                {newRepetitionType === "daily" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎日`}
+                {newRepetitionType === "weekly" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
+                {newRepetitionType === "monthly" &&
+                  newRepetitionSettings[0] === 1 &&
+                  `毎月`}
+                {newRepetitionSettings[0] > 1 &&
+                  newRepetitionSettings &&
+                  `毎${newRepetitionSettings[0]}${
+                    newRepetitionType === "daily"
+                      ? "日"
+                      : newRepetitionType === "weekly"
+                      ? `週 ${newRepetitionSettings.slice(1).join(" ")}`
+                      : "月"
+                  }`}
+              </>
+            )}
+          </Typography>
+          <Typography>
+            {newRepetition === true && (
+              <>次回の予定：{formatDate(nextSchedule)}</>
+            )}
+          </Typography>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">備考</Typography>
+          <TextField
+            fullWidth
+            multiline
+            variant="outlined"
+            name="body"
+            value={newBody}
+            onChange={handleChange}
+          />
+        </li>
+        <li className="pt-10">
+          <Stack direction="row" justifyContent="center">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
+              作成
+            </Button>
+          </Stack>
+        </li>
+      </ul>
     </Box>
   );
 };

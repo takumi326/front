@@ -65,11 +65,14 @@ const Money: React.FC = () => {
         <ul className="py-6 grid grid-cols-2">
           <div>
             <div className="pl-10 max-w-3xl">
+              <p className="text-right">
+                月の変更
+              </p>
               <MoneyCalendar />
             </div>
             <div>
               <p className="font-bold text-center">
-                来月以降に残ってるお金 （口座ごと）
+                来月以降口座に残ってるお金 （口座ごと）
               </p>
             </div>
           </div>

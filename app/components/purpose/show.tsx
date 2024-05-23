@@ -34,6 +34,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   const [editDeadline, setEditDeadline] = useState<Date>(deadline);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
+  const [isFormValid, setIsFormValid] = useState(true);
 
   const editPurpose = async (id: string) => {
     try {
@@ -55,7 +56,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
       };
       onUpdate(editedData);
     } catch (error) {
-      console.error("Failed to edit todo:", error);
+      console.error("Failed to edit purpose:", error);
     }
   };
 
@@ -66,6 +67,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
     switch (name) {
       case "title":
         setEditTitle(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "result":
         setEditResult(value);
@@ -151,7 +153,12 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               保存
             </Button>
           </Stack>

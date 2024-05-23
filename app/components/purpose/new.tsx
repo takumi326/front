@@ -16,6 +16,7 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const [newResult, setNewResult] = useState("");
   const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
   const [newBody, setNewBody] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const newPurpose = async () => {
     try {
@@ -34,6 +35,7 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
     switch (name) {
       case "title":
         setNewTitle(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "result":
         setNewResult(value);
@@ -107,7 +109,12 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

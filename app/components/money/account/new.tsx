@@ -13,6 +13,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newBody, setNewBody] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const newAccount = async () => {
     try {
@@ -28,6 +29,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
     switch (name) {
       case "name":
         setNewName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
         setNewAmountString(
@@ -99,7 +101,12 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

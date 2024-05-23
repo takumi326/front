@@ -72,28 +72,42 @@ import {
 import { classificationData } from "@/interface/classification-interface";
 import { ClassificationNew } from "@/components/money/classification/new";
 
+import {
+  classificationMonthlyAmountGetData,
+  classificationMonthlyAmountDelete,
+} from "@/lib/api/classificationMonthlyAmount-api";
+
 export const MoneyTable: React.FC = () => {
   const {
     classifications,
     setClassifications,
+    classificationMonthlyAmounts,
+    setClassificationMonthlyAmounts,
     categories,
     setCategories,
+    allPayments,
+    setAllPayments,
     payments,
     setPayments,
+    allIncomes,
+    setAllIncomes,
     incomes,
     setIncomes,
     accounts,
     setAccounts,
+    allTransfers,
+    setAllTransfers,
     transfers,
     setTransfers,
     filter,
     setFilter,
+    currentMonth,
   } = useContext(moneyContext);
 
   const [rows, setRows] = useState<
     displayPaymentData[] | displayIncomeData[] | displayAccountData[]
   >([]);
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -103,6 +117,22 @@ export const MoneyTable: React.FC = () => {
   const [isCategoryRowModalOpen, setIsCategoryRowModalOpen] = useState(false);
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [start, setStart] = useState<Date>(
+    new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)) - 1,
+      1
+    )
+  );
+  const [end, setEnd] = useState<Date>(
+    new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)),
+      0,
+      23,
+      59
+    )
+  );
 
   const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>(() => {
     if (filter === "payment") {
@@ -141,25 +171,69 @@ export const MoneyTable: React.FC = () => {
   });
 
   useEffect(() => {
-    paymentGetData().then((data) => {
-      setPayments(data);
-    });
-    incomeGetData().then((data) => {
-      setIncomes(data);
-    });
-    accountGetData().then((data) => {
-      setAccounts(data);
-    });
-    categoryGetData().then((data) => {
-      setCategories(data);
-    });
-    classificationGetData().then((data) => {
-      setClassifications(data);
-    });
-    transferGetData().then((data) => {
-      setTransfers(data);
-    });
-  }, [isEditing, isAdding]);
+    const startScedule = new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)) - 1,
+      1
+    );
+    const endScedule = new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)),
+      0
+    );
+    setStart(startScedule);
+    setEnd(endScedule);
+  }, [currentMonth]);
+
+  useEffect(() => {
+    const handleAllDataFetch = async () => {
+      await paymentGetData().then((data) => {
+        setAllPayments(data);
+      });
+      paymentGetData().then((datas) => {
+        setPayments([]);
+        if (start !== undefined && end !== undefined) {
+          datas
+            .filter(
+              (data) =>
+                new Date(data.schedule).getTime() >= start.getTime() &&
+                new Date(data.schedule).getTime() <= end.getTime()
+            )
+            .map((data) => {
+              setPayments((prevPayments) => [...prevPayments, data]);
+            });
+        } else {
+          setPayments(datas);
+        }
+      });
+      await incomeGetData().then((data) => {
+        setAllIncomes(data);
+      });
+      await incomeGetData().then((data) => {
+        setIncomes(data);
+      });
+      await accountGetData().then((data) => {
+        setAccounts(data);
+      });
+      await categoryGetData().then((data) => {
+        setCategories(data);
+      });
+      await classificationGetData().then((data) => {
+        setClassifications(data);
+      });
+      await classificationMonthlyAmountGetData().then((data) => {
+        setClassificationMonthlyAmounts(data);
+      });
+      await transferGetData().then((data) => {
+        setAllTransfers(data);
+      });
+      await transferGetData().then((data) => {
+        setTransfers(data);
+      });
+    };
+
+    handleAllDataFetch();
+  }, [isEditing, isAdding, currentMonth, start, end]);
 
   useEffect(() => {
     let initialColumnSettings: { [key: string]: boolean } = {};
@@ -471,7 +545,7 @@ export const MoneyTable: React.FC = () => {
     setIsEditing(true);
   };
 
-  const updateClassification = (updateClassification: classificationData) => {
+  const updateClassification = () => {
     // const updatedTransfers = transfers.map((transfer) => {
     //   if (transfer.id === updateTransfer.id) {
     //     return updateTransfer;
@@ -1087,7 +1161,8 @@ export const MoneyTable: React.FC = () => {
                   <TableCell></TableCell>
                   <TableCell>
                     <Typography>
-                      今月合計： {formatAmountCommas(totalClassificationMoney)}
+                      {currentMonth.slice(4)}月分合計：{" "}
+                      {formatAmountCommas(totalClassificationMoney)}
                     </Typography>
                   </TableCell>
                 </>
@@ -1097,7 +1172,8 @@ export const MoneyTable: React.FC = () => {
                   <TableCell></TableCell>
                   <TableCell>
                     <Typography>
-                      今月合計： {formatAmountCommas(totalClassificationMoney)}
+                      {currentMonth.slice(4)}月分合計：{" "}
+                      {formatAmountCommas(totalClassificationMoney)}
                     </Typography>
                   </TableCell>
                 </>

@@ -57,6 +57,8 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   const [newRepetitionType, setNewRepetitionType] = useState("");
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   const [newBody, setNewBody] = useState("");
+  const [isBeforeTitleFormValid, setIsBeforeTitleFormValid] = useState(true);
+  const [isAfterTitleFormValid, setIsAfterTitleFormValid] = useState(true);
 
   const newTransfer = async () => {
     try {
@@ -173,6 +175,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       setNewBeforeAccountName(selectedAccount.name);
       setNewBeforeAccountAmount(selectedAccount.amount);
       setNewBeforeAccountBody(selectedAccount.body);
+      setIsBeforeTitleFormValid(false);
     } else {
       setNewBeforeAccountName("");
       setNewBeforeAccountAmount(0);
@@ -188,6 +191,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       setNewAfterAccountName(selectedAccount.name);
       setNewAfterAccountAmount(selectedAccount.amount);
       setNewAfterAccountBody(selectedAccount.body);
+      setIsAfterTitleFormValid(false);
     } else {
       setNewAfterAccountName("");
       setNewAfterAccountAmount(0);
@@ -381,6 +385,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+  period === "daily" ||
+  period === "monthly" ||
+  (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={770}>
       <Dialog
@@ -449,6 +458,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
@@ -480,6 +490,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
                 口座金額：{formatAmountCommas(account.amount)}
               </Typography>
             ))}
+          {isBeforeTitleFormValid && (
+            <Typography align="left" variant="subtitle1">
+              送金元口座を選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">送金先口座</Typography>
@@ -505,6 +520,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
                 口座金額：{formatAmountCommas(account.amount)}
               </Typography>
             ))}
+          {isAfterTitleFormValid && (
+            <Typography align="left" variant="subtitle1">
+              送金先口座を選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
@@ -549,12 +569,17 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             />
           </Box>
         </li>
-        <li
-          className="pt-5"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
+        <li className="pt-5">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
           <Typography>
             {newRepetitionSettings && (
               <>
@@ -598,7 +623,17 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={
+                isBeforeTitleFormValid ||
+                isAfterTitleFormValid ||
+                newAmountError ||
+                newAmountOverError
+              }
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

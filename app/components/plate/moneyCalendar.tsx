@@ -1,29 +1,40 @@
 "use client";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import jaLocale from "@fullcalendar/core/locales/ja";
 
-import { taskGetData as getData } from "@/lib/api/task-api";
-
-import { taskContext } from "@/context/task-context";
 import { moneyContext } from "@/context/money-context";
+
+
 
 export const MoneyCalendar = (): JSX.Element => {
   const {
     classifications,
     setClassifications,
+    classificationMonthlyAmounts,
+    setClassificationMonthlyAmounts,
+    categories,
+    setCategories,
+    allPayments,
+    setAllPayments,
     payments,
     setPayments,
+    allIncomes,
+    setAllIncomes,
     incomes,
     setIncomes,
     accounts,
     setAccounts,
+    allTransfers,
+    setAllTransfers,
     transfers,
     setTransfers,
     filter,
     setFilter,
+    currentMonth,
+    setCurrentMonth,
   } = useContext(moneyContext);
 
   // useEffect(() => {
@@ -31,6 +42,27 @@ export const MoneyCalendar = (): JSX.Element => {
   //     setTasks(data);
   //   });
   // }, []);
+
+  const calendarRef = useRef(null);
+
+  const handleDateChange = () => {
+    const calendarApi = calendarRef.current.getApi();
+    const currentDate = calendarApi.getDate();
+    setCurrentMonth(
+      `${currentDate.getFullYear()}${currentDate.getMonth() + 1}`
+    );
+  };
+
+  useEffect(() => {
+    const calendarApi = calendarRef.current.getApi();
+
+    calendarApi.on("datesSet", handleDateChange); // datesSetイベントリスナーを追加
+
+    // クリーンアップ
+    return () => {
+      calendarApi.off("datesSet", handleDateChange);
+    };
+  }, []);
 
   const formatAmountCommas = (number: number) => {
     const integerPart = Math.floor(number);
@@ -42,10 +74,9 @@ export const MoneyCalendar = (): JSX.Element => {
     );
   };
 
-
   const events =
     filter === "payment"
-      ? payments.map((item) => ({
+      ? allPayments.map((item) => ({
           title: item.category_name,
           start: item.schedule,
           allDay: item.schedule,
@@ -53,34 +84,57 @@ export const MoneyCalendar = (): JSX.Element => {
           borderColor: "green",
         }))
       : filter === "income"
-      ? incomes.map((item) => ({
+      ? allIncomes.map((item) => ({
           title: item.category_name,
           start: item.schedule,
           allDay: item.schedule,
           backgroundColor: "green",
           borderColor: "green",
         }))
-      : transfers.map((item) => ({
-          title: item.after_account_name +"   "+ formatAmountCommas(item.amount),
+      : allTransfers.map((item) => ({
+          title:
+            item.after_account_name + "   " + formatAmountCommas(item.amount),
           start: item.schedule,
           allDay: item.schedule,
           backgroundColor: "green",
           borderColor: "green",
         }));
 
-  const eventss = classifications
-    .filter((classification) => classification.schedule !== null)
-    .map((item) => ({
-      title: item.name,
-      start: item.schedule,
-      allDay: item.schedule,
-      backgroundColor: "red",
-      borderColor: "red",
-    }));
+  const allEvents =
+    filter === "payment"
+      ? classifications
+          .filter(
+            (classification) =>
+              classification.schedule !== null &&
+              classification.classification_type === "payment"
+          )
+          .map((item) => ({
+            title: item.name,
+            start: item.schedule,
+            allDay: item.schedule,
+            backgroundColor: "green",
+            borderColor: "green",
+          }))
+      : filter === "income"
+      ? classifications
+          .filter(
+            (classification) =>
+              classification.schedule !== null &&
+              classification.classification_type === "income"
+          )
+          .map((item) => ({
+            title: item.name,
+            start: item.schedule,
+            allDay: item.schedule,
+            backgroundColor: "green",
+            borderColor: "green",
+          }))
+      : null;
 
   return (
-    <div className="py-10">
+    <div className="">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         locales={[jaLocale]}
