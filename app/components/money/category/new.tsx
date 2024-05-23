@@ -10,6 +10,7 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
   const { onClassificationAdd, onClose, classification_type } = props;
 
   const [newName, setNewName] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const newCategory = async () => {
     try {
@@ -25,6 +26,7 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
     switch (name) {
       case "name":
         setNewName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       default:
         break;
@@ -51,7 +53,12 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

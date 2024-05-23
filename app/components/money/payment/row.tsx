@@ -22,6 +22,10 @@ import { moneyContext } from "@/context/money-context";
 
 import { paymentEdit } from "@/lib/api/payment-api";
 import { classificationEdit } from "@/lib/api/classification-api";
+import {
+  classificationMonthlyAmountNew,
+  classificationMonthlyAmountEdit,
+} from "@/lib/api/classificationMonthlyAmount-api";
 
 import {
   paymentRowProps,
@@ -41,7 +45,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     onPaymentDelete,
     onClassificationDelete,
   } = props;
-  const { classifications } = useContext(moneyContext);
+  const { classifications, classificationMonthlyAmounts, currentMonth } =
+    useContext(moneyContext);
 
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [isEditClassificationModalOpen, setIsEditClassificationModalOpen] =
@@ -50,8 +55,25 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const [isHistory, setIsHistory] = useState(0);
 
   useEffect(() => {
-    console.log(row);
-  }, []);
+    const handleClassificationMonthlyAmount = async () => {
+      try {
+        const shouldCreateNewAmount = classificationMonthlyAmounts.some(
+          (classificationMonthlyAmount) =>
+            classificationMonthlyAmount.classification_id === row.id &&
+            classificationMonthlyAmount.month === currentMonth
+        );
+
+        if (!shouldCreateNewAmount) {
+          await classificationMonthlyAmountNew(row.id, currentMonth, 0);
+          onClassificationUpdate();
+        }
+      } catch (error) {
+        console.error("Failed to new classificationMonthlyAmount:", error);
+      }
+    };
+
+    handleClassificationMonthlyAmount();
+  }, [currentMonth]);
 
   const handleOpenEditPaymentModal = (index: number) => {
     setIsEditPaymentModalOpen(true);
@@ -229,12 +251,17 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     const selectedClassification = classifications.find(
       (classification) => classification.id === row.id
     );
+    const selectedClassificationMonthlyAmount =
+      classificationMonthlyAmounts.find(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id === row.id &&
+          classificationMonthlyAmount.month === currentMonth
+      );
     try {
       if (row.classification_name === "分類なし") {
         onPaymentDelete(id);
       } else {
-        if (selectedClassification) {
-          console.log(1);
+        if (selectedClassification && selectedClassificationMonthlyAmount) {
           const editedClassificationAmount =
             parseFloat(String(selectedClassification.amount)) -
             parseFloat(String(row.history[index].payment_amount));
@@ -246,6 +273,12 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
             editedClassificationAmount,
             "payment"
           );
+          await classificationMonthlyAmountEdit(
+            selectedClassificationMonthlyAmount.id,
+            selectedClassificationMonthlyAmount.classification_id,
+            selectedClassificationMonthlyAmount.month,
+            editedClassificationAmount
+          );
 
           const editedClassification = {
             id: selectedClassification.id,
@@ -256,7 +289,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
             classification_type: "payment",
           };
 
-          onClassificationUpdate(editedClassification);
+          onClassificationUpdate();
           onPaymentDelete(id);
         }
       }
@@ -330,6 +363,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       )}
 
       <TableRow
+        key={row.id}
         sx={{
           "& > *": {
             borderBottom: "unset",
@@ -379,7 +413,20 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                   className="pl-12"
                 >
                   {row.classification_name !== "分類なし"
-                    ? formatAmountCommas(row.classification_amount)
+                    ? formatAmountCommas(
+                        classificationMonthlyAmounts
+                          .filter(
+                            (classificationMonthlyAmount) =>
+                              classificationMonthlyAmount.month ===
+                                currentMonth &&
+                              classificationMonthlyAmount.classification_id ===
+                                row.id
+                          )
+                          .map(
+                            (classificationMonthlyAmount) =>
+                              classificationMonthlyAmount.amount
+                          )
+                      )
                     : ""}
                 </TableCell>
               ) : (

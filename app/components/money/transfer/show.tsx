@@ -729,6 +729,11 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+    period === "daily" ||
+    period === "monthly" ||
+    (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={770}>
       <Dialog
@@ -797,6 +802,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
@@ -901,12 +907,17 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
             />
           </Box>
         </li>
-        <li
-          className="pt-5"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
+        <li className="pt-5">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
           <Typography>
             {editRepetitionSettings && (
               <>

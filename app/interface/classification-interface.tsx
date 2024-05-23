@@ -8,6 +8,13 @@ export type classificationData = {
   classification_type: string;
 };
 
+export type classificationMonthlyAmountData = {
+  id: string;
+  classification_id: string;
+  month: string;
+  amount: number;
+};
+
 // ヘッダーに表示するClassificationの型定義
 export type selectClassificationData = {
   name: string;

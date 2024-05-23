@@ -71,6 +71,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   // const [editTime, setEditTime] = useState(time);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
+  const [isFormValid, setIsFormValid] = useState(true);
 
   useEffect(() => {
     purposeGetData().then((data) => {
@@ -117,6 +118,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     switch (name) {
       case "title":
         setEditTitle(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "body":
         setEditBody(value);
@@ -320,123 +322,13 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+    period === "daily" ||
+    period === "monthly" ||
+    (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={700}>
-      <ul className="w-full">
-        <li className="flex items-center">
-          <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-          <Checkbox
-            checked={editCompleted}
-            onChange={handleCheckboxChange}
-            color="primary"
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">タイトル</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="title"
-            value={editTitle}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">関連する目標</Typography>
-          <Select
-            fullWidth
-            value={editPurposeId}
-            onChange={handlePurposeChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {purposes.map((purpose) => (
-              <MenuItem key={purpose.id} value={purpose.id}>
-                {purpose.title}
-              </MenuItem>
-            ))}
-          </Select>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">予定</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={editSchedule}
-              onChange={handleSchedulChange}
-            />
-          </Box>
-        </li>
-        <li
-          className="pt-10"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
-          <Typography>
-            {editRepetitionSettings && (
-              <>
-                {editRepetitionType === "daily" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎日`}
-                {editRepetitionType === "weekly" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
-                {editRepetitionType === "monthly" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎月`}
-                {editRepetitionSettings[0] > 1 &&
-                  editRepetitionSettings &&
-                  `毎${editRepetitionSettings[0]}${
-                    editRepetitionType === "daily"
-                      ? "日"
-                      : editRepetitionType === "weekly"
-                      ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
-                      : "月"
-                  }`}
-              </>
-            )}
-          </Typography>
-          <Typography>
-            {editRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography>
-        </li>
-        <li className="pt-10">
-          <Typography variant="subtitle1">備考</Typography>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            name="body"
-            value={editBody}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
-              保存
-            </Button>
-          </Stack>
-          <IconButton
-            onClick={() => onDelete(id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </li>
-      </ul>
-
       {/* 繰り返し設定ダイアログ */}
       <Dialog
         open={repetitionDialogOpen}
@@ -504,11 +396,137 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ul className="w-full">
+        <li className="flex items-center">
+          <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
+          <Checkbox
+            checked={editCompleted}
+            onChange={handleCheckboxChange}
+            color="primary"
+          />
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">タイトル</Typography>
+          <TextField
+            fullWidth
+            variant="outlined"
+            name="title"
+            value={editTitle}
+            onChange={handleChange}
+          />
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">関連する目標</Typography>
+          <Select
+            fullWidth
+            value={editPurposeId}
+            onChange={handlePurposeChange}
+            displayEmpty
+            inputProps={{ "aria-label": "Without label" }}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {purposes.map((purpose) => (
+              <MenuItem key={purpose.id} value={purpose.id}>
+                {purpose.title}
+              </MenuItem>
+            ))}
+          </Select>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">予定</Typography>
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={editSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
+        </li>
+        <li className="pt-10">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
+          <Typography>
+            {editRepetitionSettings && (
+              <>
+                {editRepetitionType === "daily" &&
+                  editRepetitionSettings[0] === 1 &&
+                  `毎日`}
+                {editRepetitionType === "weekly" &&
+                  editRepetitionSettings[0] === 1 &&
+                  `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
+                {editRepetitionType === "monthly" &&
+                  editRepetitionSettings[0] === 1 &&
+                  `毎月`}
+                {editRepetitionSettings[0] > 1 &&
+                  editRepetitionSettings &&
+                  `毎${editRepetitionSettings[0]}${
+                    editRepetitionType === "daily"
+                      ? "日"
+                      : editRepetitionType === "weekly"
+                      ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
+                      : "月"
+                  }`}
+              </>
+            )}
+          </Typography>
+          <Typography>
+            {editRepetition === true && (
+              <>次回の予定：{formatDate(nextSchedule)}</>
+            )}
+          </Typography>
+        </li>
+        <li className="pt-10">
+          <Typography variant="subtitle1">備考</Typography>
+          <TextField
+            fullWidth
+            multiline
+            variant="outlined"
+            name="body"
+            value={editBody}
+            onChange={handleChange}
+          />
+        </li>
+        <li className="pt-10">
+          <Stack direction="row" justifyContent="center">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
+              保存
+            </Button>
+          </Stack>
+          <IconButton
+            onClick={() => onDelete(id)}
+            className="absolute right-0 bottom-0 m-8"
+          >
+            <DeleteIcon />
+          </IconButton>
+        </li>
+      </ul>
     </Box>
   );
 };

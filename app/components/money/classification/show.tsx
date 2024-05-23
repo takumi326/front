@@ -15,7 +15,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 import { moneyContext } from "@/context/money-context";
 
-import { classificationEdit as Edit } from "@/lib/api/classification-api";
+import { classificationEdit } from "@/lib/api/classification-api";
+
+import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthlyAmount-api";
 import { classificationShowProps } from "@/interface/classification-interface";
 
 export const ClassificationShow: React.FC<classificationShowProps> = (
@@ -32,7 +34,8 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     onClose,
     onDelete,
   } = props;
-  const { accounts } = useContext(moneyContext);
+  const { accounts, classificationMonthlyAmounts, currentMonth } =
+    useContext(moneyContext);
 
   const [editAccountId, setEditAccountId] = useState(account_id);
   const [editAccountName, setEditAccountName] = useState(account_name);
@@ -43,17 +46,37 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   );
 
   const editClassification = async (id: string) => {
+    const selectedClassificationMonthlyAmount =
+      classificationMonthlyAmounts.find(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id === id &&
+          classificationMonthlyAmount.month === currentMonth
+      );
     try {
-      await Edit(id, editAccountId, editName, editAmount, classification_type);
-      const editedData = {
-        id: id,
-        account_id: editAccountId,
-        account_name: editAccountName,
-        name: editName,
-        amount: editAmount,
-        classification_type: classification_type,
-      };
-      onUpdate(editedData);
+      if (selectedClassificationMonthlyAmount) {
+        await classificationEdit(
+          id,
+          editAccountId,
+          editName,
+          editAmount,
+          classification_type
+        );
+        await classificationMonthlyAmountEdit(
+          selectedClassificationMonthlyAmount.id,
+          selectedClassificationMonthlyAmount.classification_id,
+          selectedClassificationMonthlyAmount.month,
+          editAmount
+        );
+        const editedData = {
+          id: id,
+          account_id: editAccountId,
+          account_name: editAccountName,
+          name: editName,
+          amount: editAmount,
+          classification_type: classification_type,
+        };
+        onUpdate(editedData);
+      }
     } catch (error) {
       console.error("Failed to edit classification:", error);
     }

@@ -14,26 +14,37 @@ import {
 
 import { moneyContext } from "@/context/money-context";
 
-import { classificationNew as New } from "@/lib/api/classification-api";
+import { classificationNew } from "@/lib/api/classification-api";
+import {
+  classificationMonthlyAmountNew,
+  classificationMonthlyAmountEdit,
+} from "@/lib/api/classificationMonthlyAmount-api";
 import { classificationNewProps } from "@/interface/classification-interface";
 
 export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const { onClassificationAdd, onClose, classification_type } = props;
-  const { accounts } = useContext(moneyContext);
+  const { accounts, classificationMonthlyAmounts, currentMonth } =
+    useContext(moneyContext);
 
   const [newAccountId, setNewAccountId] = useState("");
   const [newAccountName, setNewAccountName] = useState("");
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
+  const [isFormValid, setIsFormValid] = useState(false);
 
   const newAccount = async () => {
     try {
-      const response = await New(
+      const response = await classificationNew(
         newAccountId,
         newName,
         newAmount,
         classification_type
+      );
+      await classificationMonthlyAmountNew(
+        response.id,
+        currentMonth,
+        newAmount
       );
 
       const newClassification = {
@@ -56,6 +67,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
     switch (name) {
       case "name":
         setNewName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
         setNewAmountString(
@@ -144,7 +156,12 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

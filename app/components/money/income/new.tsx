@@ -25,6 +25,10 @@ import { moneyContext } from "@/context/money-context";
 
 import { incomeNew } from "@/lib/api/income-api";
 import { classificationEdit } from "@/lib/api/classification-api";
+import {
+  classificationMonthlyAmountNew,
+  classificationMonthlyAmountEdit,
+} from "@/lib/api/classificationMonthlyAmount-api";
 
 import { incomeNewProps } from "@/interface/income-interface";
 
@@ -32,7 +36,12 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const IncomeNew: React.FC<incomeNewProps> = (props) => {
   const { onIncomeAdd, onClassificationUpdate, onClose } = props;
-  const { classifications, categories } = useContext(moneyContext);
+  const {
+    classifications,
+    categories,
+    classificationMonthlyAmounts,
+    currentMonth,
+  } = useContext(moneyContext);
   const initialDateObject = new Date();
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
@@ -60,55 +69,73 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
   const [newRepetitionType, setNewRepetitionType] = useState("");
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   const [newBody, setNewBody] = useState("");
+  const [isClassificationFormValid, setIsClassificationFormValid] =
+    useState(true);
+  const [isCategoryFormValid, setIsCategoryFormValid] = useState(true);
 
   const newIncome = async () => {
+    const selectedClassificationMonthlyAmount =
+      classificationMonthlyAmounts.find(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            newClassificationId &&
+          classificationMonthlyAmount.month === currentMonth
+      );
     try {
-      const editedClassificationAmount =
-        parseFloat(String(newClassificationAmount)) +
-        parseFloat(String(newAmount));
+      if (selectedClassificationMonthlyAmount) {
+        const editedClassificationAmount =
+          parseFloat(String(newClassificationAmount)) +
+          parseFloat(String(newAmount));
 
-      const incomeResponse = await incomeNew(
-        newCategoryId,
-        newClassificationId,
-        newAmount,
-        newSchedule,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-      await classificationEdit(
-        newClassificationId,
-        newClassificationAccountId,
-        newClassificationName,
-        editedClassificationAmount,
-        "income"
-      );
+        const incomeResponse = await incomeNew(
+          newCategoryId,
+          newClassificationId,
+          newAmount,
+          newSchedule,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
+        await classificationEdit(
+          newClassificationId,
+          newClassificationAccountId,
+          newClassificationName,
+          editedClassificationAmount,
+          "income"
+        );
+        await classificationMonthlyAmountEdit(
+          selectedClassificationMonthlyAmount.id,
+          selectedClassificationMonthlyAmount.classification_id,
+          selectedClassificationMonthlyAmount.month,
+          editedClassificationAmount
+        );
 
-      const newIncome = {
-        id: incomeResponse.id,
-        category_id: incomeResponse.category_id,
-        category_name: newCategoryName,
-        classification_id: incomeResponse.classification_id,
-        classification_name: newClassificationAccountName,
-        amount: incomeResponse.amount,
-        schedule: incomeResponse.schedule,
-        repetition: incomeResponse.repetition,
-        repetition_type: incomeResponse.repetition_type,
-        repetition_settings: incomeResponse.repetition_settings,
-        body: incomeResponse.body,
-      };
-      const newClassification = {
-        id: newClassificationId,
-        account_id: newClassificationAccountId,
-        account_name: newClassificationAccountName,
-        name: newClassificationName,
-        amount: editedClassificationAmount,
-        classification_type: "income",
-      };
+        const newIncome = {
+          id: incomeResponse.id,
+          category_id: incomeResponse.category_id,
+          category_name: newCategoryName,
+          classification_id: incomeResponse.classification_id,
+          classification_name: newClassificationAccountName,
+          amount: incomeResponse.amount,
+          schedule: incomeResponse.schedule,
+          repetition: incomeResponse.repetition,
+          repetition_type: incomeResponse.repetition_type,
+          repetition_settings: incomeResponse.repetition_settings,
+          body: incomeResponse.body,
+        };
+        const newClassification = {
+          id: newClassificationId,
+          account_id: newClassificationAccountId,
+          account_name: newClassificationAccountName,
+          name: newClassificationName,
+          amount: editedClassificationAmount,
+          classification_type: "income",
+        };
 
-      onClassificationUpdate(newClassification);
-      onIncomeAdd(newIncome);
+        onClassificationUpdate(newClassification);
+        onIncomeAdd(newIncome);
+      }
     } catch (error) {
       console.error("Failed to create income:", error);
     }
@@ -167,6 +194,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
       setNewClassificationAccountName(selectedClassification.account_name);
       setNewClassificationName(selectedClassification.name);
       setNewClassificationAmount(selectedClassification.amount);
+      setIsClassificationFormValid(false);
     } else {
       setNewClassificationAccountId("");
       setNewClassificationAccountName("");
@@ -183,6 +211,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     );
     if (selectedCategory) {
       setNewCategoryName(selectedCategory.name);
+      setIsCategoryFormValid(false);
     } else {
       setNewCategoryName("");
     }
@@ -374,6 +403,11 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+  period === "daily" ||
+  period === "monthly" ||
+  (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={770}>
       <Dialog
@@ -442,6 +476,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
@@ -469,6 +504,11 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
                 </MenuItem>
               ))}
           </Select>
+          {isClassificationFormValid && (
+            <Typography align="left" variant="subtitle1">
+              分類を選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">カテゴリ</Typography>
@@ -487,6 +527,11 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
                 </MenuItem>
               ))}
           </Select>
+          {isCategoryFormValid && (
+            <Typography align="left" variant="subtitle1">
+              カテゴリを選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
@@ -526,12 +571,17 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
             />
           </Box>
         </li>
-        <li
-          className="pt-5"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
+        <li className="pt-5">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
           <Typography>
             {newRepetitionSettings && (
               <>
@@ -575,7 +625,16 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={
+                isClassificationFormValid ||
+                isCategoryFormValid ||
+                newAmountError
+              }
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

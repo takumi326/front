@@ -25,6 +25,10 @@ import { moneyContext } from "@/context/money-context";
 
 import { paymentNew } from "@/lib/api/payment-api";
 import { classificationEdit } from "@/lib/api/classification-api";
+import {
+  classificationMonthlyAmountNew,
+  classificationMonthlyAmountEdit,
+} from "@/lib/api/classificationMonthlyAmount-api";
 
 import { paymentNewProps } from "@/interface/payment-interface";
 
@@ -32,7 +36,12 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   const { onPaymentAdd, onClassificationUpdate, onClose } = props;
-  const { classifications, categories } = useContext(moneyContext);
+  const {
+    classifications,
+    categories,
+    classificationMonthlyAmounts,
+    currentMonth,
+  } = useContext(moneyContext);
   const initialDateObject = new Date();
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
@@ -60,55 +69,73 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   const [newRepetitionType, setNewRepetitionType] = useState("");
   const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
   const [newBody, setNewBody] = useState("");
+  const [isClassificationFormValid, setIsClassificationFormValid] =
+    useState(true);
+  const [isCategoryFormValid, setIsCategoryFormValid] = useState(true);
 
   const newPayment = async () => {
+    const selectedClassificationMonthlyAmount =
+      classificationMonthlyAmounts.find(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            newClassificationId &&
+          classificationMonthlyAmount.month === currentMonth
+      );
     try {
-      const editedClassificationAmount =
-        parseFloat(String(newClassificationAmount)) +
-        parseFloat(String(newAmount));
+      if (selectedClassificationMonthlyAmount) {
+        const editedClassificationAmount =
+          parseFloat(String(newClassificationAmount)) +
+          parseFloat(String(newAmount));
 
-      const paymentResponse = await paymentNew(
-        newCategoryId,
-        newClassificationId,
-        newAmount,
-        newSchedule,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-      await classificationEdit(
-        newClassificationId,
-        newClassificationAccountId,
-        newClassificationName,
-        editedClassificationAmount,
-        "payment"
-      );
+        const paymentResponse = await paymentNew(
+          newCategoryId,
+          newClassificationId,
+          newAmount,
+          newSchedule,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
+        await classificationEdit(
+          newClassificationId,
+          newClassificationAccountId,
+          newClassificationName,
+          editedClassificationAmount,
+          "payment"
+        );
+        await classificationMonthlyAmountEdit(
+          selectedClassificationMonthlyAmount.id,
+          selectedClassificationMonthlyAmount.classification_id,
+          selectedClassificationMonthlyAmount.month,
+          editedClassificationAmount
+        );
 
-      const newPayment = {
-        id: paymentResponse.id,
-        category_id: paymentResponse.category_id,
-        category_name: newCategoryName,
-        classification_id: paymentResponse.classification_id,
-        classification_name: newClassificationAccountName,
-        amount: paymentResponse.amount,
-        schedule: paymentResponse.schedule,
-        repetition: paymentResponse.repetition,
-        repetition_type: paymentResponse.repetition_type,
-        repetition_settings: paymentResponse.repetition_settings,
-        body: paymentResponse.body,
-      };
-      const newClassification = {
-        id: newClassificationId,
-        account_id: newClassificationAccountId,
-        account_name: newClassificationAccountName,
-        name: newClassificationName,
-        amount: editedClassificationAmount,
-        classification_type: "payment",
-      };
+        const newPayment = {
+          id: paymentResponse.id,
+          category_id: paymentResponse.category_id,
+          category_name: newCategoryName,
+          classification_id: paymentResponse.classification_id,
+          classification_name: newClassificationAccountName,
+          amount: paymentResponse.amount,
+          schedule: paymentResponse.schedule,
+          repetition: paymentResponse.repetition,
+          repetition_type: paymentResponse.repetition_type,
+          repetition_settings: paymentResponse.repetition_settings,
+          body: paymentResponse.body,
+        };
+        const newClassification = {
+          id: newClassificationId,
+          account_id: newClassificationAccountId,
+          account_name: newClassificationAccountName,
+          name: newClassificationName,
+          amount: editedClassificationAmount,
+          classification_type: "payment",
+        };
 
-      onClassificationUpdate(newClassification);
-      onPaymentAdd(newPayment);
+        onClassificationUpdate(newClassification);
+        onPaymentAdd(newPayment);
+      }
     } catch (error) {
       console.error("Failed to create payment:", error);
     }
@@ -167,6 +194,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
       setNewClassificationAccountName(selectedClassification.account_name);
       setNewClassificationName(selectedClassification.name);
       setNewClassificationAmount(selectedClassification.amount);
+      setIsClassificationFormValid(false);
     } else {
       setNewClassificationAccountId("");
       setNewClassificationAccountName("");
@@ -183,6 +211,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     );
     if (selectedCategory) {
       setNewCategoryName(selectedCategory.name);
+      setIsCategoryFormValid(false);
     } else {
       setNewCategoryName("");
     }
@@ -374,6 +403,11 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const isDialogFormValid =
+  period === "daily" ||
+  period === "monthly" ||
+  (period === "weekly" && selectedDays.length > 0);
+
   return (
     <Box width={560} height={770}>
       <Dialog
@@ -442,6 +476,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           <Button
             onClick={handleRepetitionSave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={!isDialogFormValid}
           >
             設定
           </Button>
@@ -469,6 +504,11 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
                 </MenuItem>
               ))}
           </Select>
+          {isClassificationFormValid && (
+            <Typography align="left" variant="subtitle1">
+              分類を選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">カテゴリ</Typography>
@@ -487,6 +527,11 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
                 </MenuItem>
               ))}
           </Select>
+          {isCategoryFormValid && (
+            <Typography align="left" variant="subtitle1">
+              カテゴリを選択してください
+            </Typography>
+          )}
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">金額</Typography>
@@ -526,12 +571,17 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             />
           </Box>
         </li>
-        <li
-          className="pt-5"
-          onClick={handleRepetitionDialogOpen} // Open the repetition dialog when clicked
-          style={{ cursor: "pointer" }}
-        >
-          <Typography variant="subtitle1">繰り返し</Typography>
+        <li className="pt-5">
+          <button
+            style={{
+              color: "blue",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={handleRepetitionDialogOpen}
+          >
+            繰り返し
+          </button>
           <Typography>
             {newRepetitionSettings && (
               <>
@@ -575,7 +625,16 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={
+                isClassificationFormValid ||
+                isCategoryFormValid ||
+                newAmountError
+              }
+              color="primary"
+            >
               作成
             </Button>
           </Stack>

@@ -4,6 +4,7 @@ import moment from "moment";
 
 import {
   IconButton,
+  TableContainer,
   TableCell,
   TableRow,
   Collapse,
@@ -20,36 +21,31 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import { incomeEdit } from "@/lib/api/income-api";
+import { paymentEdit } from "@/lib/api/payment-api";
 import { classificationEdit } from "@/lib/api/classification-api";
-
 import {
   classificationMonthlyAmountNew,
   classificationMonthlyAmountEdit,
 } from "@/lib/api/classificationMonthlyAmount-api";
 
 import {
-  incomeRowProps,
-  displayIncomeData,
-} from "@/interface/Income-interface";
+  paymentRowProps,
+  displayPaymentData,
+} from "@/interface/Payment-interface";
 
-import { IncomeShow } from "@/components/money/income/show";
+import { PaymentShow } from "@/components/money/payment/show";
 import { ClassificationShow } from "@/components/money/classification/show";
 
 // 表の行コンポーネント
-export const IncomeRow: React.FC<incomeRowProps> = (props) => {
+export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const {
-    row,
-    visibleColumns,
-    onIncomeUpdate,
-    onClassificationUpdate,
-    onIncomeDelete,
-    onClassificationDelete,
-  } = props;
-  const { classifications, classificationMonthlyAmounts, currentMonth } =
-    useContext(moneyContext);
+    accounts,
+    classifications,
+    classificationMonthlyAmounts,
+    currentMonth,
+  } = useContext(moneyContext);
 
-  const [isEditIncomeModalOpen, setIsEditIncomeModalOpen] = useState(false);
+  const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [isEditClassificationModalOpen, setIsEditClassificationModalOpen] =
     useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -76,13 +72,13 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
     handleClassificationMonthlyAmount();
   }, [currentMonth]);
 
-  const handleOpenEditIncomeModal = (index: number) => {
-    setIsEditIncomeModalOpen(true);
+  const handleOpenEditPaymentModal = (index: number) => {
+    setIsEditPaymentModalOpen(true);
     setIsHistory(index);
   };
 
-  const handleCloseEditIncomeModal = () => {
-    setIsEditIncomeModalOpen(false);
+  const handleCloseEditPaymentModal = () => {
+    setIsEditPaymentModalOpen(false);
   };
 
   const handleOpenEditClassificationModal = () => {
@@ -109,31 +105,31 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
   };
 
   const renderRepetition = (index: number) => {
-    const { income_repetition_type, income_repetition_settings } =
+    const { payment_repetition_type, payment_repetition_settings } =
       row.history[index];
-    if (!income_repetition_type || !income_repetition_settings) return "";
+    if (!payment_repetition_type || !payment_repetition_settings) return "";
 
     if (
-      income_repetition_type === "daily" &&
-      income_repetition_settings[0] === 1
+      payment_repetition_type === "daily" &&
+      payment_repetition_settings[0] === 1
     ) {
       return "毎日";
     } else if (
-      income_repetition_type === "weekly" &&
-      income_repetition_settings[0] === 1
+      payment_repetition_type === "weekly" &&
+      payment_repetition_settings[0] === 1
     ) {
-      return `毎週 ${income_repetition_settings.slice(1).join(" ")}`;
+      return `毎週 ${payment_repetition_settings.slice(1).join(" ")}`;
     } else if (
-      income_repetition_type === "monthly" &&
-      income_repetition_settings[0] === 1
+      payment_repetition_type === "monthly" &&
+      payment_repetition_settings[0] === 1
     ) {
       return "毎月";
-    } else if (income_repetition_settings[0] > 1) {
-      return `毎${income_repetition_settings[0]}${
-        income_repetition_type === "daily"
+    } else if (payment_repetition_settings[0] > 1) {
+      return `毎${payment_repetition_settings[0]}${
+        payment_repetition_type === "daily"
           ? "日"
-          : income_repetition_type === "weekly"
-          ? `週 ${income_repetition_settings.slice(1).join(" ")}`
+          : payment_repetition_type === "weekly"
+          ? `週 ${payment_repetition_settings.slice(1).join(" ")}`
           : "月"
       }`;
     } else {
@@ -142,11 +138,11 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
   };
 
   const calculateNextSchedule = (index: number) => {
-    if (row.history[index].income_repetition && row.history.length > 0) {
+    if (row.history[index].payment_repetition && row.history.length > 0) {
       const {
-        income_schedule,
-        income_repetition_type,
-        income_repetition_settings,
+        payment_schedule,
+        payment_repetition_type,
+        payment_repetition_settings,
       } = row.history[index];
 
       // 曜日名を整数にマッピングする関数
@@ -171,20 +167,20 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
         }
       };
 
-      const date = new Date(income_schedule);
+      const date = new Date(payment_schedule);
       const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
       const currentMonth = date.getMonth(); // 予定の日付の月を取得
       const currentYear = date.getFullYear(); // 予定の日付の年を取得
       let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
 
-      switch (income_repetition_type) {
+      switch (payment_repetition_type) {
         case "daily":
-          nextSchedule += income_repetition_settings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
+          nextSchedule += payment_repetition_settings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
           break;
 
         case "weekly":
-          if (income_repetition_settings.length > 1) {
-            const targetDaysOfWeek = income_repetition_settings
+          if (payment_repetition_settings.length > 1) {
+            const targetDaysOfWeek = payment_repetition_settings
               .slice(1)
               .map(mapDayOfWeekToInt);
             const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
@@ -207,7 +203,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
 
             nextSchedule +=
               (daysUntilNextSchedule +
-                (income_repetition_settings[0] - 1) * 7) *
+                (payment_repetition_settings[0] - 1) * 7) *
               24 *
               60 *
               60 *
@@ -218,7 +214,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
         case "monthly":
           // 次の予定日の年と月を計算
           let nextYear = currentYear;
-          let nextMonth = currentMonth + income_repetition_settings[0];
+          let nextMonth = currentMonth + payment_repetition_settings[0];
           if (nextMonth === 12) {
             nextYear++;
             nextMonth = 0; // 0 は 1 月を表す
@@ -248,7 +244,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
     return calculateNextSchedule(index);
   };
 
-  const handleIncomeDelete = async (id: string, index: number) => {
+  const handlePaymentDelete = async (id: string, index: number) => {
     const selectedClassification = classifications.find(
       (classification) => classification.id === row.id
     );
@@ -260,20 +256,19 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
       );
     try {
       if (row.classification_name === "分類なし") {
-        onIncomeDelete(id);
+        onPaymentDelete(id);
       } else {
         if (selectedClassification && selectedClassificationMonthlyAmount) {
-          console.log(1);
           const editedClassificationAmount =
             parseFloat(String(selectedClassification.amount)) -
-            parseFloat(String(row.history[index].income_amount));
+            parseFloat(String(row.history[index].payment_amount));
 
           await classificationEdit(
             selectedClassification.id,
             selectedClassification.account_id,
             selectedClassification.name,
             editedClassificationAmount,
-            "income"
+            "payment"
           );
           await classificationMonthlyAmountEdit(
             selectedClassificationMonthlyAmount.id,
@@ -288,109 +283,77 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
             account_name: selectedClassification.account_name,
             name: selectedClassification.name,
             amount: editedClassificationAmount,
-            classification_type: "income",
+            classification_type: "payment",
           };
 
-          onClassificationUpdate(editedClassification);
-          onIncomeDelete(id);
+          onClassificationUpdate();
+          onPaymentDelete(id);
         }
       }
     } catch (error) {
-      console.error("Failed to edit income:", error);
+      console.error("Failed to edit payment:", error);
     }
   };
 
   return (
-    <React.Fragment>
-      {isEditClassificationModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 ">
-          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
-          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
-            <button
-              onClick={handleCloseEditClassificationModal}
-              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
-            >
-              <CloseIcon />
-            </button>
-            <ClassificationShow
-              id={row.id}
-              account_id={row.classification_account_id}
-              account_name={row.classification_account_name}
-              name={row.classification_name}
-              amount={row.classification_amount}
-              classification_type={"income"}
-              onUpdate={onClassificationUpdate}
-              onClose={handleCloseEditClassificationModal}
-              onDelete={onClassificationDelete}
-            />
-          </div>
-        </div>
-      )}
-
-      {isEditIncomeModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 ">
-          <div className="absolute inset-0 bg-gray-900 opacity-75 "></div>
-          <div className="bg-white rounded-lg p-8 z-50 relative bg-slate-200">
-            <button
-              onClick={handleCloseEditIncomeModal}
-              className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
-            >
-              <CloseIcon />
-            </button>
-            <IncomeShow
-              id={row.history[isHistory].income_id}
-              category_id={row.history[isHistory].income_category_id}
-              category_name={row.history[isHistory].income_category_name}
-              classification_id={
-                row.history[isHistory].income_classification_id
-              }
-              classification_name={
-                row.history[isHistory].income_classification_name
-              }
-              amount={row.history[isHistory].income_amount}
-              schedule={row.history[isHistory].income_schedule}
-              repetition={row.history[isHistory].income_repetition}
-              repetition_type={row.history[isHistory].income_repetition_type}
-              repetition_settings={
-                row.history[isHistory].income_repetition_settings
-              }
-              body={row.history[isHistory].income_body}
-              onIncomeUpdate={onIncomeUpdate}
-              onClassificationUpdate={onClassificationUpdate}
-              onClose={handleCloseEditIncomeModal}
-              onIncomeDelete={handleIncomeDelete}
-            />
-          </div>
-        </div>
-      )}
-
-      <TableRow
-        sx={{
-          "& > *": {
-            borderBottom: "unset",
-            backgroundColor: isHistoryOpen ? "#f5f5f5" : "transparent",
-          },
-        }}
-      >
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-          >
-            {isHistoryOpen ? (
-              <KeyboardArrowUpIcon />
-            ) : (
-              <KeyboardArrowDownIcon />
-            )}
-          </IconButton>
-        </TableCell>
+    <Box>
+      <TableContainer component={Paper} sx={{ maxHeight: 605 }}>
+        <Table stickyHeader aria-label="collapsible table sticky table">
+          <TableHead>
+            <TableRow>           
+                <TableCell>
+                 `口座　${currentMonth.slice(1,3)}`
+                </TableCell>
+                {}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filter === "payment"
+              ? sortedAllRows.map((row) => (
+                  <PaymentRow
+                    key={row.id}
+                    row={row}
+                    visibleColumns={visibleColumns}
+                    onPaymentUpdate={updatePayment}
+                    onClassificationUpdate={updateClassification}
+                    onPaymentDelete={deleteData}
+                    onClassificationDelete={deleteClassification}
+                  />
+                ))
+              : filter === "income"
+              ? sortedAllRows.map((row) => (
+                  <IncomeRow
+                    key={row.id}
+                    row={row}
+                    visibleColumns={visibleColumns}
+                    onIncomeUpdate={updateIncome}
+                    onClassificationUpdate={updateClassification}
+                    onIncomeDelete={deleteData}
+                    onClassificationDelete={deleteClassification}
+                  />
+                ))
+              : sortedRows.map((row) => (
+                  <AccountRow
+                    key={row.id}
+                    row={row}
+                    visibleColumns={visibleColumns}
+                    onAccountUpdate={updateAccount}
+                    onTransferUpdate={updateTransfer}
+                    onAccountDelete={deleteData}
+                    onTransferDelete={deleteTransfer}
+                  />
+                ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TableRow>
+        <TableCell>口座</TableCell>
         {Object.keys(visibleColumns).map((key) =>
           visibleColumns[key] ? (
             <>
               {key === "classification_name" ? (
                 <TableCell key={key} component="th" scope="row">
-                  {row.classification_classification_type === "income" &&
+                  {row.classification_classification_type === "payment" &&
                   row.classification_name !== "分類なし" ? (
                     <button
                       style={{
@@ -414,12 +377,25 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                   className="pl-12"
                 >
                   {row.classification_name !== "分類なし"
-                    ? formatAmountCommas(row.classification_amount)
+                    ? formatAmountCommas(
+                        classificationMonthlyAmounts
+                          .filter(
+                            (classificationMonthlyAmount) =>
+                              classificationMonthlyAmount.month ===
+                                currentMonth &&
+                              classificationMonthlyAmount.classification_id ===
+                                row.id
+                          )
+                          .map(
+                            (classificationMonthlyAmount) =>
+                              classificationMonthlyAmount.amount
+                          )
+                      )
                     : ""}
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
-                  {String(row[key as keyof displayIncomeData])}
+                  {String(row[key as keyof displayPaymentData])}
                 </TableCell>
               )}
             </>
@@ -457,9 +433,9 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                   </TableHead>
                   <TableBody>
                     {row.history.map((historyRow, historyIndex) => (
-                      <TableRow key={historyRow.income_id}>
+                      <TableRow key={historyRow.payment_id}>
                         <TableCell component="th" scope="row">
-                          {formatDate(historyRow.income_schedule)}
+                          {formatDate(historyRow.payment_schedule)}
                         </TableCell>
                         <TableCell>
                           <button
@@ -469,20 +445,20 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                               cursor: "pointer",
                             }}
                             onClick={() =>
-                              handleOpenEditIncomeModal(historyIndex)
+                              handleOpenEditPaymentModal(historyIndex)
                             }
                           >
-                            {historyRow.income_category_name !== null
-                              ? historyRow.income_category_name
+                            {historyRow.payment_category_name !== null
+                              ? historyRow.payment_category_name
                               : "なし"}
                           </button>
                         </TableCell>
                         <TableCell>
-                          {formatAmountCommas(historyRow.income_amount)}
+                          {formatAmountCommas(historyRow.payment_amount)}
                         </TableCell>
                         <TableCell>
                           {renderRepetition(historyIndex)}
-                          {historyRow.income_repetition === true && (
+                          {historyRow.payment_repetition === true && (
                             <Typography>
                               次回の予定：
                               {formatDate(nextSchedule(historyIndex))}
@@ -492,8 +468,8 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              handleIncomeDelete(
-                                historyRow.income_id,
+                              handlePaymentDelete(
+                                historyRow.payment_id,
                                 historyIndex
                               )
                             }
