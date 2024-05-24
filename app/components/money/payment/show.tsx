@@ -726,21 +726,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           )}
         </li>
         <li className="pt-5">
-          <Typography variant="subtitle1">予定</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={editSchedule}
-              onChange={handleSchedulChange}
-            />
-          </Box>
-        </li>
-        <li className="pt-5">
           <button
             style={{
               color: "blue",
@@ -775,11 +760,30 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               </>
             )}
           </Typography>
-          <Typography>
+          {/* <Typography>
             {editRepetition === true && (
               <>次回の予定：{formatDate(nextSchedule)}</>
             )}
-          </Typography>
+          </Typography> */}
+        </li>
+        <li className="pt-5">
+          {editRepetition === true ? (
+            <Typography variant="subtitle1">繰り返し開始日</Typography>
+          ) : (
+            <Typography variant="subtitle1">予定</Typography>
+          )}
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={editSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
         </li>
         <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>

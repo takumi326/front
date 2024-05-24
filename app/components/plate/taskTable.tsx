@@ -40,7 +40,8 @@ import { TaskRow } from "@/components/task/row";
 import { TaskNew } from "@/components/task/new";
 
 export const TaskTable: React.FC = () => {
-  const { tasks, setTasks } = useContext(taskContext);
+  const { tasks, setTasks, allTasks, setAllTasks, currentMonth } =
+    useContext(taskContext);
 
   const [completedTasks, setCompletedTasks] = useState<taskData[]>([]);
   const [incompleteTasks, setIncompleteTasks] = useState<taskData[]>([]);
@@ -55,25 +56,22 @@ export const TaskTable: React.FC = () => {
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
-  // const rows = tasks.map((item) => ({
-  //   id: item.id,
-  //   title: item.title,
-  //   purpose_id: item.purpose_id,
-  //   purpose_title: item.purpose_title,
-  //   schedule: item.schedule,
-  //   repetition: item.repetition,
-  //   repetition_type: item.repetition_type,
-  //   repetition_settings: item.repetition_settings,
-  //   body: item.body,
-  //   completed: item.completed,
-  // }));
-
-  const selectrows: selectTaskData[] = tasks.map((item) => ({
-    title: item.title,
-    purpose_title: item.purpose_title,
-    schedule: item.schedule,
-    repetition_type: item.repetition_type,
-  }));
+  const [start, setStart] = useState<Date>(
+    new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)) - 1,
+      1
+    )
+  );
+  const [end, setEnd] = useState<Date>(
+    new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)),
+      0,
+      23,
+      59
+    )
+  );
 
   const [orderBy, setOrderBy] =
     React.useState<keyof (typeof tasks)[0]>("schedule");
@@ -112,11 +110,41 @@ export const TaskTable: React.FC = () => {
   });
 
   useEffect(() => {
+    const startScedule = new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)) - 1,
+      1
+    );
+    const endScedule = new Date(
+      Number(currentMonth.slice(0, 4)),
+      Number(currentMonth.slice(4)),
+      0
+    );
+    setStart(startScedule);
+    setEnd(endScedule);
+  }, [currentMonth]);
+
+  useEffect(() => {
     getData().then((data) => {
-      setTasks(data);
-      console.log(data);
+      setAllTasks(data);
     });
-  }, [isEditing, isAdding]);
+    getData().then((datas) => {
+      setTasks([]);
+      if (start !== undefined && end !== undefined) {
+        datas
+          .filter(
+            (data) =>
+              new Date(data.schedule).getTime() >= start.getTime() &&
+              new Date(data.schedule).getTime() <= end.getTime()
+          )
+          .map((data) => {
+            setTasks((prevTasks) => [...prevTasks, data]);
+          });
+      } else {
+        setTasks(datas);
+      }
+    });
+  }, [isEditing, isAdding, currentMonth, start, end]);
 
   useEffect(() => {
     setIsEditing(false);

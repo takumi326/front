@@ -494,12 +494,12 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         </TableCell>
                         <TableCell>
                           {renderRepetition(historyIndex)}
-                          {historyRow.payment_repetition === true && (
+                          {/* {historyRow.payment_repetition === true && (
                             <Typography>
                               次回の予定：
                               {formatDate(nextSchedule(historyIndex))}
                             </Typography>
-                          )}
+                          )} */}
                         </TableCell>
                         <TableCell align="right">
                           <IconButton

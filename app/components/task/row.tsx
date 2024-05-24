@@ -251,11 +251,11 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
               ) : key === "repetition_type" ? (
                 <>
                   {renderRepetition()}
-                  {row.repetition === true && (
+                  {/* {row.repetition === true && (
                     <Typography>
                       次回の予定：{formatDate(nextSchedule)}
                     </Typography>
-                  )}
+                  )} */}
                 </>
               ) : (
                 String(row[key as keyof taskData])

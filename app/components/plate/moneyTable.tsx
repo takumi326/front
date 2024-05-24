@@ -209,8 +209,21 @@ export const MoneyTable: React.FC = () => {
       await incomeGetData().then((data) => {
         setAllIncomes(data);
       });
-      await incomeGetData().then((data) => {
-        setIncomes(data);
+      await incomeGetData().then((datas) => {
+        setIncomes([]);
+        if (start !== undefined && end !== undefined) {
+          datas
+            .filter(
+              (data) =>
+                new Date(data.schedule).getTime() >= start.getTime() &&
+                new Date(data.schedule).getTime() <= end.getTime()
+            )
+            .map((data) => {
+              setIncomes((prevIncomes) => [...prevIncomes, data]);
+            });
+        } else {
+          setIncomes(datas);
+        }
       });
       await accountGetData().then((data) => {
         setAccounts(data);
@@ -227,8 +240,21 @@ export const MoneyTable: React.FC = () => {
       await transferGetData().then((data) => {
         setAllTransfers(data);
       });
-      await transferGetData().then((data) => {
-        setTransfers(data);
+      await transferGetData().then((datas) => {
+        setTransfers([]);
+        if (start !== undefined && end !== undefined) {
+          datas
+            .filter(
+              (data) =>
+                new Date(data.schedule).getTime() >= start.getTime() &&
+                new Date(data.schedule).getTime() <= end.getTime()
+            )
+            .map((data) => {
+              setTransfers((prevTransfers) => [...prevTransfers, data]);
+            });
+        } else {
+          setTransfers(datas);
+        }
       });
     };
 
@@ -1110,6 +1136,7 @@ export const MoneyTable: React.FC = () => {
                   </Stack>
                 </TableCell>
               ))}
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
