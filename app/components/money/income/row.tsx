@@ -482,12 +482,12 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                         </TableCell>
                         <TableCell>
                           {renderRepetition(historyIndex)}
-                          {historyRow.income_repetition === true && (
+                          {/* {historyRow.income_repetition === true && (
                             <Typography>
                               次回の予定：
                               {formatDate(nextSchedule(historyIndex))}
                             </Typography>
-                          )}
+                          )} */}
                         </TableCell>
                         <TableCell align="right">
                           <IconButton

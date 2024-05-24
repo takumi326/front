@@ -28,7 +28,7 @@ export const PurposeCalendar = (): JSX.Element => {
   }));
 
   return (
-    <div className="py-10">
+    <div className="pb-14">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"

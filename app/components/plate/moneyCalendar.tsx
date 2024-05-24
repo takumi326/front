@@ -132,14 +132,14 @@ export const MoneyCalendar = (): JSX.Element => {
       : null;
 
   return (
-    <div className="">
+    <div className="pb-5">
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         locales={[jaLocale]}
         locale="ja"
-        height={525}
+        height={473}
         events={events}
         businessHours={{ daysOfWeek: [1, 2, 3, 4, 5] }}
         dayCellContent={(e) => e.dayNumberText.replace("日", "")} // 日付の「日」を削除する

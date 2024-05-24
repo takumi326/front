@@ -406,21 +406,6 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           </Select>
         </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">予定</Typography>
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={newSchedule}
-              onChange={handleSchedulChange}
-            />
-          </Box>
-        </li>
-        <li className="pt-10">
           <button
             style={{
               color: "blue",
@@ -455,11 +440,30 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
               </>
             )}
           </Typography>
-          <Typography>
+          {/* <Typography>
             {newRepetition === true && (
               <>次回の予定：{formatDate(nextSchedule)}</>
             )}
-          </Typography>
+          </Typography> */}
+        </li>
+        <li className="pt-10">
+          {newRepetition === true ? (
+            <Typography variant="subtitle1">繰り返し開始日</Typography>
+          ) : (
+            <Typography variant="subtitle1">予定</Typography>
+          )}
+          <Box
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              borderWidth: "px",
+            }}
+          >
+            <InputDateTime
+              selectedDate={newSchedule}
+              onChange={handleSchedulChange}
+            />
+          </Box>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>

@@ -25,6 +25,7 @@ import {
 
 import { MoneyCalendar } from "@/components/plate/moneyCalendar";
 import { MoneyTable } from "@/components/plate/moneyTable";
+import { AccountNextMonthTable } from "@/components/plate/accountNextMonthTable";
 
 // import { PurposeTable } from "@/components/plate/purposeTable";
 
@@ -33,47 +34,23 @@ import { MoneyProvider, moneyContext } from "@/context/money-context";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Money: React.FC = () => {
-  const data = {
-    datasets: [
-      {
-        label: "",
-        data: [12, 19, 3, 5, 2, 3],
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
-          "rgba(75, 192, 192, 0.2)",
-          "rgba(153, 102, 255, 0.2)",
-          "rgba(255, 159, 64, 0.2)",
-        ],
-        borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)",
-          "rgba(255, 159, 64, 1)",
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
-
   return (
     <>
       <MoneyProvider>
         <ul className="py-6 grid grid-cols-2">
-          <div>
-            <div className="pl-10 max-w-3xl">
-              <p className="text-right">
-                月の変更
-              </p>
+          <div className="pl-10 max-w-3xl">
+            <div>
+              <div className="flex justify-between font-bold">
+                <p>年の変更</p>
+                <p className="text-right">月の変更</p>
+              </div>
               <MoneyCalendar />
             </div>
-            <div>
-              <p className="font-bold text-center">
+            <div className="">
+              <p className=" font-bold text-center">
                 来月以降口座に残ってるお金 （口座ごと）
               </p>
+              <AccountNextMonthTable />
             </div>
           </div>
           <div className="pr-10">

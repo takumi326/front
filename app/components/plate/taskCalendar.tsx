@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -10,15 +10,39 @@ import { taskGetData as getData } from "@/lib/api/task-api";
 import { taskContext } from "@/context/task-context";
 
 export const TaskCalendar = (): JSX.Element => {
-  const { tasks, setTasks } = useContext(taskContext);
+  const { allTasks, setAllTasks, currentMonth, setCurrentMonth } =
+    useContext(taskContext);
+
+  // useEffect(() => {
+  //   getData().then((data) => {
+  //     setTasks(data);
+  //   });
+  // }, []);
+
+  const calendarRef = useRef(null);
+
+  const handleDateChange = () => {
+    const calendarApi = calendarRef.current.getApi();
+    const currentDate = calendarApi.getDate();
+    setCurrentMonth(
+      `${currentDate.getFullYear()}${currentDate.getMonth() + 1}`
+    );
+  };
 
   useEffect(() => {
-    getData().then((data) => {
-      setTasks(data);
-    });
+    console.log(allTasks);
+    console.log(currentMonth);
+    const calendarApi = calendarRef.current.getApi();
+
+    calendarApi.on("datesSet", handleDateChange); // datesSetイベントリスナーを追加
+
+    // クリーンアップ
+    return () => {
+      calendarApi.off("datesSet", handleDateChange);
+    };
   }, []);
 
-  const events = tasks.map((item) => ({
+  const events = allTasks.map((item) => ({
     title: item.title,
     start: item.schedule,
     allDay: item.schedule,
@@ -28,8 +52,9 @@ export const TaskCalendar = (): JSX.Element => {
   }));
 
   return (
-    <div className="py-10">
+    <div className="pb-14">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         locales={[jaLocale]}
