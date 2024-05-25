@@ -7,6 +7,7 @@ export type incomeData = {
   classification_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];
@@ -21,6 +22,7 @@ export type classificationNilIncomeData = {
   income_classification_name: string;
   income_amount: number;
   income_schedule: Date;
+  income_end_date: Date;
   income_repetition: boolean;
   income_repetition_type: string;
   income_repetition_settings: [];
@@ -57,6 +59,7 @@ export type displayIncomeData = {
     income_classification_name: string;
     income_amount: number;
     income_schedule: Date;
+    income_end_date: Date;
     income_repetition: boolean;
     income_repetition_type: string;
     income_repetition_settings: [];
@@ -101,7 +104,6 @@ export interface classificationNilIncomeRowProps {
   onClassificationDelete: (id: string) => void;
 }
 
-
 // Showコンポーネントで使用する Props の型を定義
 export interface incomeShowProps {
   id: string;
@@ -111,6 +113,7 @@ export interface incomeShowProps {
   classification_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];

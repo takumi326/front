@@ -24,8 +24,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
 import {
-  purposeGetData as getData,
-  purposeDelete as Delete,
+  purposeGetData,
+  purposeDelete,
 } from "@/lib/api/purpose-api";
 
 import {
@@ -51,26 +51,10 @@ export const PurposeTable: React.FC = () => {
   );
   const [displayedPurposes, setDisplayedPurposes] = useState<purposeData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
-
-  // const rows = purposes.map((item) => ({
-  //   id: item.id,
-  //   title: item.title,
-  //   result: item.result,
-  //   deadline: item.deadline,
-  //   body: item.body,
-  //   completed: item.completed,
-  // }));
-
-  const selectrows: selectPurposeData[] = purposes.map((item) => ({
-    title: item.title,
-    result: item.result,
-    deadline: item.deadline,
-  }));
 
   const [orderBy, setOrderBy] =
     React.useState<keyof (typeof purposes)[0]>("deadline");
@@ -95,7 +79,6 @@ export const PurposeTable: React.FC = () => {
       });
       return initialSettings;
     } else {
-      // rows が空の場合は適切な初期設定を行う
       return {
         title: true,
         result: true,
@@ -105,15 +88,11 @@ export const PurposeTable: React.FC = () => {
   });
 
   useEffect(() => {
-    getData().then((data) => {
+    purposeGetData().then((data) => {
       setPurposes(data);
+      setIsEditing(false);
     });
-  }, [isEditing, isAdding]);
-
-  useEffect(() => {
-    setIsEditing(false);
-    setIsAdding(false);
-  }, [purposes]);
+  }, [isEditing]);
 
   useEffect(() => {
     const completed = purposes.filter((purpose) => purpose.completed);
@@ -121,7 +100,7 @@ export const PurposeTable: React.FC = () => {
     setCompletedPurposes(completed);
     setIncompletePurposes(incomplete);
     setDisplayedPurposes(purposes);
-  }, [purposes, isEditing, isAdding]);
+  }, [purposes, isEditing]);
 
   useEffect(() => {
     let filteredPurposes: purposeData[] = [];
@@ -132,7 +111,6 @@ export const PurposeTable: React.FC = () => {
     } else if (filter === "incomplete") {
       filteredPurposes = incompletePurposes;
     }
-    // 表示される目的を設定
     setDisplayedPurposes(filteredPurposes);
   }, [filter, purposes, completedPurposes, incompletePurposes]);
 
@@ -148,42 +126,19 @@ export const PurposeTable: React.FC = () => {
     setIsNewModalOpen(false);
   };
 
-  // TableShow コンポーネント内での更新処理
-  const newPurpose = (newPurpose: purposeData) => {
-    setPurposes([...purposes, newPurpose]);
+  const editPurpose = () => {
     setIsEditing(true);
   };
 
-  // TableShow コンポーネント内での更新処理
-  const updatePurpose = (updatePurpose: purposeData) => {
-    const updatedPurposes = purposes.map((purpose) => {
-      if (purpose.id === updatePurpose.id) {
-        return updatePurpose; // 編集されたデータで該当の目的を更新
-      }
-      return purpose;
-    });
-    setPurposes(updatedPurposes); // 更新された purposes ステートを設定
-    setIsAdding(true);
-  };
-
-  const deletePurpose = async (id: string) => {
+  const deleteAllPurpose = async () => {
     try {
-      console.log(id);
-      await Delete(id);
-      setPurposes(purposes.filter((purpose) => purpose.id !== id)); // UIからも削除
+      await Promise.all(selected.map((id) => purposeDelete(id)));
+      setIsEditing(true);
+      setCompletedSelected([]); 
+      setIncompleteSelected([]);
+      setSelected([]); 
     } catch (error) {
-      console.error("Failed to delete todo:", error);
-    }
-  };
-
-  const deleteAllPurpose = async (ids: string[]) => {
-    try {
-      // 複数のIDに対して削除を実行
-      await Promise.all(ids.map((id) => Delete(id)));
-      // UIからも削除
-      setPurposes(purposes.filter((purpose) => !ids.includes(purpose.id)));
-    } catch (error) {
-      console.error("Failed to delete todo:", error);
+      console.error("Failed to delete purpose:", error);
     }
   };
 
@@ -203,7 +158,6 @@ export const PurposeTable: React.FC = () => {
     setOrderBy(property);
   };
 
-  // データをソートする関数
   const sortedRows = displayedPurposes.slice().sort((a, b) => {
     const compare = (key: keyof (typeof purposes)[0]) => {
       if (order[key] === "asc") {
@@ -300,21 +254,6 @@ export const PurposeTable: React.FC = () => {
     Object.entries(columnSettings).filter(([key, value]) => value)
   );
 
-  const handleDelete = (id: string) => {
-    deletePurpose(id);
-  };
-
-  const handleAllDelete = () => {
-    deleteAllPurpose(selected);
-    setCompletedSelected([]); // 選択をクリア
-    setIncompleteSelected([]); // 選択をクリア
-    setSelected([]); // 選択をクリア
-  };
-
-  const handleNewCloseModal = () => {
-    setIsNewModalOpen(false);
-  };
-
   return (
     <Box>
       {isNewModalOpen && (
@@ -327,7 +266,7 @@ export const PurposeTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <PurposeNew onAdd={newPurpose} onClose={handleNewCloseModal} />
+            <PurposeNew onAdd={editPurpose} onClose={handleCloseModal} />
           </div>
         </div>
       )}
@@ -358,7 +297,7 @@ export const PurposeTable: React.FC = () => {
           onClick={selected.length > 0 ? undefined : handleMenuClick}
         >
           {selected.length > 0 ? (
-            <DeleteIcon onClick={() => handleAllDelete()} />
+            <DeleteIcon onClick={deleteAllPurpose} />
           ) : (
             <KeyboardArrowDownIcon />
           )}
@@ -474,8 +413,7 @@ export const PurposeTable: React.FC = () => {
                 onSelect={handleSelect}
                 isSelected={isSelected(row.id, row.completed)}
                 visibleColumns={visibleColumns}
-                onUpdate={updatePurpose}
-                onDelete={handleDelete}
+                onUpdate={editPurpose}
               />
             ))}
           </TableBody>

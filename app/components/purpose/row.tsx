@@ -6,14 +6,15 @@ import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { purposeEdit as Edit } from "@/lib/api/purpose-api";
+import { purposeEdit, purposeDelete } from "@/lib/api/purpose-api";
+
 import { purposeRowProps, purposeData } from "@/interface/purpose-interface";
 
 import { PurposeShow } from "@/components/purpose/show";
 
 // 表の行コンポーネント
 export const PurposeRow: React.FC<purposeRowProps> = (props) => {
-  const { row, onSelect, isSelected, visibleColumns, onUpdate, onDelete } =
+  const { row, onSelect, isSelected, visibleColumns, onUpdate } =
     props;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(row.completed);
@@ -26,22 +27,28 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
     setIsEditModalOpen(false);
   };
 
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+  const handleCheckboxChange = () => {
     onSelect(row.id, row.completed);
   };
 
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
+  const formatDate = (date: string): string => {
+    if (!date) return "";
     return moment(date).format("MM/DD/YY");
   };
 
-  const handleCompletionToggle = async (e: ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+  const deletePurpose = async (id: string) => {
+    try {
+      await purposeDelete(id);
+      onUpdate();
+    } catch (error) {
+      console.error("Failed to delete purpose:", error);
+    }
+  };
+
+  const handleCompletionToggle = async () => {
     try {
       const updatedRow = { ...row, completed: !isChecked };
-      await Edit(
+      await purposeEdit(
         updatedRow.id,
         updatedRow.title,
         updatedRow.result,
@@ -50,9 +57,9 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
         updatedRow.completed
       );
       setIsChecked(!isChecked);
-      onUpdate(updatedRow);
+      onUpdate();
     } catch (error) {
-      console.error("Failed to edit todo:", error);
+      console.error("Failed to edit purpose:", error);
     }
   };
 
@@ -77,7 +84,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
               completed={row.completed}
               onUpdate={onUpdate}
               onClose={handleEditCloseModal}
-              onDelete={onDelete}
+              onDelete={deletePurpose}
             />
           </div>
         </div>
@@ -117,7 +124,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
         )}
         <TableCell align="right">
           <Checkbox checked={row.completed} onChange={handleCompletionToggle} />
-          <IconButton onClick={() => onDelete(row.id)}>
+          <IconButton onClick={() => deletePurpose(row.id)}>
             <DeleteIcon />
           </IconButton>
         </TableCell>

@@ -12,7 +12,8 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import { purposeEdit as Edit } from "@/lib/api/purpose-api";
+import { purposeEdit  } from "@/lib/api/purpose-api";
+
 import { purposeShowProps } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
@@ -31,14 +32,14 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   } = props;
   const [editTitle, setEditTitle] = useState(title);
   const [editResult, setEditResult] = useState(result);
-  const [editDeadline, setEditDeadline] = useState<Date>(deadline);
+  const [editDeadline, setEditDeadline] = useState(deadline);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
   const [isFormValid, setIsFormValid] = useState(true);
 
   const editPurpose = async (id: string) => {
     try {
-      await Edit(
+      await purposeEdit(
         id,
         editTitle,
         editResult,
@@ -46,24 +47,14 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
         editBody,
         editCompleted
       );
-      const editedData = {
-        id: id,
-        title: editTitle,
-        result: editResult,
-        deadline: editDeadline,
-        body: editBody,
-        completed: editCompleted,
-      };
-      onUpdate(editedData);
+      onUpdate();
     } catch (error) {
       console.error("Failed to edit purpose:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
         setEditTitle(value);
@@ -81,12 +72,12 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   };
 
   const handleCheckboxChange = () => {
-    setEditCompleted(!editCompleted); // 現在の値を反転させて更新
+    setEditCompleted(!editCompleted); 
   };
 
-  // 日付が変更されたときのハンドラ
   const handleDateChange = (date: Date) => {
-    setEditDeadline(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setEditDeadline(stringDate);
   };
 
   const handleSave = () => {

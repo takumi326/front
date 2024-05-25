@@ -23,10 +23,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import {
-  taskGetData as getData,
-  taskDelete as Delete,
-} from "@/lib/api/task-api";
+import { taskGetData, taskDelete } from "@/lib/api/task-api";
 
 import {
   taskData,
@@ -40,7 +37,7 @@ import { TaskRow } from "@/components/task/row";
 import { TaskNew } from "@/components/task/new";
 
 export const TaskTable: React.FC = () => {
-  const { tasks, setTasks, allTasks, setAllTasks, currentMonth } =
+  const { tasks, setTasks, setAllTasks, currentMonth } =
     useContext(taskContext);
 
   const [completedTasks, setCompletedTasks] = useState<taskData[]>([]);
@@ -50,7 +47,6 @@ export const TaskTable: React.FC = () => {
   );
   const [displayedTasks, setDisplayedTasks] = useState<taskData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
@@ -125,31 +121,27 @@ export const TaskTable: React.FC = () => {
   }, [currentMonth]);
 
   useEffect(() => {
-    getData().then((data) => {
+    taskGetData().then((data) => {
       setAllTasks(data);
     });
-    getData().then((datas) => {
+    taskGetData().then((datas) => {
       setTasks([]);
       if (start !== undefined && end !== undefined) {
         datas
           .filter(
-            (data) =>
+            (data: taskData) =>
               new Date(data.schedule).getTime() >= start.getTime() &&
               new Date(data.schedule).getTime() <= end.getTime()
           )
-          .map((data) => {
+          .map((data: taskData) => {
             setTasks((prevTasks) => [...prevTasks, data]);
           });
       } else {
         setTasks(datas);
       }
+      setIsEditing(false);
     });
-  }, [isEditing, isAdding, currentMonth, start, end]);
-
-  useEffect(() => {
-    setIsEditing(false);
-    setIsAdding(false);
-  }, [tasks]);
+  }, [isEditing, currentMonth, start, end]);
 
   useEffect(() => {
     const completed = tasks.filter((task) => task.completed);
@@ -157,7 +149,7 @@ export const TaskTable: React.FC = () => {
     setCompletedTasks(completed);
     setIncompleteTasks(incomplete);
     setDisplayedTasks(tasks);
-  }, [tasks, isEditing, isAdding]);
+  }, [tasks, isEditing]);
 
   useEffect(() => {
     let filteredTasks: taskData[] = [];
@@ -168,7 +160,6 @@ export const TaskTable: React.FC = () => {
     } else if (filter === "incomplete") {
       filteredTasks = incompleteTasks;
     }
-    // 表示される目的を設定
     setDisplayedTasks(filteredTasks);
   }, [filter, tasks, completedTasks, incompleteTasks]);
 
@@ -184,42 +175,19 @@ export const TaskTable: React.FC = () => {
     setIsNewModalOpen(false);
   };
 
-  // TableShow コンポーネント内での更新処理
-  const newTask = (newTask: taskData) => {
-    setTasks([...tasks, newTask]);
+  const editTask = () => {
     setIsEditing(true);
   };
 
-  // TableShow コンポーネント内での更新処理
-  const updateTask = (updateTask: taskData) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === updateTask.id) {
-        return updateTask; // 編集されたデータで該当の目的を更新
-      }
-      return task;
-    });
-    setTasks(updatedTasks); // 更新された tasks ステートを設定
-    setIsAdding(true);
-  };
-
-  const deleteTask = async (id: string) => {
+  const deleteAllTask = async () => {
     try {
-      console.log(id);
-      await Delete(id);
-      setTasks(tasks.filter((task) => task.id !== id)); // UIからも削除
+      await Promise.all(selected.map((id) => taskDelete(id)));
+      setIsEditing(true);
+      setCompletedSelected([]);
+      setIncompleteSelected([]);
+      setSelected([]);
     } catch (error) {
-      console.error("Failed to delete todo:", error);
-    }
-  };
-
-  const deleteAllTask = async (ids: string[]) => {
-    try {
-      // 複数のIDに対して削除を実行
-      await Promise.all(ids.map((id) => Delete(id)));
-      // UIからも削除
-      setTasks(tasks.filter((task) => !ids.includes(task.id)));
-    } catch (error) {
-      console.error("Failed to delete todo:", error);
+      console.error("Failed to delete task:", error);
     }
   };
 
@@ -334,21 +302,6 @@ export const TaskTable: React.FC = () => {
     Object.entries(columnSettings).filter(([key, value]) => value)
   );
 
-  const handleDelete = (id: string) => {
-    deleteTask(id);
-  };
-
-  const handleAllDelete = () => {
-    deleteAllTask(selected);
-    setCompletedSelected([]); // 選択をクリア
-    setIncompleteSelected([]); // 選択をクリア
-    setSelected([]); // 選択をクリア
-  };
-
-  const handleNewCloseModal = () => {
-    setIsNewModalOpen(false);
-  };
-
   return (
     <Box>
       {isNewModalOpen && (
@@ -361,7 +314,7 @@ export const TaskTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <TaskNew onAdd={newTask} onClose={handleNewCloseModal} />
+            <TaskNew onAdd={editTask} onClose={handleCloseModal} />
           </div>
         </div>
       )}
@@ -392,7 +345,7 @@ export const TaskTable: React.FC = () => {
           onClick={selected.length > 0 ? undefined : handleMenuClick}
         >
           {selected.length > 0 ? (
-            <DeleteIcon onClick={() => handleAllDelete()} />
+            <DeleteIcon onClick={deleteAllTask} />
           ) : (
             <KeyboardArrowDownIcon />
           )}
@@ -505,8 +458,7 @@ export const TaskTable: React.FC = () => {
                 onSelect={handleSelect}
                 isSelected={isSelected(row.id, row.completed)}
                 visibleColumns={visibleColumns}
-                onUpdate={updateTask}
-                onDelete={handleDelete}
+                onUpdate={editTask}
               />
             ))}
           </TableBody>
