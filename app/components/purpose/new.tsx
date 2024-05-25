@@ -3,35 +3,33 @@ import React, { useState, ChangeEvent } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
-import { purposeNew as New } from "@/lib/api/purpose-api";
+import { purposeNew } from "@/lib/api/purpose-api";
+
 import { purposeNewProps } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const { onAdd, onClose } = props;
-  const undifindDateObject = new Date();
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
 
   const [newTitle, setNewTitle] = useState("");
   const [newResult, setNewResult] = useState("");
-  const [newDeadline, setNewDeadline] = useState<Date>(undifindDateObject);
+  const [newDeadline, setNewDeadline] = useState(initialDateObject);
   const [newBody, setNewBody] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
   const newPurpose = async () => {
     try {
-      const response = await New(newTitle, newResult, newDeadline, newBody);
-      console.log(newTitle);
-      onAdd(response);
+      await purposeNew(newTitle, newResult, newDeadline, newBody);
+      onAdd();
     } catch (error) {
-      console.error("Failed to create todo:", error);
+      console.error("Failed to create purpose:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
         setNewTitle(value);
@@ -48,14 +46,14 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
     }
   };
 
-  const handleSave = () => {
-    newPurpose();
-    console.log(newTitle);
-    onClose();
+  const handleDateChange = (date: Date) => {
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setNewDeadline(stringDate);
   };
 
-  const handleDateChange = (date: Date) => {
-    setNewDeadline(date);
+  const handleSave = () => {
+    newPurpose();
+    onClose();
   };
 
   return (

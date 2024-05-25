@@ -6,6 +6,7 @@ export type transferData = {
   after_account_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];
@@ -47,6 +48,7 @@ export interface transferShowProps {
   after_account_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];

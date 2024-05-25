@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
   Box,
-  Checkbox,
   TextField,
   Button,
   Typography,
@@ -15,80 +14,67 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
-
-import { taskNew as New } from "@/lib/api/task-api";
-import { taskNewProps } from "@/interface/task-interface";
-
-import { purposeGetData } from "@/lib/api/purpose-api";
-import { purposeData } from "@/interface/purpose-interface";
-
-import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
-
-import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
+import { taskContext } from "@/context/task-context";
+
+import { taskNew } from "@/lib/api/task-api";
+import { taskNewProps } from "@/interface/task-interface";
+
+import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
+
 export const TaskNew: React.FC<taskNewProps> = (props) => {
   const { onAdd, onClose } = props;
-  const initialDateObject = new Date();
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
+  const currentDate = new Date();
+  currentDate.setFullYear(currentDate.getFullYear() + 5);
+  const endDateObject = currentDate.toLocaleDateString();
+  const { purposes } = useContext(taskContext);
 
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(1);
-  const [selectedDays, setSelectedDays] = useState([]);
+  const [frequency, setFrequency] = useState<number>(1);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [period, setPeriod] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newPurposeId, setNewPurposeId] = useState("");
-  const [newPurposeTitle, setNewPurposeTitle] = useState("");
-  const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
+  const [newSchedule, setNewSchedule] = useState(initialDateObject);
+  const [newEndDate, setNewEndDate] = useState(endDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
-  const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
+  const [newRepetitionSettings, setNewRepetitionSettings] = useState<string[]>(
+    []
+  );
   // const [newTime, setNewTime] = useState("");
   const [newBody, setNewBody] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
-  useEffect(() => {
-    purposeGetData().then((data) => {
-      setPurposes(data);
-    });
-  }, []);
-
   const newTask = async () => {
     try {
-      const response = await New(
+      await taskNew(
         newTitle,
         newPurposeId,
         newSchedule,
+        newEndDate,
         newRepetition,
         newRepetitionType,
         newRepetitionSettings,
         newBody
       );
-      const newData = {
-        id: response.id,
-        title: response.title,
-        purpose_id: response.purpose_id,
-        purpose_title: newPurposeTitle,
-        schedule: response.schedule,
-        repetition: response.repetition,
-        repetition_type: response.repetition_type,
-        repetition_settings: response.repetition_settings,
-        body: response.body,
-        completed: response.completed,
-      };
-      onAdd(newData);
+      onAdd();
     } catch (error) {
       console.error("Failed to create task:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
         setNewTitle(value);
@@ -102,35 +88,21 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
   };
 
-  const handlePurposeChange = (event: ChangeEvent<{ value: unknown }>) => {
-    const value = event.target.value as string;
+  const handlePurposeChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value;
     setNewPurposeId(value);
-
-    // purposes リストから対応する目標を探し、その目標のタイトルをセットする
-    const selectedPurpose = purposes.find((purpose) => purpose.id === value);
-    if (selectedPurpose) {
-      setNewPurposeTitle(selectedPurpose.title);
-    } else {
-      setNewPurposeTitle(""); // 目標が見つからない場合は空文字をセットするなど、適切な処理を行う
-    }
   };
 
-  const handleCheckboxChange = () => {
-    setNewCompleted(!newCompleted); // 現在の値を反転させて更新
-  };
-
-  // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
     setPeriod("daily");
   };
 
-  // 繰り返しダイアログの枠外をクリックされたとき
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
       newRepetitionSettings && newRepetitionSettings[0]
-        ? newRepetitionSettings[0]
+        ? Number(newRepetitionSettings[0])
         : 1
     );
     setSelectedDays(
@@ -141,7 +113,6 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     setPeriod(newRepetitionType ? newRepetitionType : "");
   };
 
-  // 繰り返しダイアログの削除ボタン押されたとき
   const handleRepetitionDialogDelete = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(false);
@@ -152,30 +123,41 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     setPeriod("");
   };
 
-  // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(true);
     setNewRepetitionType(period);
-    setNewRepetitionSettings([frequency, ...selectedDays]);
+    setNewRepetitionSettings([frequency.toString(), ...selectedDays]);
   };
 
-  // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setNewSchedule(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setNewSchedule(stringDate);
   };
 
-  // 保存ボタン押したとき
+  const handleEndDateChange = (date: Date) => {
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      stringDate = endDateObject;
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+    setNewEndDate(stringDate);
+  };
+
   const handleSave = () => {
     newTask();
     onClose();
   };
 
-  const handleFrequencyChange = (delta) => {
+  const handleFrequencyChange = (delta: number) => {
     setFrequency((prev) => Math.max(1, prev + delta));
   };
 
-  const handlePeriodChange = (event, newPeriod: string | null) => {
+  const handlePeriodChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newPeriod: string | null
+  ) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
       if (newPeriod !== "weekly") {
@@ -184,7 +166,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
         ? prev.filter((d) => d !== day)
@@ -199,7 +181,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     if (!newRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
 
     // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek) => {
+    const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
           return 1;
@@ -228,7 +210,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
 
     switch (newRepetitionType) {
       case "daily":
-        nextSchedule += newRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
+        nextSchedule += Number(newRepetitionSettings[0]) * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
         break;
 
       case "weekly":
@@ -255,7 +237,8 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           }
 
           nextSchedule +=
-            (daysUntilNextSchedule + (newRepetitionSettings[0] - 1) * 7) *
+            (daysUntilNextSchedule +
+              (Number(newRepetitionSettings[0]) - 1) * 7) *
             24 *
             60 *
             60 *
@@ -266,7 +249,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
       case "monthly":
         // 次の予定日の年と月を計算
         let nextYear = currentYear;
-        let nextMonth = currentMonth + newRepetitionSettings[0];
+        let nextMonth = currentMonth + Number(newRepetitionSettings[0]);
         if (nextMonth === 12) {
           nextYear++;
           nextMonth = 0; // 0 は 1 月を表す
@@ -284,13 +267,15 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
 
     // 次の予定日を Date オブジェクトに変換して返す
-    return new Date(nextSchedule);
+    if (new Date(newEndDate).getTime() >= new Date(nextSchedule).getTime()) {
+      return new Date(nextSchedule);
+    }
   };
 
   const nextSchedule = calculateNextSchedule();
 
   const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
+    if (!date) return "";
 
     return moment(date).format("MM/DD/YY");
   };
@@ -301,7 +286,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     (period === "weekly" && selectedDays.length > 0);
 
   return (
-    <Box width={560} height={700}>
+    <Box width={560} height={650}>
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -338,18 +323,16 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             </Box>
             {period === "weekly" && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                {["月", "火", "水", "木", "金", "土", "日"].map(
-                  (day, index) => (
-                    <ToggleButton
-                      key={day}
-                      value={day}
-                      selected={selectedDays.includes(day)}
-                      onChange={() => toggleDay(day)}
-                    >
-                      {day}
-                    </ToggleButton>
-                  )
-                )}
+                {["月", "火", "水", "木", "金", "土", "日"].map((day) => (
+                  <ToggleButton
+                    key={day}
+                    value={day}
+                    selected={selectedDays.includes(day)}
+                    onChange={() => toggleDay(day)}
+                  >
+                    {day}
+                  </ToggleButton>
+                ))}
               </Box>
             )}
           </Box>
@@ -376,7 +359,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
       </Dialog>
 
       <ul className="w-full">
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">タイトル</Typography>
           <TextField
             fullWidth
@@ -386,7 +369,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             onChange={handleChange}
           />
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">関連する目標</Typography>
           <Select
             fullWidth
@@ -405,7 +388,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             ))}
           </Select>
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <button
             style={{
               color: "blue",
@@ -420,15 +403,15 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             {newRepetitionSettings && (
               <>
                 {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎日`}
                 {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
                 {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎月`}
-                {newRepetitionSettings[0] > 1 &&
+                {Number(newRepetitionSettings[0]) > 1 &&
                   newRepetitionSettings &&
                   `毎${newRepetitionSettings[0]}${
                     newRepetitionType === "daily"
@@ -440,13 +423,8 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
               </>
             )}
           </Typography>
-          {/* <Typography>
-            {newRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography> */}
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           {newRepetition === true ? (
             <Typography variant="subtitle1">繰り返し開始日</Typography>
           ) : (
@@ -465,7 +443,26 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             />
           </Box>
         </li>
-        <li className="pt-10">
+        {newRepetition === true && (
+          <li className="pt-5">
+            <Typography variant="subtitle1">繰り返し終了日</Typography>
+            <Box
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={newEndDate}
+                onChange={handleEndDateChange}
+              />
+            </Box>
+            <Typography>※設定できるのは最大で今日から5年後です</Typography>
+            <Typography>※設定しない場合は今日から5年後が設定されます</Typography>
+          </li>
+        )}
+        <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>
           <TextField
             fullWidth
@@ -476,7 +473,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             onChange={handleChange}
           />
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Stack direction="row" justifyContent="center">
             <Button
               variant="contained"

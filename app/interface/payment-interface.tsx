@@ -7,6 +7,7 @@ export type paymentData = {
   classification_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];
@@ -21,6 +22,7 @@ export type classificationNilPaymentData = {
   payment_classification_name: string;
   payment_amount: number;
   payment_schedule: Date;
+  payment_end_date: Date;
   payment_repetition: boolean;
   payment_repetition_type: string;
   payment_repetition_settings: [];
@@ -57,6 +59,7 @@ export type displayPaymentData = {
     payment_classification_name: string;
     payment_amount: number;
     payment_schedule: Date;
+    payment_end_date: Date;
     payment_repetition: boolean;
     payment_repetition_type: string;
     payment_repetition_settings: [];
@@ -101,7 +104,6 @@ export interface classificationNilPaymentRowProps {
   onClassificationDelete: (id: string) => void;
 }
 
-
 // Showコンポーネントで使用する Props の型を定義
 export interface paymentShowProps {
   id: string;
@@ -111,6 +113,7 @@ export interface paymentShowProps {
   classification_name: string;
   amount: number;
   schedule: Date;
+  end_date: Date;
   repetition: boolean;
   repetition_type: string;
   repetition_settings: [];

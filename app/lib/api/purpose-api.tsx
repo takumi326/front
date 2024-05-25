@@ -12,18 +12,16 @@ export const purposeGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
-    console.log(response.data);
     return response.data;
   } catch (error) {
-    throw new Error("Failed to fetch data");
+    throw new Error("Failed to fetch purpose");
   }
 };
 
 export const purposeNew = async (
   title: string,
   result: string,
-  deadline: Date,
+  deadline: string,
   body: string
 ): Promise<purposeData> => {
   try {
@@ -46,8 +44,6 @@ export const purposeNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post purpose");
@@ -58,7 +54,7 @@ export const purposeEdit = async (
   id: string,
   title: string,
   result: string,
-  deadline: Date,
+  deadline: string,
   body: string,
   completed: boolean
 ) => {
@@ -82,7 +78,6 @@ export const purposeEdit = async (
         },
       }
     );
-    console.log("update成功");
     return response;
   } catch (error) {
     throw new Error("Failed to edit purpose");
@@ -98,7 +93,6 @@ export const purposeDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete purpose");
   }

@@ -22,10 +22,11 @@ export const taskGetData = async () => {
 export const taskNew = async (
   title: string,
   purpose_id: string,
-  schedule: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string
 ): Promise<taskData> => {
   try {
@@ -36,6 +37,7 @@ export const taskNew = async (
           title: title,
           purpose_id: purpose_id,
           schedule: schedule,
+          end_date: end_date,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,
@@ -63,10 +65,11 @@ export const taskEdit = async (
   id: string,
   title: string,
   purpose_id: string,
-  schedule: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string,
   completed: boolean
 ) => {
@@ -78,6 +81,7 @@ export const taskEdit = async (
           title: title,
           purpose_id: purpose_id,
           schedule: schedule,
+          end_date: end_date,
           repetition: repetition,
           repetition_type: repetition_type,
           repetition_settings: repetition_settings,

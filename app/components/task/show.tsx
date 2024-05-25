@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import {
@@ -19,15 +19,15 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
-import { taskEdit as Edit } from "@/lib/api/task-api";
-import { taskShowProps } from "@/interface/task-interface";
+import { taskContext } from "@/context/task-context";
 
-import { purposeGetData } from "@/lib/api/purpose-api";
-import { purposeData } from "@/interface/purpose-interface";
+import { taskEdit } from "@/lib/api/task-api";
+import { taskShowProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
@@ -36,8 +36,8 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     id,
     title,
     purpose_id,
-    purpose_title,
     schedule,
+    end_date,
     repetition,
     repetition_type,
     repetition_settings,
@@ -47,11 +47,13 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     onClose,
     onDelete,
   } = props;
-  const [purposes, setPurposes] = useState<purposeData[]>([]);
+  const { purposes } = useContext(taskContext);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(
-    repetition_settings && repetition_settings[0] ? repetition_settings[0] : 1
+  const [frequency, setFrequency] = useState<number>(
+    repetition_settings && Number(repetition_settings[0])
+      ? Number(repetition_settings[0])
+      : 1
   );
   const [selectedDays, setSelectedDays] = useState(
     repetition_settings && repetition_settings.length > 1
@@ -62,59 +64,39 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
 
   const [editTitle, setEditTitle] = useState(title);
   const [editPurposeId, setEditPurposeId] = useState(purpose_id);
-  const [editPurposeTitle, setEditPurposeTitle] = useState(purpose_title);
-  const [editSchedule, setEditSchedule] = useState<Date>(schedule);
+  const [editSchedule, setEditSchedule] = useState(schedule);
+  const [editEndDate, setEditEndDate] = useState(end_date);
   const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
   const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
   const [editRepetitionSettings, setEditRepetitionSettings] =
-    useState(repetition_settings);
+    useState<string[]>(repetition_settings);
   // const [editTime, setEditTime] = useState(time);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
   const [isFormValid, setIsFormValid] = useState(true);
 
-  useEffect(() => {
-    purposeGetData().then((data) => {
-      setPurposes(data);
-    });
-  }, []);
-
   const editTask = async (id: string) => {
     try {
-      await Edit(
+      await taskEdit(
         id,
         editTitle,
         editPurposeId,
         editSchedule,
+        editEndDate,
         editRepetition,
         editRepetitionType,
         editRepetitionSettings,
         editBody,
         editCompleted
       );
-      const editedData = {
-        id: id,
-        title: editTitle,
-        purpose_id: editPurposeId,
-        purpose_title: editPurposeTitle,
-        schedule: editSchedule,
-        repetition: editRepetition,
-        repetition_type: editRepetitionType,
-        repetition_settings: editRepetitionSettings,
-        body: editBody,
-        completed: editCompleted,
-      };
-      console.log(editedData);
-      onUpdate(editedData);
+      onUpdate();
     } catch (error) {
       console.error("Failed to edit task:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
         setEditTitle(value);
@@ -128,35 +110,25 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     }
   };
 
-  const handlePurposeChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handlePurposeChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditPurposeId(value);
-
-    // purposes リストから対応する目標を探し、その目標のタイトルをセットする
-    const selectedPurpose = purposes.find((purpose) => purpose.id === value);
-    if (selectedPurpose) {
-      setEditPurposeTitle(selectedPurpose.title);
-    } else {
-      setEditPurposeTitle(""); // 目標が見つからない場合は空文字をセットするなど、適切な処理を行う
-    }
   };
 
   const handleCheckboxChange = () => {
-    setEditCompleted(!editCompleted); // 現在の値を反転させて更新
+    setEditCompleted(!editCompleted);
   };
 
-  // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
     setPeriod("daily");
   };
 
-  // 繰り返しダイアログの枠外をクリックされたとき
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
       editRepetitionSettings && editRepetitionSettings[0]
-        ? editRepetitionSettings[0]
+        ? Number(editRepetitionSettings[0])
         : 1
     );
     setSelectedDays(
@@ -167,7 +139,6 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setPeriod(editRepetitionType ? editRepetitionType : "");
   };
 
-  // 繰り返しダイアログの削除ボタン押されたとき
   const handleRepetitionDialogDelete = () => {
     setRepetitionDialogOpen(false);
     setEditRepetition(false);
@@ -178,31 +149,45 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setPeriod("");
   };
 
-  // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
     setEditRepetition(true);
     setEditRepetitionType(period);
-    setEditRepetitionSettings([frequency, ...selectedDays]);
+    setEditRepetitionSettings([frequency.toString(), ...selectedDays]);
   };
 
-  // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setEditSchedule(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setEditSchedule(stringDate);
   };
 
-  // 保存ボタン押したとき
+  const handleEndDateChange = (date: Date) => {
+    const currentDate = new Date();
+    currentDate.setFullYear(currentDate.getFullYear() + 5);
+    const endDateObject = currentDate.toLocaleDateString();
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      stringDate = endDateObject;
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+    setEditEndDate(stringDate);
+  };
+
   const handleSave = () => {
     editTask(id);
     console.log(editRepetition);
     onClose();
   };
 
-  const handleFrequencyChange = (delta) => {
+  const handleFrequencyChange = (delta: number) => {
     setFrequency((prev) => Math.max(1, prev + delta));
   };
 
-  const handlePeriodChange = (event, newPeriod: string | null) => {
+  const handlePeriodChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newPeriod: string | null
+  ) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
       if (newPeriod !== "weekly") {
@@ -211,7 +196,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     }
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
         ? prev.filter((d) => d !== day)
@@ -226,7 +211,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     if (!editRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
 
     // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek) => {
+    const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
           return 1;
@@ -255,7 +240,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
 
     switch (editRepetitionType) {
       case "daily":
-        nextSchedule += editRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
+        nextSchedule += Number(editRepetitionSettings[0]) * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
         break;
 
       case "weekly":
@@ -282,7 +267,8 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
           }
 
           nextSchedule +=
-            (daysUntilNextSchedule + (editRepetitionSettings[0] - 1) * 7) *
+            (daysUntilNextSchedule +
+              (Number(editRepetitionSettings[0]) - 1) * 7) *
             24 *
             60 *
             60 *
@@ -293,7 +279,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
       case "monthly":
         // 次の予定日の年と月を計算
         let nextYear = currentYear;
-        let nextMonth = currentMonth + editRepetitionSettings[0];
+        let nextMonth = currentMonth + Number(editRepetitionSettings[0]);
         if (nextMonth === 12) {
           nextYear++;
           nextMonth = 0; // 0 は 1 月を表す
@@ -311,7 +297,9 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     }
 
     // 次の予定日を Date オブジェクトに変換して返す
-    return new Date(nextSchedule);
+    if (new Date(editEndDate).getTime() >= new Date(nextSchedule).getTime()) {
+      return new Date(nextSchedule);
+    }
   };
 
   const nextSchedule = calculateNextSchedule();
@@ -328,7 +316,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     (period === "weekly" && selectedDays.length > 0);
 
   return (
-    <Box width={560} height={700}>
+    <Box width={560} height={680}>
       {/* 繰り返し設定ダイアログ */}
       <Dialog
         open={repetitionDialogOpen}
@@ -412,7 +400,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             color="primary"
           />
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">タイトル</Typography>
           <TextField
             fullWidth
@@ -422,7 +410,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             onChange={handleChange}
           />
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">関連する目標</Typography>
           <Select
             fullWidth
@@ -441,7 +429,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             ))}
           </Select>
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <button
             style={{
               color: "blue",
@@ -456,15 +444,15 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             {editRepetitionSettings && (
               <>
                 {editRepetitionType === "daily" &&
-                  editRepetitionSettings[0] === 1 &&
+                  Number(editRepetitionSettings[0]) === 1 &&
                   `毎日`}
                 {editRepetitionType === "weekly" &&
-                  editRepetitionSettings[0] === 1 &&
+                  Number(editRepetitionSettings[0]) === 1 &&
                   `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
                 {editRepetitionType === "monthly" &&
-                  editRepetitionSettings[0] === 1 &&
+                  Number(editRepetitionSettings[0]) === 1 &&
                   `毎月`}
-                {editRepetitionSettings[0] > 1 &&
+                {Number(editRepetitionSettings[0]) > 1 &&
                   editRepetitionSettings &&
                   `毎${editRepetitionSettings[0]}${
                     editRepetitionType === "daily"
@@ -476,13 +464,8 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
               </>
             )}
           </Typography>
-          {/* <Typography>
-            {editRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography> */}
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           {editRepetition === true ? (
             <Typography variant="subtitle1">繰り返し開始日</Typography>
           ) : (
@@ -501,7 +484,28 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             />
           </Box>
         </li>
-        <li className="pt-10">
+        {editRepetition === true && (
+          <li className="pt-5">
+            <Typography variant="subtitle1">繰り返し終了日</Typography>
+            <Box
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={editEndDate}
+                onChange={handleEndDateChange}
+              />
+            </Box>
+            <Typography>※設定できるのは最大で今日から5年後です</Typography>
+            <Typography>
+              ※設定しない場合は今日から5年後が設定されます
+            </Typography>
+          </li>
+        )}
+        <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>
           <TextField
             fullWidth
@@ -512,7 +516,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             onChange={handleChange}
           />
         </li>
-        <li className="pt-10">
+        <li className="pt-5">
           <Stack direction="row" justifyContent="center">
             <Button
               variant="contained"
