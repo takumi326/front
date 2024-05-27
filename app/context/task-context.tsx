@@ -3,34 +3,56 @@ import React, { useState, createContext, useEffect } from "react";
 
 import { purposeGetData } from "@/lib/api/purpose-api";
 
-import { taskData } from "@/interface/task-interface";
+import {
+  taskData,
+  completedRepetitionTaskData,
+} from "@/interface/task-interface";
 import { purposeData } from "@/interface/purpose-interface";
 
 export const taskContext = createContext<{
-  tasks: taskData[];
-  setTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
+  displayTasks: taskData[];
+  setDisplayTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
+  calendarTasks: taskData[];
+  setCalendarTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
   allTasks: taskData[];
   setAllTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
+  completedRepetitionTasks: completedRepetitionTaskData[];
+  setCompletedRepetitionTasks: React.Dispatch<
+    React.SetStateAction<completedRepetitionTaskData[]>
+  >;
   purposes: purposeData[];
   setPurposes: React.Dispatch<React.SetStateAction<purposeData[]>>;
   currentMonth: string;
   setCurrentMonth: React.Dispatch<React.SetStateAction<string>>;
+  isEditing: boolean;
+  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
-  tasks: [],
-  setTasks: () => {},
+  displayTasks: [],
+  setDisplayTasks: () => {},
+  calendarTasks: [],
+  setCalendarTasks: () => {},
   allTasks: [],
   setAllTasks: () => {},
+  completedRepetitionTasks: [],
+  setCompletedRepetitionTasks: () => {},
   purposes: [],
   setPurposes: () => {},
   currentMonth: "",
   setCurrentMonth: () => {},
+  isEditing: false,
+  setIsEditing: () => {},
 });
 
 export const TaskProvider: React.FC = ({ children }) => {
-  const [tasks, setTasks] = useState<taskData[]>([]);
+  const [displayTasks, setDisplayTasks] = useState<taskData[]>([]);
+  const [calendarTasks, setCalendarTasks] = useState<taskData[]>([]);
   const [allTasks, setAllTasks] = useState<taskData[]>([]);
+  const [completedRepetitionTasks, setCompletedRepetitionTasks] = useState<
+    completedRepetitionTaskData[]
+  >([]);
   const [purposes, setPurposes] = useState<purposeData[]>([]);
   const [currentMonth, setCurrentMonth] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     purposeGetData().then((data) => {
@@ -41,14 +63,20 @@ export const TaskProvider: React.FC = ({ children }) => {
   return (
     <taskContext.Provider
       value={{
-        tasks,
-        setTasks,
+        displayTasks,
+        setDisplayTasks,
+        calendarTasks,
+        setCalendarTasks,
+        allTasks,
+        setAllTasks,
+        completedRepetitionTasks,
+        setCompletedRepetitionTasks,
         currentMonth,
         setCurrentMonth,
         purposes,
         setPurposes,
-        allTasks,
-        setAllTasks,
+        isEditing,
+        setIsEditing,
       }}
     >
       {children}

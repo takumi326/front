@@ -12,6 +12,13 @@ export type taskData = {
   completed: boolean;
 };
 
+export type completedRepetitionTaskData = {
+  id: string;
+  task_id: string;
+  completed_date: string;
+  completed: boolean;
+};
+
 export type selectTaskData = {
   title: string;
   purpose_title: string;
@@ -27,11 +34,10 @@ export const columnTaskNames = {
 };
 
 export interface taskRowProps {
-  row: taskData; 
+  row: taskData;
   onSelect: (id: string, completed: boolean) => void;
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
-  onUpdate: () => void;
 }
 
 export interface taskShowProps {
@@ -45,12 +51,9 @@ export interface taskShowProps {
   repetition_settings: string[];
   body: string;
   completed: boolean;
-  onUpdate: () => void;
   onClose: () => void;
-  onDelete: (id: string) => void;
 }
 
 export interface taskNewProps {
-  onAdd: () => void;
   onClose: () => void;
 }

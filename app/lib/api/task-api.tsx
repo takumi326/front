@@ -12,7 +12,6 @@ export const taskGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -53,8 +52,6 @@ export const taskNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post task");
@@ -97,9 +94,7 @@ export const taskEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit task");
   }
@@ -114,7 +109,6 @@ export const taskDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete task");
   }

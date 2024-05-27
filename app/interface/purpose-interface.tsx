@@ -24,7 +24,6 @@ export interface purposeRowProps {
   onSelect: (id: string, completed: boolean) => void; 
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean }; 
-  onUpdate: () => void;
 }
 
 export interface purposeShowProps {
@@ -34,12 +33,9 @@ export interface purposeShowProps {
   deadline: string;
   body: string;
   completed: boolean;
-  onUpdate: () => void;
   onClose: () => void;
-  onDelete: (id: string) => void;
 }
 
 export interface purposeNewProps {
-  onAdd: () => void;
   onClose: () => void;
 }

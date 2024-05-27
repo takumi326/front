@@ -23,10 +23,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
-import {
-  purposeGetData,
-  purposeDelete,
-} from "@/lib/api/purpose-api";
+import { purposeGetData, purposeDelete } from "@/lib/api/purpose-api";
 
 import {
   purposeData,
@@ -40,7 +37,8 @@ import { PurposeRow } from "@/components/purpose/row";
 import { PurposeNew } from "@/components/purpose/new";
 
 export const PurposeTable: React.FC = () => {
-  const { purposes, setPurposes } = useContext(purposeContext);
+  const { purposes, setPurposes, isEditing, setIsEditing } =
+    useContext(purposeContext);
 
   const [completedPurposes, setCompletedPurposes] = useState<purposeData[]>([]);
   const [incompletePurposes, setIncompletePurposes] = useState<purposeData[]>(
@@ -50,7 +48,7 @@ export const PurposeTable: React.FC = () => {
     "incomplete"
   );
   const [displayedPurposes, setDisplayedPurposes] = useState<purposeData[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
+  // const [isEditing, setIsEditing] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
@@ -126,17 +124,13 @@ export const PurposeTable: React.FC = () => {
     setIsNewModalOpen(false);
   };
 
-  const editPurpose = () => {
-    setIsEditing(true);
-  };
-
   const deleteAllPurpose = async () => {
     try {
       await Promise.all(selected.map((id) => purposeDelete(id)));
       setIsEditing(true);
-      setCompletedSelected([]); 
+      setCompletedSelected([]);
       setIncompleteSelected([]);
-      setSelected([]); 
+      setSelected([]);
     } catch (error) {
       console.error("Failed to delete purpose:", error);
     }
@@ -266,7 +260,7 @@ export const PurposeTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <PurposeNew onAdd={editPurpose} onClose={handleCloseModal} />
+            <PurposeNew onClose={handleCloseModal} />
           </div>
         </div>
       )}
@@ -413,7 +407,6 @@ export const PurposeTable: React.FC = () => {
                 onSelect={handleSelect}
                 isSelected={isSelected(row.id, row.completed)}
                 visibleColumns={visibleColumns}
-                onUpdate={editPurpose}
               />
             ))}
           </TableBody>

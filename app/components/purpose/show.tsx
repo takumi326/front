@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 
 import {
   Box,
@@ -12,24 +12,19 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import { purposeEdit  } from "@/lib/api/purpose-api";
+import { purposeContext } from "@/context/purpose-context";
+
+import { purposeEdit, purposeDelete } from "@/lib/api/purpose-api";
 
 import { purposeShowProps } from "@/interface/purpose-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeShow: React.FC<purposeShowProps> = (props) => {
-  const {
-    id,
-    title,
-    result,
-    deadline,
-    body,
-    completed,
-    onUpdate,
-    onClose,
-    onDelete,
-  } = props;
+  const { id, title, result, deadline, body, completed, onClose} =
+    props;
+  const { setIsEditing } = useContext(purposeContext);
+
   const [editTitle, setEditTitle] = useState(title);
   const [editResult, setEditResult] = useState(result);
   const [editDeadline, setEditDeadline] = useState(deadline);
@@ -47,9 +42,18 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
         editBody,
         editCompleted
       );
-      onUpdate();
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit purpose:", error);
+    }
+  };
+
+  const deletePurpose = async (id: string) => {
+    try {
+      await purposeDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete purpose:", error);
     }
   };
 
@@ -72,7 +76,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   };
 
   const handleCheckboxChange = () => {
-    setEditCompleted(!editCompleted); 
+    setEditCompleted(!editCompleted);
   };
 
   const handleDateChange = (date: Date) => {
@@ -154,7 +158,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
             </Button>
           </Stack>
           <IconButton
-            onClick={() => onDelete(id)}
+            onClick={() => deletePurpose (id)}
             className="absolute right-0 bottom-0 m-8"
           >
             <DeleteIcon />
