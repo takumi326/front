@@ -1,22 +1,42 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import moment from "moment";
 
 import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
+import { taskContext } from "@/context/task-context";
+
 import { taskEdit, taskDelete } from "@/lib/api/task-api";
+import {
+  completedRepetitionTaskEdit,
+  completedRepetitionTaskDelete,
+} from "@/lib/api/completedRepetitionTask-api";
 
 import { taskRowProps, taskData } from "@/interface/task-interface";
 
 import { TaskShow } from "@/components/task/show";
 
-// 表の行コンポーネント
 export const TaskRow: React.FC<taskRowProps> = (props) => {
-  const { row, onSelect, isSelected, visibleColumns, onUpdate } = props;
+  const { row, onSelect, isSelected, visibleColumns } = props;
+  const { allTasks, completedRepetitionTasks, setIsEditing } =
+    useContext(taskContext);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(row.completed);
+  const [schedule, setSchedule] = useState("");
+  const [completed, setCompleted] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (allTasks) {
+      const task = allTasks.find((task: taskData) => task.id === row.id);
+      if (task && task.repetition === true) {
+        setSchedule(task.schedule);
+        setCompleted(task.completed);
+      }
+    }
+  }, [row.id, allTasks]);
 
   const handleTitleClick = () => {
     setIsEditModalOpen(true);
@@ -30,10 +50,20 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
     onSelect(row.id, row.completed);
   };
 
-  const deleteTask = async (id: string) => {
+  const deleteTask = async (taskId: string) => {
     try {
-      await taskDelete(id);
-      onUpdate();
+      if (row.repetition === true) {
+        await completedRepetitionTaskDelete(
+          completedRepetitionTasks.filter(
+            (completedRepetitionTask) =>
+              completedRepetitionTask.task_id === taskId &&
+              completedRepetitionTask.completed_date === row.schedule
+          )[0].id
+        );
+      } else {
+        await taskDelete(taskId);
+      }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete task:", error);
     }
@@ -41,28 +71,41 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
 
   const handleCompletionToggle = async () => {
     try {
-      const updatedRow = { ...row, completed: !isChecked };
-      await taskEdit(
-        updatedRow.id,
-        updatedRow.title,
-        updatedRow.purpose_id,
-        updatedRow.schedule,
-        updatedRow.end_date,
-        updatedRow.repetition,
-        updatedRow.repetition_type,
-        updatedRow.repetition_settings,
-        updatedRow.body,
-        updatedRow.completed
-      );
+      if (row.repetition === true) {
+        await completedRepetitionTaskEdit(
+          completedRepetitionTasks.filter(
+            (completedRepetitionTask) =>
+              completedRepetitionTask.task_id === row.id &&
+              completedRepetitionTask.completed_date === row.schedule
+          )[0].id,
+          row.id,
+          row.schedule,
+          !isChecked
+        );
+      } else {
+        const updatedRow = { ...row, completed: !isChecked };
+        await taskEdit(
+          updatedRow.id,
+          updatedRow.title,
+          updatedRow.purpose_id,
+          updatedRow.schedule,
+          updatedRow.end_date,
+          updatedRow.repetition,
+          updatedRow.repetition_type,
+          updatedRow.repetition_settings,
+          updatedRow.body,
+          updatedRow.completed
+        );
+      }
       setIsChecked(!isChecked);
-      onUpdate();
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit task:", error);
     }
   };
 
   const renderRepetition = () => {
-    if (!row.repetition || !row.repetition_settings) return ""; // 繰り返し設定がオフまたは未定義の場合は空文字を返す
+    if (!row.repetition || !row.repetition_settings) return "";
 
     const { repetition_type, repetition_settings } = row;
 
@@ -91,109 +134,6 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
     }
   };
 
-  const calculateNextSchedule = () => {
-    const {
-      schedule,
-      end_date,
-      repetition,
-      repetition_type,
-      repetition_settings,
-    } = row;
-    if (!repetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek: string) => {
-      switch (dayOfWeek) {
-        case "月":
-          return 1;
-        case "火":
-          return 2;
-        case "水":
-          return 3;
-        case "木":
-          return 4;
-        case "金":
-          return 5;
-        case "土":
-          return 6;
-        case "日":
-          return 0;
-        default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
-      }
-    };
-
-    const date = new Date(schedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
-
-    switch (repetition_type) {
-      case "daily":
-        nextSchedule += Number(repetition_settings[0]) * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
-
-      case "weekly":
-        if (repetition_settings.length > 1) {
-          const targetDaysOfWeek = repetition_settings
-            .slice(1)
-            .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
-
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
-          for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
-            if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
-              break;
-            }
-          }
-
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
-          }
-
-          nextSchedule +=
-            (daysUntilNextSchedule + (Number(repetition_settings[0]) - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
-
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + Number(repetition_settings[0]);
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
-    }
-
-    // 次の予定日を Date オブジェクトに変換して返す
-    if (new Date(end_date).getTime() >= new Date(nextSchedule).getTime()) {
-      return new Date(nextSchedule);
-    }
-  };
-
-  const nextSchedule = calculateNextSchedule();
-
   const formatDate = (date: string): string => {
     if (!date) return "";
     return moment(date).format("MM/DD/YY");
@@ -211,24 +151,39 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
             >
               <CloseIcon />
             </button>
-            <TaskShow
-              id={row.id}
-              title={row.title}
-              purpose_id={row.purpose_id}
-              schedule={row.schedule}
-              end_date={row.end_date}
-              repetition={row.repetition}
-              repetition_type={row.repetition_type}
-              repetition_settings={row.repetition_settings}
-              body={row.body}
-              completed={row.completed}
-              onUpdate={onUpdate}
-              onClose={handleEditCloseModal}
-              onDelete={deleteTask}
-            />
+            {row.repetition === false ? (
+              <TaskShow
+                id={row.id}
+                title={row.title}
+                purpose_id={row.purpose_id}
+                schedule={row.schedule}
+                end_date={row.end_date}
+                repetition={row.repetition}
+                repetition_type={row.repetition_type}
+                repetition_settings={row.repetition_settings}
+                body={row.body}
+                completed={row.completed}
+                onClose={handleEditCloseModal}
+              />
+            ) : (
+              <TaskShow
+                id={row.id}
+                title={row.title}
+                purpose_id={row.purpose_id}
+                schedule={schedule}
+                end_date={row.end_date}
+                repetition={row.repetition}
+                repetition_type={row.repetition_type}
+                repetition_settings={row.repetition_settings}
+                body={row.body}
+                completed={completed}
+                onClose={handleEditCloseModal}
+              />
+            )}
           </div>
         </div>
       )}
+
       <TableRow
         sx={{
           "& > *": {
@@ -252,7 +207,9 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
                   }}
                   onClick={handleTitleClick}
                 >
-                  {row.title}
+                  {row.repetition === true
+                    ? `${row.title}(${formatDate(row.schedule)})`
+                    : row.title}
                 </button>
               ) : key === "schedule" ? (
                 formatDate(row.schedule)

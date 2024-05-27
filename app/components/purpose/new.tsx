@@ -1,7 +1,9 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
+
+import { purposeContext } from "@/context/purpose-context";
 
 import { purposeNew } from "@/lib/api/purpose-api";
 
@@ -10,7 +12,9 @@ import { purposeNewProps } from "@/interface/purpose-interface";
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeNew: React.FC<purposeNewProps> = (props) => {
-  const { onAdd, onClose } = props;
+  const { onClose } = props;
+  const { setIsEditing } = useContext(purposeContext);
+
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
 
   const [newTitle, setNewTitle] = useState("");
@@ -22,7 +26,7 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const newPurpose = async () => {
     try {
       await purposeNew(newTitle, newResult, newDeadline, newBody);
-      onAdd();
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create purpose:", error);
     }

@@ -1,10 +1,12 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 import moment from "moment";
 
 import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
+
+import { purposeContext } from "@/context/purpose-context";
 
 import { purposeEdit, purposeDelete } from "@/lib/api/purpose-api";
 
@@ -12,10 +14,10 @@ import { purposeRowProps, purposeData } from "@/interface/purpose-interface";
 
 import { PurposeShow } from "@/components/purpose/show";
 
-// 表の行コンポーネント
 export const PurposeRow: React.FC<purposeRowProps> = (props) => {
-  const { row, onSelect, isSelected, visibleColumns, onUpdate } =
-    props;
+  const { row, onSelect, isSelected, visibleColumns  } = props;
+  const { setIsEditing } = useContext(purposeContext);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(row.completed);
 
@@ -39,7 +41,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
   const deletePurpose = async (id: string) => {
     try {
       await purposeDelete(id);
-      onUpdate();
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete purpose:", error);
     }
@@ -57,7 +59,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
         updatedRow.completed
       );
       setIsChecked(!isChecked);
-      onUpdate();
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit purpose:", error);
     }
@@ -82,9 +84,7 @@ export const PurposeRow: React.FC<purposeRowProps> = (props) => {
               deadline={row.deadline}
               body={row.body}
               completed={row.completed}
-              onUpdate={onUpdate}
               onClose={handleEditCloseModal}
-              onDelete={deletePurpose}
             />
           </div>
         </div>

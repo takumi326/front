@@ -26,7 +26,11 @@ import RemoveIcon from "@mui/icons-material/Remove";
 
 import { taskContext } from "@/context/task-context";
 
-import { taskEdit } from "@/lib/api/task-api";
+import { taskEdit, taskDelete } from "@/lib/api/task-api";
+import {
+  completedRepetitionTaskNew,
+  completedRepetitionTaskDelete,
+} from "@/lib/api/completedRepetitionTask-api";
 import { taskShowProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
@@ -43,11 +47,10 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     repetition_settings,
     body,
     completed,
-    onUpdate,
     onClose,
-    onDelete,
   } = props;
-  const { purposes } = useContext(taskContext);
+  const { purposes, completedRepetitionTasks, setIsEditing } =
+    useContext(taskContext);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
   const [frequency, setFrequency] = useState<number>(
@@ -61,6 +64,8 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
       : []
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
+
+  const initialRepetiion = repetition;
 
   const [editTitle, setEditTitle] = useState(title);
   const [editPurposeId, setEditPurposeId] = useState(purpose_id);
@@ -89,9 +94,41 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         editBody,
         editCompleted
       );
-      onUpdate();
+      if (editRepetition === true) {
+        if (initialRepetiion === true) {
+          await Promise.all(
+            completedRepetitionTasks
+              .filter(
+                (completedRepetitionTask) =>
+                  completedRepetitionTask.task_id === id
+              )
+              .map((completedRepetitionTask) =>
+                completedRepetitionTaskDelete(completedRepetitionTask.id)
+              )
+          );
+        }
+        const schedules = calculateNextSchedules();
+        await Promise.all(
+          schedules.map(async (schedule) => {
+            const stringDate = new Date(schedule)
+              .toLocaleDateString()
+              .split("T")[0];
+            await completedRepetitionTaskNew(id, stringDate, false);
+          })
+        );
+      }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit task:", error);
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      await taskDelete(taskId);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete task:", error);
     }
   };
 
@@ -139,7 +176,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setPeriod(editRepetitionType ? editRepetitionType : "");
   };
 
-  const handleRepetitionDialogDelete = () => {
+  const handleRepetitionDialogDelete = async () => {
     setRepetitionDialogOpen(false);
     setEditRepetition(false);
     setEditRepetitionType("");
@@ -147,6 +184,19 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("");
+    try {
+      await Promise.all(
+        completedRepetitionTasks
+          .filter(
+            (completedRepetitionTask) => completedRepetitionTask.task_id === id
+          )
+          .map((completedRepetitionTask) =>
+            completedRepetitionTaskDelete(completedRepetitionTask.id)
+          )
+      );
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
   };
 
   const handleRepetitionSave = () => {
@@ -176,7 +226,6 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
 
   const handleSave = () => {
     editTask(id);
-    console.log(editRepetition);
     onClose();
   };
 
@@ -207,10 +256,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     );
   };
 
-  const calculateNextSchedule = () => {
-    if (!editRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
+  const calculateNextSchedules = () => {
     const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
@@ -228,81 +274,75 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         case "日":
           return 0;
         default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
+          return NaN;
       }
     };
 
-    const date = new Date(editSchedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
+    const startDate = new Date(editSchedule);
+    const endDate = new Date(editEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    let schedules = [];
+    let currentDate = startDate;
 
-    switch (editRepetitionType) {
-      case "daily":
-        nextSchedule += Number(editRepetitionSettings[0]) * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
+    while (currentDate <= endDate) {
+      schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
 
-      case "weekly":
-        if (editRepetitionSettings.length > 1) {
+      switch (editRepetitionType) {
+        case "daily":
+          currentDate.setDate(
+            currentDate.getDate() + Number(editRepetitionSettings[0])
+          );
+          break;
+
+        case "weekly":
           const targetDaysOfWeek = editRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
+          let currentDayOfWeek = currentDate.getDay();
+          let nextDayOfWeek = currentDayOfWeek;
 
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
           for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
+            nextDayOfWeek = (currentDayOfWeek + i) % 7;
             if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
+              currentDate.setDate(currentDate.getDate() + i);
               break;
             }
           }
 
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
+          if (currentDayOfWeek === nextDayOfWeek) {
+            currentDate.setDate(currentDate.getDate() + 7);
           }
+          break;
 
-          nextSchedule +=
-            (daysUntilNextSchedule +
-              (Number(editRepetitionSettings[0]) - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
+        case "monthly":
+          let nextMonth =
+            currentDate.getMonth() + Number(editRepetitionSettings[0]);
+          let nextYear = currentDate.getFullYear();
+          if (nextMonth > 11) {
+            nextYear += Math.floor(nextMonth / 12);
+            nextMonth = nextMonth % 12;
+          }
+          const daysInNextMonth = new Date(
+            nextYear,
+            nextMonth + 1,
+            0
+          ).getDate();
+          currentDate = new Date(
+            nextYear,
+            nextMonth,
+            Math.min(currentDate.getDate(), daysInNextMonth)
+          );
+          break;
 
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + Number(editRepetitionSettings[0]);
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
+        default:
+          return schedules;
+      }
     }
 
-    // 次の予定日を Date オブジェクトに変換して返す
-    if (new Date(editEndDate).getTime() >= new Date(nextSchedule).getTime()) {
-      return new Date(nextSchedule);
-    }
+    return schedules;
   };
 
-  const nextSchedule = calculateNextSchedule();
+  const nextSchedule = calculateNextSchedules();
 
   const formatDate = (date: Date | undefined): string => {
     if (!date) return ""; // 日付が未定義の場合は空文字を返す
@@ -392,14 +432,16 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
       </Dialog>
 
       <ul className="w-full">
-        <li className="flex items-center">
-          <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-          <Checkbox
-            checked={editCompleted}
-            onChange={handleCheckboxChange}
-            color="primary"
-          />
-        </li>
+        {editRepetition === false && (
+          <li className="flex items-center">
+            <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
+            <Checkbox
+              checked={editCompleted}
+              onChange={handleCheckboxChange}
+              color="primary"
+            />
+          </li>
+        )}
         <li className="pt-5">
           <Typography variant="subtitle1">タイトル</Typography>
           <TextField
@@ -528,7 +570,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             </Button>
           </Stack>
           <IconButton
-            onClick={() => onDelete(id)}
+            onClick={() => deleteTask(id)}
             className="absolute right-0 bottom-0 m-8"
           >
             <DeleteIcon />

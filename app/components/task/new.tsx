@@ -25,17 +25,19 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import { taskContext } from "@/context/task-context";
 
 import { taskNew } from "@/lib/api/task-api";
+import { completedRepetitionTaskNew } from "@/lib/api/completedRepetitionTask-api";
 import { taskNewProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TaskNew: React.FC<taskNewProps> = (props) => {
-  const { onAdd, onClose } = props;
+  const { onClose } = props;
+  const { purposes, setIsEditing } = useContext(taskContext);
+
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
-  const { purposes } = useContext(taskContext);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
   const [frequency, setFrequency] = useState<number>(1);
@@ -57,7 +59,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
 
   const newTask = async () => {
     try {
-      await taskNew(
+      const response = await taskNew(
         newTitle,
         newPurposeId,
         newSchedule,
@@ -67,7 +69,18 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
         newRepetitionSettings,
         newBody
       );
-      onAdd();
+      if (newRepetition === true) {
+        const schedules = calculateNextSchedules();
+        await Promise.all(
+          schedules.map(async (schedule) => {
+            const stringDate = new Date(schedule)
+              .toLocaleDateString()
+              .split("T")[0];
+            await completedRepetitionTaskNew(response.id, stringDate, false);
+          })
+        );
+      }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create task:", error);
     }
@@ -177,10 +190,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     );
   };
 
-  const calculateNextSchedule = () => {
-    if (!newRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
+  const calculateNextSchedules = () => {
     const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
@@ -198,81 +208,73 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
         case "日":
           return 0;
         default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
+          return NaN;
       }
     };
 
-    const date = new Date(newSchedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
+    const startDate = new Date(newSchedule);
+    const endDate = new Date(newEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    let schedules = [];
+    let currentDate = startDate;
 
-    switch (newRepetitionType) {
-      case "daily":
-        nextSchedule += Number(newRepetitionSettings[0]) * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
+    while (currentDate <= endDate) {
+      schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
 
-      case "weekly":
-        if (newRepetitionSettings.length > 1) {
+      switch (newRepetitionType) {
+        case "daily":
+          currentDate.setDate(
+            currentDate.getDate() + Number(newRepetitionSettings[0])
+          );
+          break;
+
+        case "weekly":
           const targetDaysOfWeek = newRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
+          let currentDayOfWeek = currentDate.getDay();
+          let nextDayOfWeek = currentDayOfWeek;
 
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
           for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
+            nextDayOfWeek = (currentDayOfWeek + i) % 7;
             if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
+              currentDate.setDate(currentDate.getDate() + i);
               break;
             }
           }
 
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
+          if (currentDayOfWeek === nextDayOfWeek) {
+            currentDate.setDate(currentDate.getDate() + 7);
           }
+          break;
 
-          nextSchedule +=
-            (daysUntilNextSchedule +
-              (Number(newRepetitionSettings[0]) - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
+        case "monthly":
+          let nextMonth =
+            currentDate.getMonth() + Number(newRepetitionSettings[0]);
+          let nextYear = currentDate.getFullYear();
+          if (nextMonth > 11) {
+            nextYear += Math.floor(nextMonth / 12);
+            nextMonth = nextMonth % 12;
+          }
+          const daysInNextMonth = new Date(
+            nextYear,
+            nextMonth + 1,
+            0
+          ).getDate();
+          currentDate = new Date(
+            nextYear,
+            nextMonth,
+            Math.min(currentDate.getDate(), daysInNextMonth)
+          );
+          break;
 
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + Number(newRepetitionSettings[0]);
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
+        default:
+          return schedules;
+      }
     }
 
-    // 次の予定日を Date オブジェクトに変換して返す
-    if (new Date(newEndDate).getTime() >= new Date(nextSchedule).getTime()) {
-      return new Date(nextSchedule);
-    }
+    return schedules;
   };
-
-  const nextSchedule = calculateNextSchedule();
 
   const formatDate = (date: Date | undefined): string => {
     if (!date) return "";
@@ -459,7 +461,9 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
               />
             </Box>
             <Typography>※設定できるのは最大で今日から5年後です</Typography>
-            <Typography>※設定しない場合は今日から5年後が設定されます</Typography>
+            <Typography>
+              ※設定しない場合は今日から5年後が設定されます
+            </Typography>
           </li>
         )}
         <li className="pt-5">
