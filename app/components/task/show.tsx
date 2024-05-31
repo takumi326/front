@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent, useContext } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -52,13 +51,14 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   const { purposes, completedRepetitionTasks, setIsEditing } =
     useContext(taskContext);
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
+  const [repetitionDialogOpen, setRepetitionDialogOpen] =
+    useState<boolean>(false);
   const [frequency, setFrequency] = useState<number>(
     repetition_settings && Number(repetition_settings[0])
       ? Number(repetition_settings[0])
       : 1
   );
-  const [selectedDays, setSelectedDays] = useState(
+  const [selectedDays, setSelectedDays] = useState<string[]>(
     repetition_settings && repetition_settings.length > 1
       ? repetition_settings.slice(1)
       : []
@@ -342,14 +342,6 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     return schedules;
   };
 
-  const nextSchedule = calculateNextSchedules();
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
-    return moment(date).format("MM/DD/YY");
-  };
-
   const isDialogFormValid =
     period === "daily" ||
     period === "monthly" ||
@@ -357,7 +349,6 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
 
   return (
     <Box width={560} height={680}>
-      {/* 繰り返し設定ダイアログ */}
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -394,18 +385,16 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
             </Box>
             {period === "weekly" && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                {["月", "火", "水", "木", "金", "土", "日"].map(
-                  (day, index) => (
-                    <ToggleButton
-                      key={day}
-                      value={day}
-                      selected={selectedDays.includes(day)}
-                      onChange={() => toggleDay(day)}
-                    >
-                      {day}
-                    </ToggleButton>
-                  )
-                )}
+                {["月", "火", "水", "木", "金", "土", "日"].map((day) => (
+                  <ToggleButton
+                    key={day}
+                    value={day}
+                    selected={selectedDays.includes(day)}
+                    onChange={() => toggleDay(day)}
+                  >
+                    {day}
+                  </ToggleButton>
+                ))}
               </Box>
             )}
           </Box>
@@ -434,12 +423,14 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
       <ul className="w-full">
         {editRepetition === false && (
           <li className="flex items-center">
-            <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-            <Checkbox
-              checked={editCompleted}
-              onChange={handleCheckboxChange}
-              color="primary"
-            />
+            <Stack direction="row" alignItems="center">
+              <Checkbox
+                checked={editCompleted}
+                onChange={handleCheckboxChange}
+                color="primary"
+              />
+              <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
+            </Stack>
           </li>
         )}
         <li className="pt-5">

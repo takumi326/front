@@ -48,7 +48,6 @@ export const PurposeTable: React.FC = () => {
     "incomplete"
   );
   const [displayedPurposes, setDisplayedPurposes] = useState<purposeData[]>([]);
-  // const [isEditing, setIsEditing] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
@@ -88,8 +87,8 @@ export const PurposeTable: React.FC = () => {
   useEffect(() => {
     purposeGetData().then((data) => {
       setPurposes(data);
-      setIsEditing(false);
     });
+    setIsEditing(false);
   }, [isEditing]);
 
   useEffect(() => {
@@ -233,9 +232,7 @@ export const PurposeTable: React.FC = () => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const handleClose = () => setAnchorEl(null);
 
   const handleColumnToggle = (property: keyof selectPurposeData) => {
     setColumnSettings((prevSettings) => ({

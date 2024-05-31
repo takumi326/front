@@ -12,8 +12,6 @@ export const transferGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
-    console.log(response.data);
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -24,11 +22,11 @@ export const transferNew = async (
   before_account_id: string,
   after_account_id: string,
   amount: number,
-  schedule: Date,
-  end_date: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string
 ): Promise<transferData> => {
   try {
@@ -55,8 +53,6 @@ export const transferNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post transfer");
@@ -68,13 +64,13 @@ export const transferEdit = async (
   before_account_id: string,
   after_account_id: string,
   amount: number,
-  schedule: Date,
-  end_date: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string
-) => {
+): Promise<transferData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/transfers/${id}`,
@@ -99,9 +95,7 @@ export const transferEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit transfer");
   }
@@ -116,7 +110,6 @@ export const transferDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete transfer");
   }

@@ -4,59 +4,62 @@ import React, { useState, ChangeEvent, useContext } from "react";
 import {
   Box,
   TextField,
-  IconButton,
   Button,
   Typography,
   Stack,
   MenuItem,
   Select,
+  Checkbox,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 
 import { moneyContext } from "@/context/money-context";
 
 import { classificationNew } from "@/lib/api/classification-api";
-import {
-  classificationMonthlyAmountNew,
-  classificationMonthlyAmountEdit,
-} from "@/lib/api/classificationMonthlyAmount-api";
+import { classificationMonthlyAmountNew } from "@/lib/api/classificationMonthlyAmount-api";
 import { classificationNewProps } from "@/interface/classification-interface";
 
 export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
-  const { onClassificationAdd, onClose, classification_type } = props;
-  const { accounts, classificationMonthlyAmounts, currentMonth } =
-    useContext(moneyContext);
+  const { onClose, classification_type } = props;
+  const { accounts, currentMonth, setIsEditing } = useContext(moneyContext);
 
   const [newAccountId, setNewAccountId] = useState("");
-  const [newAccountName, setNewAccountName] = useState("");
   const [newName, setNewName] = useState("");
-  const [newAmount, setNewAmount] = useState<number>(0);
+  const [newDate, setNewDate] = useState<number>(1);
   const [newAmountString, setNewAmountString] = useState("0");
+  const [newMonthlyAmount, setNewMonthlyAmount] = useState<number>(0);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [completed, setCompleted] = useState<boolean>(false);
 
   const newAccount = async () => {
     try {
-      const response = await classificationNew(
-        newAccountId,
-        newName,
-        newAmount,
-        classification_type
-      );
-      await classificationMonthlyAmountNew(
-        response.id,
-        currentMonth,
-        newAmount
-      );
+      if (completed === true) {
+        const response = await classificationNew(
+          newAccountId,
+          newName,
+          "即日",
+          classification_type
+        );
+        await classificationMonthlyAmountNew(
+          response.id,
+          currentMonth,
+          newMonthlyAmount
+        );
+      } else {
+        const response = await classificationNew(
+          newAccountId,
+          newName,
+          String(newDate),
+          classification_type
+        );
+        await classificationMonthlyAmountNew(
+          response.id,
+          currentMonth,
+          newMonthlyAmount
+        );
+      }
 
-      const newClassification = {
-        id: response.id,
-        account_id: response.account_id,
-        account_name: newAccountName,
-        name: response.name,
-        amount: response.amount,
-        classification_type: response.classification_type,
-      };
-
-      onClassificationAdd(newClassification);
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create classification:", error);
     }
@@ -80,24 +83,25 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             ? ""
             : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
         );
-        setNewAmount(
+        setNewMonthlyAmount(
           value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
         );
+        break;
+      case "date":
+        setNewDate(Number(value));
         break;
       default:
         break;
     }
   };
 
-  const handleAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setCompleted(!completed);
+  };
+
+  const handleAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setNewAccountName(selectedAccount.name);
-    } else {
-      setNewAccountName("");
-    }
   };
 
   const handleSave = () => {
@@ -106,7 +110,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={450}>
+    <Box width={560} height={650}>
       <ul className="w-full">
         <li className="pt-10">
           <Typography variant="subtitle1">分類名</Typography>
@@ -153,6 +157,35 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             />
             <span>円</span>
           </div>
+        </li>
+        <li className="pt-10">
+          {classification_type === "payment" ? (
+            <Typography variant="subtitle1">支払い日</Typography>
+          ) : (
+            <Typography variant="subtitle1">振込み日</Typography>
+          )}
+          <div className="flex items-center">
+            <TextField
+              variant="outlined"
+              name="date"
+              value={newDate}
+              onChange={handleChange}
+              disabled={completed}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              }}
+            />
+            <span>日</span>
+          </div>
+          <Stack direction="row" alignItems="center">
+            <Checkbox
+              checked={completed}
+              onChange={handleCheckboxChange}
+              color="primary"
+            />
+            <Typography>即日反映</Typography>
+          </Stack>
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">

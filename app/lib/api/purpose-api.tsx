@@ -57,7 +57,7 @@ export const purposeEdit = async (
   deadline: string,
   body: string,
   completed: boolean
-) => {
+): Promise<purposeData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/purposes/${id}`,
@@ -78,7 +78,7 @@ export const purposeEdit = async (
         },
       }
     );
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit purpose");
   }

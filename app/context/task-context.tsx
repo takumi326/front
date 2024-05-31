@@ -10,8 +10,8 @@ import {
 import { purposeData } from "@/interface/purpose-interface";
 
 export const taskContext = createContext<{
-  displayTasks: taskData[];
-  setDisplayTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
+  tableTasks: taskData[];
+  setTableTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
   calendarTasks: taskData[];
   setCalendarTasks: React.Dispatch<React.SetStateAction<taskData[]>>;
   allTasks: taskData[];
@@ -27,8 +27,8 @@ export const taskContext = createContext<{
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
-  displayTasks: [],
-  setDisplayTasks: () => {},
+  tableTasks: [],
+  setTableTasks: () => {},
   calendarTasks: [],
   setCalendarTasks: () => {},
   allTasks: [],
@@ -44,7 +44,7 @@ export const taskContext = createContext<{
 });
 
 export const TaskProvider: React.FC = ({ children }) => {
-  const [displayTasks, setDisplayTasks] = useState<taskData[]>([]);
+  const [tableTasks, setTableTasks] = useState<taskData[]>([]);
   const [calendarTasks, setCalendarTasks] = useState<taskData[]>([]);
   const [allTasks, setAllTasks] = useState<taskData[]>([]);
   const [completedRepetitionTasks, setCompletedRepetitionTasks] = useState<
@@ -63,8 +63,8 @@ export const TaskProvider: React.FC = ({ children }) => {
   return (
     <taskContext.Provider
       value={{
-        displayTasks,
-        setDisplayTasks,
+        tableTasks,
+        setTableTasks,
         calendarTasks,
         setCalendarTasks,
         allTasks,

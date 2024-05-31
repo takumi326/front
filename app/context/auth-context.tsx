@@ -40,14 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleGetCurrentUser = async () => {
     try {
       const res = await getCurrentUser();
-      console.log(res);
-
+      
       if (res?.data.isLogin === true) {
         setIsSignedIn(true);
         setCurrentUser(res?.data.data);
         setcurrentUserId(res?.data.data.id);
-
-        console.log(res?.data.data);
       } else {
         console.log("No current user");
       }

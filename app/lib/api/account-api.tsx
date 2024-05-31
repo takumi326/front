@@ -12,8 +12,6 @@ export const accountGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
-    console.log(response.data);
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -43,8 +41,6 @@ export const accountNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post account");
@@ -56,7 +52,7 @@ export const accountEdit = async (
   name: string,
   amount: number,
   body: string
-) => {
+): Promise<accountData> => {
   if (!name) {
     console.error("Name field is empty. Request not sent.");
     throw new Error("Name field cannot be empty.");
@@ -79,9 +75,7 @@ export const accountEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit account");
   }
@@ -96,7 +90,6 @@ export const accountDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete account");
   }

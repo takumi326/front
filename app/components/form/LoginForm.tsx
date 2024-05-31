@@ -39,7 +39,7 @@ export const LoginForm: React.FC = () => {
         setCurrentUser(res.data.data);
         setcurrentUserId(res.data.data.id);
 
-        router.push(`/mypage`);
+        router.push(`/money`);
 
         console.log("Signed in successfully!");
       } else {

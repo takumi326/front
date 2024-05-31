@@ -34,12 +34,7 @@ import { CategoryShow } from "@/components/money/category/show";
 
 // 表の行コンポーネント
 export const CategoryRow: React.FC<categoryRowProps> = (props) => {
-  const {
-    category,
-    category_type,
-    onCategoryUpdate,
-    onCategoryDelete,
-  } = props;
+  const { category, category_type, onCategoryUpdate, onCategoryDelete } = props;
   const { accounts } = useContext(moneyContext);
 
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);

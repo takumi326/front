@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent, useContext } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -39,7 +38,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
+  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState<boolean>(false);
   const [frequency, setFrequency] = useState<number>(1);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [period, setPeriod] = useState("");
@@ -274,12 +273,6 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     }
 
     return schedules;
-  };
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return "";
-
-    return moment(date).format("MM/DD/YY");
   };
 
   const isDialogFormValid =

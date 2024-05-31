@@ -12,7 +12,6 @@ export const classificationGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -22,7 +21,7 @@ export const classificationGetData = async () => {
 export const classificationNew = async (
   account_id: string,
   name: string,
-  amount: number,
+  date: string,
   classification_type: string
 ): Promise<classificationData> => {
   try {
@@ -32,7 +31,7 @@ export const classificationNew = async (
         classification: {
           account_id: account_id,
           name: name,
-          amount: amount,
+          date: date,
           classification_type: classification_type,
         },
       },
@@ -44,8 +43,6 @@ export const classificationNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post classification");
@@ -56,9 +53,9 @@ export const classificationEdit = async (
   id: string,
   account_id: string,
   name: string,
-  amount: number,
+  date: string,
   classification_type: string
-) => {
+): Promise<classificationData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/classifications/${id}`,
@@ -66,7 +63,7 @@ export const classificationEdit = async (
         classification: {
           account_id: account_id,
           name: name,
-          amount: amount,
+          date: date,
           classification_type: classification_type,
         },
       },
@@ -78,9 +75,7 @@ export const classificationEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit classification");
   }
@@ -95,7 +90,6 @@ export const classificationDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete classification");
   }
