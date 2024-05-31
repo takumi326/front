@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent, useContext } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -18,60 +17,65 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
+import { repetitionMoneyNew } from "@/lib/api/repetitionMoney-api";
 import { paymentNew } from "@/lib/api/payment-api";
-import { classificationEdit } from "@/lib/api/classification-api";
-import {
-  classificationMonthlyAmountNew,
-  classificationMonthlyAmountEdit,
-} from "@/lib/api/classificationMonthlyAmount-api";
+import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthlyAmount-api";
 
+import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { paymentNewProps } from "@/interface/payment-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PaymentNew: React.FC<paymentNewProps> = (props) => {
-  const { onPaymentAdd, onClassificationUpdate, onClose } = props;
+  const { onClose } = props;
   const {
     classifications,
     categories,
     classificationMonthlyAmounts,
     currentMonth,
+    setIsEditing,
   } = useContext(moneyContext);
-  const initialDateObject = new Date();
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
+  const currentDate = new Date();
+  currentDate.setFullYear(currentDate.getFullYear() + 5);
+  const endDateObject = currentDate.toLocaleDateString();
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(1);
-  const [selectedDays, setSelectedDays] = useState([]);
+  const [repetitionDialogOpen, setRepetitionDialogOpen] =
+    useState<boolean>(false);
+  const [frequency, setFrequency] = useState<number>(1);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [period, setPeriod] = useState("");
 
   const [newCategoryId, setNewCategoryId] = useState("");
-  const [newCategoryName, setNewCategoryName] = useState("");
-
   const [newClassificationId, setNewClassificationId] = useState("");
-  const [newClassificationAccountId, setNewClassificationAccountId] =
-    useState("");
-  const [newClassificationAccountName, setNewClassificationAccountName] =
-    useState("");
-  const [newClassificationName, setNewClassificationName] = useState("");
-  const [newClassificationAmount, setNewClassificationAmount] =
-    useState<number>(0);
-
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newAmountError, setNewAmountError] = useState<boolean>(false);
-  const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
+  const [newSchedule, setNewSchedule] = useState(initialDateObject);
+  const [newEndDate, setNewEndDate] = useState(endDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
-  const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
+  const [newRepetitionSettings, setNewRepetitionSettings] = useState<string[]>(
+    []
+  );
   const [newBody, setNewBody] = useState("");
   const [isClassificationFormValid, setIsClassificationFormValid] =
     useState(true);
   const [isCategoryFormValid, setIsCategoryFormValid] = useState(true);
+
+  useEffect(() => {
+    if (newAmount > 0) {
+      setNewAmountError(false);
+    } else {
+      setNewAmountError(true);
+    }
+  }, [newAmount]);
 
   const newPayment = async () => {
     const selectedClassificationMonthlyAmount =
@@ -81,80 +85,97 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             newClassificationId &&
           classificationMonthlyAmount.month === currentMonth
       );
+
     try {
       if (selectedClassificationMonthlyAmount) {
-        const editedClassificationAmount =
-          parseFloat(String(newClassificationAmount)) +
-          parseFloat(String(newAmount));
-
-        const paymentResponse = await paymentNew(
+        const response = await paymentNew(
           newCategoryId,
           newClassificationId,
           newAmount,
           newSchedule,
+          newEndDate,
           newRepetition,
           newRepetitionType,
           newRepetitionSettings,
           newBody
         );
-        await classificationEdit(
-          newClassificationId,
-          newClassificationAccountId,
-          newClassificationName,
-          editedClassificationAmount,
-          "payment"
-        );
-        await classificationMonthlyAmountEdit(
-          selectedClassificationMonthlyAmount.id,
-          selectedClassificationMonthlyAmount.classification_id,
-          selectedClassificationMonthlyAmount.month,
-          editedClassificationAmount
-        );
 
-        const newPayment = {
-          id: paymentResponse.id,
-          category_id: paymentResponse.category_id,
-          category_name: newCategoryName,
-          classification_id: paymentResponse.classification_id,
-          classification_name: newClassificationAccountName,
-          amount: paymentResponse.amount,
-          schedule: paymentResponse.schedule,
-          repetition: paymentResponse.repetition,
-          repetition_type: paymentResponse.repetition_type,
-          repetition_settings: paymentResponse.repetition_settings,
-          body: paymentResponse.body,
-        };
-        const newClassification = {
-          id: newClassificationId,
-          account_id: newClassificationAccountId,
-          account_name: newClassificationAccountName,
-          name: newClassificationName,
-          amount: editedClassificationAmount,
-          classification_type: "payment",
-        };
+        if (newRepetition === false) {
+          const editedClassificationAmount =
+            parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
+            parseFloat(String(newAmount));
 
-        onClassificationUpdate(newClassification);
-        onPaymentAdd(newPayment);
+          await classificationMonthlyAmountEdit(
+            selectedClassificationMonthlyAmount.id,
+            selectedClassificationMonthlyAmount.classification_id,
+            selectedClassificationMonthlyAmount.month,
+            editedClassificationAmount
+          );
+        } else {
+          let repetitionMoneies: repetitionMoneyData[] = [];
+          const schedules = calculateNextSchedules();
+
+          await Promise.all(
+            schedules.map(async (schedule) => {
+              const stringDate = new Date(schedule)
+                .toLocaleDateString()
+                .split("T")[0];
+              const repetitionMoney = await repetitionMoneyNew(
+                "payment",
+                response.id,
+                "",
+                "",
+                newAmount,
+                stringDate
+              );
+              repetitionMoneies = [...repetitionMoneies, repetitionMoney];
+            })
+          );
+
+          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+              newClassificationId
+          )) {
+            let money = parseFloat(String(classificationMonthlyAmount.amount));
+            const start = new Date(
+              Number(classificationMonthlyAmount.month.slice(0, 4)),
+              Number(classificationMonthlyAmount.month.slice(4)) - 1,
+              1
+            );
+            const end = new Date(
+              Number(classificationMonthlyAmount.month.slice(0, 4)),
+              Number(classificationMonthlyAmount.month.slice(4)),
+              0,
+              23,
+              59
+            );
+
+            for (const repetitionMoney of repetitionMoneies.filter(
+              (repetitionMoney) =>
+                new Date(repetitionMoney.repetition_schedule).getTime() >=
+                  start.getTime() &&
+                new Date(repetitionMoney.repetition_schedule).getTime() <=
+                  end.getTime()
+            )) {
+              money += parseFloat(String(repetitionMoney.amount));
+            }
+
+            await classificationMonthlyAmountEdit(
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              money
+            );
+          }
+        }
+        setIsEditing(true);
       }
     } catch (error) {
       console.error("Failed to create payment:", error);
     }
   };
 
-  useEffect(() => {
-    if (newAmount > 0) {
-      setNewAmountError(false);
-    } else {
-      setNewAmountError(true);
-    }
-    // if (newBeforeAccountAmount >= newAmount) {
-    //   setNewAmountOverError(false);
-    // } else {
-    //   setNewAmountOverError(true);
-    // }
-  }, [newAmount]);
-
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     switch (name) {
@@ -181,64 +202,33 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     }
   };
 
-  const handleClassificationChange = (
-    event: ChangeEvent<{ value: unknown }>
-  ) => {
+  const handleClassificationChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewClassificationId(value);
-    const selectedClassification = classifications.find(
-      (classification) => classification.id === value
-    );
-    if (selectedClassification) {
-      setNewClassificationAccountId(selectedClassification.account_id);
-      setNewClassificationAccountName(selectedClassification.account_name);
-      setNewClassificationName(selectedClassification.name);
-      setNewClassificationAmount(selectedClassification.amount);
-      setIsClassificationFormValid(false);
-    } else {
-      setNewClassificationAccountId("");
-      setNewClassificationAccountName("");
-      setNewClassificationName("");
-      setNewClassificationAmount(0);
-    }
+    setIsClassificationFormValid(false);
   };
 
-  const handleCategoryChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleCategoryChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewCategoryId(value);
     const selectedCategory = categories.find(
       (category) => category.id === value
     );
     if (selectedCategory) {
-      setNewCategoryName(selectedCategory.name);
       setIsCategoryFormValid(false);
-    } else {
-      setNewCategoryName("");
     }
   };
 
-  const formatAmountCommas = (number: number) => {
-    const integerPart = Math.floor(number);
-    const decimalPart = (number - integerPart).toFixed(0).slice(1);
-    return (
-      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
-      decimalPart +
-      "円"
-    );
-  };
-
-  // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
     setPeriod("daily");
   };
 
-  // 繰り返しダイアログの枠外をクリックされたとき
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
       newRepetitionSettings && newRepetitionSettings[0]
-        ? newRepetitionSettings[0]
+        ? Number(newRepetitionSettings[0])
         : 1
     );
     setSelectedDays(
@@ -249,7 +239,6 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     setPeriod(newRepetitionType ? newRepetitionType : "");
   };
 
-  // 繰り返しダイアログの削除ボタン押されたとき
   const handleRepetitionDialogDelete = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(false);
@@ -260,30 +249,41 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     setPeriod("");
   };
 
-  // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(true);
     setNewRepetitionType(period);
-    setNewRepetitionSettings([frequency, ...selectedDays]);
+    setNewRepetitionSettings([frequency.toString(), ...selectedDays]);
   };
 
-  // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setNewSchedule(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setNewSchedule(stringDate);
   };
 
-  // 保存ボタン押したとき
+  const handleEndDateChange = (date: Date) => {
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      stringDate = endDateObject;
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+    setNewEndDate(stringDate);
+  };
+
   const handleSave = () => {
     newPayment();
     onClose();
   };
 
-  const handleFrequencyChange = (delta) => {
+  const handleFrequencyChange = (delta: number) => {
     setFrequency((prev) => Math.max(1, prev + delta));
   };
 
-  const handlePeriodChange = (event, newPeriod: string | null) => {
+  const handlePeriodChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newPeriod: string | null
+  ) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
       if (newPeriod !== "weekly") {
@@ -292,7 +292,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     }
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
         ? prev.filter((d) => d !== day)
@@ -303,11 +303,8 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     );
   };
 
-  const calculateNextSchedule = () => {
-    if (!newRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek) => {
+  const calculateNextSchedules = () => {
+    const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
           return 1;
@@ -324,83 +321,72 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         case "日":
           return 0;
         default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
+          return NaN;
       }
     };
 
-    const date = new Date(newSchedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
+    const startDate = new Date(newSchedule);
+    const endDate = new Date(newEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    let schedules = [];
+    let currentDate = startDate;
 
-    switch (newRepetitionType) {
-      case "daily":
-        nextSchedule += newRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
+    while (currentDate <= endDate) {
+      schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
 
-      case "weekly":
-        if (newRepetitionSettings.length > 1) {
+      switch (newRepetitionType) {
+        case "daily":
+          currentDate.setDate(
+            currentDate.getDate() + Number(newRepetitionSettings[0])
+          );
+          break;
+
+        case "weekly":
           const targetDaysOfWeek = newRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
+          let currentDayOfWeek = currentDate.getDay();
+          let nextDayOfWeek = currentDayOfWeek;
 
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
           for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
+            nextDayOfWeek = (currentDayOfWeek + i) % 7;
             if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
+              currentDate.setDate(currentDate.getDate() + i);
               break;
             }
           }
 
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
+          if (currentDayOfWeek === nextDayOfWeek) {
+            currentDate.setDate(currentDate.getDate() + 7);
           }
+          break;
 
-          nextSchedule +=
-            (daysUntilNextSchedule + (newRepetitionSettings[0] - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
+        case "monthly":
+          let nextMonth =
+            currentDate.getMonth() + Number(newRepetitionSettings[0]);
+          let nextYear = currentDate.getFullYear();
+          if (nextMonth > 11) {
+            nextYear += Math.floor(nextMonth / 12);
+            nextMonth = nextMonth % 12;
+          }
+          const daysInNextMonth = new Date(
+            nextYear,
+            nextMonth + 1,
+            0
+          ).getDate();
+          currentDate = new Date(
+            nextYear,
+            nextMonth,
+            Math.min(currentDate.getDate(), daysInNextMonth)
+          );
+          break;
 
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + newRepetitionSettings[0];
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
+        default:
+          return schedules;
+      }
     }
 
-    // 次の予定日を Date オブジェクトに変換して返す
-    return new Date(nextSchedule);
-  };
-
-  const nextSchedule = calculateNextSchedule();
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
-    return moment(date).format("MM/DD/YY");
+    return schedules;
   };
 
   const isDialogFormValid =
@@ -571,15 +557,15 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             {newRepetitionSettings && (
               <>
                 {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎日`}
                 {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
                 {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎月`}
-                {newRepetitionSettings[0] > 1 &&
+                {Number(newRepetitionSettings[0]) > 1 &&
                   newRepetitionSettings &&
                   `毎${newRepetitionSettings[0]}${
                     newRepetitionType === "daily"
@@ -591,11 +577,6 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
               </>
             )}
           </Typography>
-          {/* <Typography>
-            {newRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography> */}
         </li>
         <li className="pt-5">
           {newRepetition === true ? (
@@ -616,6 +597,27 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             />
           </Box>
         </li>
+        {newRepetition === true && (
+          <li className="pt-5">
+            <Typography variant="subtitle1">繰り返し終了日</Typography>
+            <Box
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={newEndDate}
+                onChange={handleEndDateChange}
+              />
+            </Box>
+            <Typography>※設定できるのは最大で今日から5年後です</Typography>
+            <Typography>
+              ※設定しない場合は今日から5年後が設定されます
+            </Typography>
+          </li>
+        )}
         <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>
           <TextField

@@ -69,7 +69,7 @@ export const taskEdit = async (
   repetition_settings: string[],
   body: string,
   completed: boolean
-) => {
+): Promise<taskData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/tasks/${id}`,

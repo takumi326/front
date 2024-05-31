@@ -15,7 +15,6 @@ export const classificationMonthlyAmountGetData = async () => {
         },
       }
     );
-    console.log("get成功");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -45,8 +44,6 @@ export const classificationMonthlyAmountNew = async (
         },
       }
     );
-    console.log(`${classification_id}new成功`);
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post classificationMonthlyAmount");
@@ -58,7 +55,7 @@ export const classificationMonthlyAmountEdit = async (
   classification_id: string,
   month: string,
   amount: number
-) => {
+): Promise<classificationMonthlyAmountData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/classification_monthly_amounts/${id}`,
@@ -77,9 +74,7 @@ export const classificationMonthlyAmountEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit classificationMonthlyAmount");
   }
@@ -97,7 +92,6 @@ export const classificationMonthlyAmountDelete = async (id: string) => {
         },
       }
     );
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete classificationMonthlyAmount");
   }

@@ -20,12 +20,17 @@ import {
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import { paymentGetData, paymentDelete } from "@/lib/api/payment-api";
+import {
+  repetitionMoneyGetData,
+  repetitionMoneyDelete,
+} from "@/lib/api/repetitionMoney-api";
+import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
+
+import { paymentGetData } from "@/lib/api/payment-api";
 import {
   paymentData,
   classificationNilPaymentData,
@@ -48,16 +53,17 @@ import { IncomeRow } from "@/components/money/income/row";
 import { IncomeNew } from "@/components/money/income/new";
 
 import { accountGetData, accountDelete } from "@/lib/api/account-api";
-import { transferGetData, transferDelete } from "@/lib/api/transfer-api";
 import {
   accountData,
   columnAccountNames,
   displayAccountData,
   selectAccountData,
-  transferData,
 } from "@/interface/account-interface";
 import { AccountRow } from "@/components/money/account/row";
 import { AccountNew } from "@/components/money/account/new";
+
+import { transferGetData } from "@/lib/api/transfer-api";
+import { transferData } from "@/interface/transfer-interface";
 import { TransferNew } from "@/components/money/transfer/new";
 
 import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
@@ -65,58 +71,51 @@ import { categoryData } from "@/interface/category-interface";
 import { CategoryRow } from "@/components/money/category/row";
 import { CategoryNew } from "@/components/money/category/new";
 
-import {
-  classificationGetData,
-  classificationDelete,
-} from "@/lib/api/classification-api";
+import { classificationGetData } from "@/lib/api/classification-api";
 import { classificationData } from "@/interface/classification-interface";
 import { ClassificationNew } from "@/components/money/classification/new";
 
-import {
-  classificationMonthlyAmountGetData,
-  classificationMonthlyAmountDelete,
-} from "@/lib/api/classificationMonthlyAmount-api";
+import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMonthlyAmount-api";
+import { classificationMonthlyAmountData } from "@/lib/api/classification-api";
 
 export const MoneyTable: React.FC = () => {
   const {
+    repetitionMoneies,
+    setRepetitionMoneies,
     classifications,
     setClassifications,
     classificationMonthlyAmounts,
     setClassificationMonthlyAmounts,
     categories,
     setCategories,
-    allPayments,
-    setAllPayments,
+    setCalendarPayments,
     payments,
     setPayments,
-    allIncomes,
-    setAllIncomes,
+    setCalendarIncomes,
     incomes,
     setIncomes,
     accounts,
     setAccounts,
-    allTransfers,
-    setAllTransfers,
+    setCalendarTransfers,
     transfers,
     setTransfers,
     filter,
     setFilter,
     currentMonth,
+    isEditing,
+    setIsEditing,
   } = useContext(moneyContext);
 
   const [rows, setRows] = useState<
     displayPaymentData[] | displayIncomeData[] | displayAccountData[]
   >([]);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isClassificationModalOpen, setIsClassificationModalOpen] =
     useState(false);
   const [isCategoryRowModalOpen, setIsCategoryRowModalOpen] = useState(false);
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
+
   const [start, setStart] = useState<Date>(
     new Date(
       Number(currentMonth.slice(0, 4)),
@@ -134,15 +133,7 @@ export const MoneyTable: React.FC = () => {
     )
   );
 
-  const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>(() => {
-    if (filter === "payment") {
-      return "classification_name";
-    } else if (filter === "income") {
-      return "classification_name";
-    } else {
-      return "account_name";
-    }
-  });
+  const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>("id");
 
   const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
@@ -174,12 +165,18 @@ export const MoneyTable: React.FC = () => {
     const startScedule = new Date(
       Number(currentMonth.slice(0, 4)),
       Number(currentMonth.slice(4)) - 1,
-      1
+      1,
+      0,
+      0,
+      0
     );
     const endScedule = new Date(
       Number(currentMonth.slice(0, 4)),
       Number(currentMonth.slice(4)),
-      0
+      0,
+      23,
+      59,
+      59
     );
     setStart(startScedule);
     setEnd(endScedule);
@@ -187,79 +184,172 @@ export const MoneyTable: React.FC = () => {
 
   useEffect(() => {
     const handleAllDataFetch = async () => {
-      await paymentGetData().then((data) => {
-        setAllPayments(data);
-      });
-      paymentGetData().then((datas) => {
-        setPayments([]);
-        if (start !== undefined && end !== undefined) {
-          datas
-            .filter(
-              (data) =>
-                new Date(data.schedule).getTime() >= start.getTime() &&
-                new Date(data.schedule).getTime() <= end.getTime()
-            )
-            .map((data) => {
-              setPayments((prevPayments) => [...prevPayments, data]);
+      await paymentGetData().then((paymentDatas: paymentData[]) => {
+        const allPayments: Array<paymentData> = [];
+        repetitionMoneyGetData().then(
+          (repetitionMoneies: repetitionMoneyData[]) => {
+            paymentDatas.forEach((paymentData: paymentData) => {
+              if (paymentData.repetition === true) {
+                repetitionMoneies
+                  .filter(
+                    (repetitionMoney: repetitionMoneyData) =>
+                      repetitionMoney.payment_id === paymentData.id
+                  )
+                  .forEach((repetitionMoney: repetitionMoneyData) => {
+                    const repetitionMoneyData = {
+                      id: paymentData.id,
+                      category_id: paymentData.category_id,
+                      category_name: paymentData.category_name,
+                      classification_id: paymentData.classification_id,
+                      classification_name: paymentData.classification_name,
+                      amount: paymentData.amount,
+                      schedule: repetitionMoney.repetition_schedule,
+                      end_date: paymentData.end_date,
+                      repetition: paymentData.repetition,
+                      repetition_type: paymentData.repetition_type,
+                      repetition_settings: paymentData.repetition_settings,
+                      body: paymentData.body,
+                    };
+                    allPayments.push(repetitionMoneyData);
+                  });
+              } else {
+                allPayments.push(paymentData);
+              }
             });
+            setCalendarPayments(allPayments);
+            repetitionMoneies;
+          }
+        );
+      });
+
+      paymentGetData().then((payments: paymentData[]) => {
+        if (start !== undefined && end !== undefined) {
+          const noRepetitonPayments = payments.filter(
+            (payment: paymentData) =>
+              payment.repetition === false &&
+              new Date(payment.schedule).getTime() >= start.getTime() &&
+              new Date(payment.schedule).getTime() <= end.getTime()
+          );
+          const repetitonPayments = payments.filter(
+            (payment: paymentData) =>
+              payment.repetition === true &&
+              ((new Date(payment.schedule).getTime() >= start.getTime() &&
+                new Date(payment.schedule).getTime() <= end.getTime()) ||
+                (new Date(payment.end_date).getTime() >= start.getTime() &&
+                  new Date(payment.end_date).getTime() <= end.getTime()))
+          );
+          setPayments(() => [...noRepetitonPayments, ...repetitonPayments]);
         } else {
-          setPayments(datas);
+          setPayments(payments);
         }
       });
-      await incomeGetData().then((data) => {
-        setAllIncomes(data);
-      });
-      await incomeGetData().then((datas) => {
-        setIncomes([]);
-        if (start !== undefined && end !== undefined) {
-          datas
-            .filter(
-              (data) =>
-                new Date(data.schedule).getTime() >= start.getTime() &&
-                new Date(data.schedule).getTime() <= end.getTime()
-            )
-            .map((data) => {
-              setIncomes((prevIncomes) => [...prevIncomes, data]);
+
+      await incomeGetData().then((incomeDatas: incomeData[]) => {
+        const allIncomes: Array<incomeData> = [];
+        repetitionMoneyGetData().then(
+          (repetitionMoneies: repetitionMoneyData[]) => {
+            incomeDatas.forEach((incomeData: incomeData) => {
+              if (incomeData.repetition === true) {
+                repetitionMoneies
+                  .filter(
+                    (repetitionMoney: repetitionMoneyData) =>
+                      repetitionMoney.income_id === incomeData.id
+                  )
+                  .forEach((repetitionMoney: repetitionMoneyData) => {
+                    const repetitionMoneyData = {
+                      id: incomeData.id,
+                      category_id: incomeData.category_id,
+                      category_name: incomeData.category_name,
+                      classification_id: incomeData.classification_id,
+                      classification_name: incomeData.classification_name,
+                      amount: incomeData.amount,
+                      schedule: repetitionMoney.repetition_schedule,
+                      end_date: incomeData.end_date,
+                      repetition: incomeData.repetition,
+                      repetition_type: incomeData.repetition_type,
+                      repetition_settings: incomeData.repetition_settings,
+                      body: incomeData.body,
+                    };
+                    allIncomes.push(repetitionMoneyData);
+                  });
+              } else {
+                allIncomes.push(incomeData);
+              }
             });
+            setCalendarIncomes(allIncomes);
+            repetitionMoneies;
+          }
+        );
+      });
+      await incomeGetData().then((incomes: incomeData[]) => {
+        if (start !== undefined && end !== undefined) {
+          const noRepetitonIncomes = incomes.filter(
+            (income: incomeData) =>
+              income.repetition === false &&
+              new Date(income.schedule).getTime() >= start.getTime() &&
+              new Date(income.schedule).getTime() <= end.getTime()
+          );
+          const repetitonIncomes = incomes.filter(
+            (income: incomeData) =>
+              income.repetition === true &&
+              (new Date(income.schedule).getTime() >= start.getTime() ||
+                new Date(income.end_date).getTime() <= end.getTime())
+          );
+          setIncomes(() => [...noRepetitonIncomes, ...repetitonIncomes]);
         } else {
-          setIncomes(datas);
+          setIncomes(incomes);
         }
       });
-      await accountGetData().then((data) => {
-        setAccounts(data);
+
+      await accountGetData().then((accounts: accountData[]) => {
+        setAccounts(accounts);
       });
-      await categoryGetData().then((data) => {
-        setCategories(data);
+
+      await categoryGetData().then((categories: categoryData[]) => {
+        setCategories(categories);
       });
-      await classificationGetData().then((data) => {
-        setClassifications(data);
+
+      await classificationGetData().then(
+        (classifications: classificationData[]) => {
+          setClassifications(classifications);
+        }
+      );
+
+      await classificationMonthlyAmountGetData().then(
+        (classificationMonthlyAmounts: classificationMonthlyAmountData[]) => {
+          setClassificationMonthlyAmounts(classificationMonthlyAmounts);
+        }
+      );
+
+      await transferGetData().then((transfers: transferData[]) => {
+        setCalendarTransfers(transfers);
       });
-      await classificationMonthlyAmountGetData().then((data) => {
-        setClassificationMonthlyAmounts(data);
-      });
-      await transferGetData().then((data) => {
-        setAllTransfers(data);
-      });
-      await transferGetData().then((datas) => {
-        setTransfers([]);
+
+      await transferGetData().then((transfers: transferData[]) => {
         if (start !== undefined && end !== undefined) {
-          datas
+          transfers
             .filter(
-              (data) =>
-                new Date(data.schedule).getTime() >= start.getTime() &&
-                new Date(data.schedule).getTime() <= end.getTime()
+              (transfer: transferData) =>
+                new Date(transfer.schedule).getTime() >= start.getTime() &&
+                new Date(transfer.schedule).getTime() <= end.getTime()
             )
-            .map((data) => {
-              setTransfers((prevTransfers) => [...prevTransfers, data]);
+            .map((transfer: transferData) => {
+              setTransfers((prevTransfers) => [...prevTransfers, transfer]);
             });
         } else {
-          setTransfers(datas);
+          setTransfers(transfers);
         }
       });
+
+      await repetitionMoneyGetData().then(
+        (repetitionMoneies: repetitionMoneyData[]) => {
+          setRepetitionMoneies(repetitionMoneies);
+        }
+      );
     };
 
     handleAllDataFetch();
-  }, [isEditing, isAdding, currentMonth, start, end]);
+  }, [isEditing, currentMonth, start, end]);
 
   useEffect(() => {
     let initialColumnSettings: { [key: string]: boolean } = {};
@@ -286,27 +376,31 @@ export const MoneyTable: React.FC = () => {
         .filter(
           (classification) => classification.classification_type === "payment"
         )
-        .map((cItem) => ({
-          id: cItem.id,
-          classification_account_id: cItem.account_id,
-          classification_account_name: cItem.account_name,
-          classification_name: cItem.name,
-          classification_amount: cItem.amount,
-          classification_classification_type: cItem.classification_type,
+        .map((classification) => ({
+          id: classification.id,
+          classification_account_id: classification.account_id,
+          classification_account_name: classification.account_name,
+          classification_name: classification.name,
+          classification_date: classification.date,
+          classification_classification_type:
+            classification.classification_type,
           history: payments
-            .filter((pItem) => pItem.classification_id === cItem.id)
-            .map((pItem) => ({
-              payment_id: pItem.id,
-              payment_category_id: pItem.category_id,
-              payment_category_name: pItem.category_name,
-              payment_classification_id: pItem.classification_id,
-              payment_classification_name: pItem.classification_name,
-              payment_amount: pItem.amount,
-              payment_schedule: pItem.schedule,
-              payment_repetition: pItem.repetition,
-              payment_repetition_type: pItem.repetition_type,
-              payment_repetition_settings: pItem.repetition_settings,
-              payment_body: pItem.body,
+            .filter(
+              (payment) => payment.classification_id === classification.id
+            )
+            .map((payment) => ({
+              payment_id: payment.id,
+              payment_category_id: payment.category_id,
+              payment_category_name: payment.category_name,
+              payment_classification_id: payment.classification_id,
+              payment_classification_name: payment.classification_name,
+              payment_amount: payment.amount,
+              payment_schedule: payment.schedule,
+              payment_end_date: payment.end_date,
+              payment_repetition: payment.repetition,
+              payment_repetition_type: payment.repetition_type,
+              payment_repetition_settings: payment.repetition_settings,
+              payment_body: payment.body,
             })),
         }));
       classificationNilDatas = payments
@@ -319,6 +413,7 @@ export const MoneyTable: React.FC = () => {
           payment_classification_name: payment.classification_name,
           payment_amount: payment.amount,
           payment_schedule: payment.schedule,
+          payment_end_date: payment.end_date,
           payment_repetition: payment.repetition,
           payment_repetition_type: payment.repetition_type,
           payment_repetition_settings: payment.repetition_settings,
@@ -331,7 +426,7 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: "",
           classification_account_name: "",
           classification_name: "分類なし",
-          classification_amount: 0,
+          classification_date: "",
           classification_classification_type: "payment",
           history: classificationNilDatas,
         },
@@ -351,27 +446,29 @@ export const MoneyTable: React.FC = () => {
         .filter(
           (classification) => classification.classification_type === "income"
         )
-        .map((cItem) => ({
-          id: cItem.id,
-          classification_account_id: cItem.account_id,
-          classification_account_name: cItem.account_name,
-          classification_name: cItem.name,
-          classification_amount: cItem.amount,
-          classification_classification_type: cItem.classification_type,
+        .map((classification) => ({
+          id: classification.id,
+          classification_account_id: classification.account_id,
+          classification_account_name: classification.account_name,
+          classification_name: classification.name,
+          classification_date: classification.date,
+          classification_classification_type:
+            classification.classification_type,
           history: incomes
-            .filter((pItem) => pItem.classification_id === cItem.id)
-            .map((pItem) => ({
-              income_id: pItem.id,
-              income_category_id: pItem.category_id,
-              income_category_name: pItem.category_name,
-              income_classification_id: pItem.classification_id,
-              income_classification_name: pItem.classification_name,
-              income_amount: pItem.amount,
-              income_schedule: pItem.schedule,
-              income_repetition: pItem.repetition,
-              income_repetition_type: pItem.repetition_type,
-              income_repetition_settings: pItem.repetition_settings,
-              income_body: pItem.body,
+            .filter((income) => income.classification_id === classification.id)
+            .map((income) => ({
+              income_id: income.id,
+              income_category_id: income.category_id,
+              income_category_name: income.category_name,
+              income_classification_id: income.classification_id,
+              income_classification_name: income.classification_name,
+              income_amount: income.amount,
+              income_schedule: income.schedule,
+              income_end_date: income.end_date,
+              income_repetition: income.repetition,
+              income_repetition_type: income.repetition_type,
+              income_repetition_settings: income.repetition_settings,
+              income_body: income.body,
             })),
         }));
       classificationNilDatas = incomes
@@ -384,6 +481,7 @@ export const MoneyTable: React.FC = () => {
           income_classification_name: income.classification_name,
           income_amount: income.amount,
           income_schedule: income.schedule,
+          income_end_date: income.end_date,
           income_repetition: income.repetition,
           income_repetition_type: income.repetition_type,
           income_repetition_settings: income.repetition_settings,
@@ -396,7 +494,7 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: "",
           classification_account_name: "",
           classification_name: "分類なし",
-          classification_amount: 0,
+          classification_date: "",
           classification_classification_type: "income",
           history: classificationNilDatas,
         },
@@ -411,24 +509,25 @@ export const MoneyTable: React.FC = () => {
         account_name: true,
         account_amount: true,
       };
-      allRows = accounts.map((aItem) => ({
-        id: aItem.id,
-        account_name: aItem.name,
-        account_amount: aItem.amount,
-        account_body: aItem.body,
+      allRows = accounts.map((account) => ({
+        id: account.id,
+        account_name: account.name,
+        account_amount: account.amount,
+        account_body: account.body,
         history: transfers
-          .filter((tItem) => tItem.before_account_id === aItem.id)
-          .map((tItem) => ({
-            transfer_id: tItem.id,
-            transfer_before_account_id: tItem.before_account_id,
-            transfer_after_account_id: tItem.after_account_id,
-            transfer_after_account_name: tItem.after_account_name,
-            transfer_amount: tItem.amount,
-            transfer_schedule: tItem.schedule,
-            transfer_repetition: tItem.repetition,
-            transfer_repetition_type: tItem.repetition_type,
-            transfer_repetition_settings: tItem.repetition_settings,
-            transfer_body: tItem.body,
+          .filter((transfer) => transfer.before_account_id === account.id)
+          .map((transfer) => ({
+            transfer_id: transfer.id,
+            transfer_before_account_id: transfer.before_account_id,
+            transfer_after_account_id: transfer.after_account_id,
+            transfer_after_account_name: transfer.after_account_name,
+            transfer_amount: transfer.amount,
+            transfer_schedule: transfer.schedule,
+            transfer_end_date: transfer.end_date,
+            transfer_repetition: transfer.repetition,
+            transfer_repetition_type: transfer.repetition_type,
+            transfer_repetition_settings: transfer.repetition_settings,
+            transfer_body: transfer.body,
           })),
       }));
       updateOrder = { account_name: "asc", account_amount: "default" };
@@ -436,6 +535,7 @@ export const MoneyTable: React.FC = () => {
     setColumnSettings(initialColumnSettings);
     setRows(allRows);
     setOrder(updateOrder);
+    setIsEditing(false);
   }, [
     filter,
     payments,
@@ -447,11 +547,6 @@ export const MoneyTable: React.FC = () => {
   ]);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  useEffect(() => {
-    setIsEditing(false);
-    setIsAdding(false);
-  }, [payments, incomes, accounts, categories, classifications, transfers]);
 
   const handleFilterChange = (value: "payment" | "income" | "account") => {
     setFilter(value);
@@ -497,191 +592,160 @@ export const MoneyTable: React.FC = () => {
     setIsNewCategoryModalOpen(false);
   };
 
-  const newPayment = (newData: paymentData) => {
-    setPayments([...payments, newData]);
-    setIsAdding(true);
-  };
+  // const newPayment = (newData: paymentData) => {
+  //   setPayments([...payments, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const newIncome = (newData: incomeData) => {
-    setIncomes([...incomes, newData]);
-    setIsAdding(true);
-  };
+  // const newIncome = (newData: incomeData) => {
+  //   setIncomes([...incomes, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const newClassification = (newData: classificationData) => {
-    setClassifications([...classifications, newData]);
-    setIsAdding(true);
-  };
+  // const newClassification = (newData: classificationData) => {
+  //   setClassifications([...classifications, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const newCategory = (newData: categoryData) => {
-    setCategories([...categories, newData]);
-    setIsAdding(true);
-  };
+  // const newCategory = (newData: categoryData) => {
+  //   setCategories([...categories, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const newAccount = (newData: accountData) => {
-    setAccounts([...accounts, newData]);
-    setIsAdding(true);
-  };
+  // const newAccount = (newData: accountData) => {
+  //   setAccounts([...accounts, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const newTransfer = (newData: transferData) => {
-    // setTransfers([...transfers, newData]);
-    setIsAdding(true);
-  };
+  // const newTransfer = (newData: transferData) => {
+  //   // setTransfers([...transfers, newData]);
+  //   setIsAdding(true);
+  // };
 
-  const updatePayment = (updatePayment: paymentData) => {
-    const updatedPayments = payments.map((payment) => {
-      if (payment.id === updatePayment.id) {
-        return updatePayment;
-      }
-      return payment;
-    });
-    setPayments(updatedPayments);
-    setIsEditing(true);
-  };
+  // const updatePayment = (updatePayment: paymentData) => {
+  //   const updatedPayments = payments.map((payment) => {
+  //     if (payment.id === updatePayment.id) {
+  //       return updatePayment;
+  //     }
+  //     return payment;
+  //   });
+  //   setPayments(updatedPayments);
+  //   setIsEditing(true);
+  // };
 
-  const updateIncome = (updateIncome: incomeData) => {
-    const updatedIncomes = incomes.map((income) => {
-      if (income.id === updateIncome.id) {
-        return updateIncome;
-      }
-      return income;
-    });
-    setIncomes(updatedIncomes);
-    setIsEditing(true);
-  };
+  // const updateIncome = (updateIncome: incomeData) => {
+  //   const updatedIncomes = incomes.map((income) => {
+  //     if (income.id === updateIncome.id) {
+  //       return updateIncome;
+  //     }
+  //     return income;
+  //   });
+  //   setIncomes(updatedIncomes);
+  //   setIsEditing(true);
+  // };
 
-  const updateAccount = (updateAccount: accountData) => {
-    const updatedAccounts = accounts.map((account) => {
-      if (account.id === updateAccount.id) {
-        return updateAccount;
-      }
-      return account;
-    });
-    setAccounts(updatedAccounts);
-    setIsEditing(true);
-  };
+  // const updateAccount = (updateAccount: accountData) => {
+  //   const updatedAccounts = accounts.map((account) => {
+  //     if (account.id === updateAccount.id) {
+  //       return updateAccount;
+  //     }
+  //     return account;
+  //   });
+  //   setAccounts(updatedAccounts);
+  //   setIsEditing(true);
+  // };
 
-  const updateTransfer = (updateTransfer: transferData) => {
-    // const updatedTransfers = transfers.map((transfer) => {
-    //   if (transfer.id === updateTransfer.id) {
-    //     return updateTransfer;
-    //   }
-    //   return transfer;
-    // });
-    // setTransfers(updatedTransfers);
-    setIsEditing(true);
-  };
+  // const updateTransfer = (updateTransfer: transferData) => {
+  //   // const updatedTransfers = transfers.map((transfer) => {
+  //   //   if (transfer.id === updateTransfer.id) {
+  //   //     return updateTransfer;
+  //   //   }
+  //   //   return transfer;
+  //   // });
+  //   // setTransfers(updatedTransfers);
+  //   setIsEditing(true);
+  // };
 
-  const updateClassification = () => {
-    // const updatedTransfers = transfers.map((transfer) => {
-    //   if (transfer.id === updateTransfer.id) {
-    //     return updateTransfer;
-    //   }
-    //   return transfer;
-    // });
-    // setTransfers(updatedTransfers);
-    setIsEditing(true);
-  };
+  // const updateClassification = () => {
+  //   // const updatedTransfers = transfers.map((transfer) => {
+  //   //   if (transfer.id === updateTransfer.id) {
+  //   //     return updateTransfer;
+  //   //   }
+  //   //   return transfer;
+  //   // });
+  //   // setTransfers(updatedTransfers);
+  //   setIsEditing(true);
+  // };
 
-  const updateCategory = () => {
-    // const updatedTransfers = transfers.map((transfer) => {
-    //   if (transfer.id === updateTransfer.id) {
-    //     return updateTransfer;
-    //   }
-    //   return transfer;
-    // });
-    // setTransfers(updatedTransfers);
-    setIsEditing(true);
-  };
+  // const updateCategory = () => {
+  //   // const updatedTransfers = transfers.map((transfer) => {
+  //   //   if (transfer.id === updateTransfer.id) {
+  //   //     return updateTransfer;
+  //   //   }
+  //   //   return transfer;
+  //   // });
+  //   // setTransfers(updatedTransfers);
+  //   setIsEditing(true);
+  // };
 
   const deleteData = async (id: string) => {
-    if (filter === "payment") {
-      try {
-        await paymentDelete(id);
-        setPayments(payments.filter((payment) => payment.id !== id));
-      } catch (error) {
-        console.error("Failed to delete payment:", error);
-      }
-    } else if (filter === "income") {
-      try {
-        await incomeDelete(id);
-        setIncomes(incomes.filter((income) => income.id !== id));
-      } catch (error) {
-        console.error("Failed to delete income:", error);
-      }
-    } else {
-      try {
-        await accountDelete(id);
-        setAccounts(accounts.filter((account) => account.id !== id));
-      } catch (error) {
-        console.error("Failed to delete account:", error);
-      }
-    }
-  };
-
-  const deleteTransfer = async (id: string) => {
     try {
-      await transferDelete(id);
-      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      await incomeDelete(id);
       setIsEditing(true);
     } catch (error) {
-      console.error("Failed to delete transfer:", error);
+      console.error("Failed to delete income:", error);
     }
-  };
 
-  const deleteClassification = async (id: string) => {
     try {
-      await classificationDelete(id);
-      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
+      await accountDelete(id);
       setIsEditing(true);
     } catch (error) {
-      console.error("Failed to delete classification:", error);
+      console.error("Failed to delete account:", error);
     }
   };
 
   const deleteCategory = async (id: string) => {
     try {
       await categoryDelete(id);
-      // setTransfers(transfers.filter((transfer) => transfer.id !== id));
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete category :", error);
     }
   };
 
-  const deleteAllData = async (ids: string[]) => {
-    if (filter === "payment") {
-      try {
-        await Promise.all(ids.map((id) => paymentDelete(id)));
-        setPayments(payments.filter((payment) => !ids.includes(payment.id)));
-      } catch (error) {
-        console.error("Failed to delete payment:", error);
-      }
-    } else if (filter === "income") {
-      try {
-        await Promise.all(ids.map((id) => incomeDelete(id)));
-        setIncomes(incomes.filter((income) => !ids.includes(income.id)));
-      } catch (error) {
-        console.error("Failed to delete income:", error);
-      }
-    } else {
-      try {
-        await Promise.all(ids.map((id) => accountDelete(id)));
-        setAccounts(accounts.filter((account) => !ids.includes(account.id)));
-      } catch (error) {
-        console.error("Failed to delete todo:", error);
-      }
-    }
-  };
+  // const deleteAllData = async (ids: string[]) => {
+  //   if (filter === "payment") {
+  //     try {
+  //       await Promise.all(ids.map((id) => paymentDelete(id)));
+  //       setPayments(payments.filter((payment) => !ids.includes(payment.id)));
+  //     } catch (error) {
+  //       console.error("Failed to delete payment:", error);
+  //     }
+  //   } else if (filter === "income") {
+  //     try {
+  //       await Promise.all(ids.map((id) => incomeDelete(id)));
+  //       setIncomes(incomes.filter((income) => !ids.includes(income.id)));
+  //     } catch (error) {
+  //       console.error("Failed to delete income:", error);
+  //     }
+  //   } else {
+  //     try {
+  //       await Promise.all(ids.map((id) => accountDelete(id)));
+  //       setAccounts(accounts.filter((account) => !ids.includes(account.id)));
+  //     } catch (error) {
+  //       console.error("Failed to delete todo:", error);
+  //     }
+  //   }
+  // };
 
-  const handleAllDelete = () => {
-    deleteAllData(selected);
-    setSelected([]);
-  };
+  // const handleAllDelete = () => {
+  //   deleteAllData(selected);
+  //   setSelected([]);
+  // };
 
   const handleRequestSort = (property: keyof (typeof rows)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
-      // すでにソートされているカラムをクリックした場合、ソート順を切り替える
       newOrder =
         order[property] === "asc"
           ? "desc"
@@ -694,7 +758,6 @@ export const MoneyTable: React.FC = () => {
     setOrderBy(property);
   };
 
-  // データをソートする関数
   const sortedRows = rows.slice().sort((a, b) => {
     const compare = (key: keyof (typeof rows)[0]) => {
       if (order[key] === "asc") {
@@ -707,51 +770,76 @@ export const MoneyTable: React.FC = () => {
     return compare(orderBy);
   });
 
-  const unclassifiedRow = sortedRows.filter(
-    (row) => row.classification_name === "分類なし" && row.history.length > 0
-  );
+  // const unclassifiedRow = sortedRows.filter(
+  //   (row) => row.classification_name === "分類なし" && row.history.length > 0
+  // );
 
-  const sortedAllRows = [
-    ...sortedRows.filter((row) => row.classification_name !== "分類なし"),
+  const sortedPayemntRows = [
     ...sortedRows.filter(
-      (row) => row.classification_name === "分類なし" && row.history.length > 0
+      (row): row is displayPaymentData =>
+        "classification_name" in row && row.classification_name !== "分類なし"
+    ),
+    ...sortedRows.filter(
+      (row): row is displayPaymentData =>
+        "classification_name" in row &&
+        row.classification_name === "分類なし" &&
+        row.history.length > 0
     ),
   ];
 
-  const handleAllSelect = () => {
-    if (filter === "payment") {
-      if (selected.length === rows.length) {
-        setSelected([]);
-      } else {
-        const allIds = payments.map((payment) => payment.id);
-        setSelected(allIds);
-      }
-    } else if (filter === "income") {
-      if (selected.length === rows.length) {
-        setSelected([]);
-      } else {
-        const allIds = incomes.map((income) => income.id);
-        setSelected(allIds);
-      }
-    } else {
-      if (selected.length === rows.length) {
-        setSelected([]);
-      } else {
-        const allIds = accounts.map((account) => account.id);
-        setSelected(allIds);
-      }
-    }
-  };
+  const sortedIncomeRows = [
+    ...sortedRows.filter(
+      (row): row is displayIncomeData =>
+        "classification_name" in row && row.classification_name !== "分類なし"
+    ),
+    ...sortedRows.filter(
+      (row): row is displayIncomeData =>
+        "classification_name" in row &&
+        row.classification_name === "分類なし" &&
+        row.history.length > 0
+    ),
+  ];
 
-  const handleSelect = (id: string) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((item) => item !== id));
-    } else {
-      setSelected([...selected, id]);
-    }
-  };
+  const sortedAccountRows = [
+    ...sortedRows.filter(
+      (row): row is displayAccountData => "account_name" in row
+    ),
+  ];
 
-  const isSelected = (id: string) => selected.includes(id);
+  // const handleAllSelect = () => {
+  //   if (filter === "payment") {
+  //     if (selected.length === rows.length) {
+  //       setSelected([]);
+  //     } else {
+  //       const allIds = payments.map((payment) => payment.id);
+  //       setSelected(allIds);
+  //     }
+  //   } else if (filter === "income") {
+  //     if (selected.length === rows.length) {
+  //       setSelected([]);
+  //     } else {
+  //       const allIds = incomes.map((income) => income.id);
+  //       setSelected(allIds);
+  //     }
+  //   } else {
+  //     if (selected.length === rows.length) {
+  //       setSelected([]);
+  //     } else {
+  //       const allIds = accounts.map((account) => account.id);
+  //       setSelected(allIds);
+  //     }
+  //   }
+  // };
+
+  // const handleSelect = (id: string) => {
+  //   if (selected.includes(id)) {
+  //     setSelected(selected.filter((item) => item !== id));
+  //   } else {
+  //     setSelected([...selected, id]);
+  //   }
+  // };
+
+  // const isSelected = (id: string) => selected.includes(id);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
@@ -802,7 +890,13 @@ export const MoneyTable: React.FC = () => {
           (classification) => classification.classification_type === "payment"
         )
         .map((classification) => {
-          allMoney += parseFloat(String(classification.amount));
+          const money = classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+                classification.id &&
+              classificationMonthlyAmount.month === currentMonth
+          )[0];
+          allMoney += money && parseFloat(String(money.amount));
         });
     } else {
       classifications
@@ -810,7 +904,13 @@ export const MoneyTable: React.FC = () => {
           (classification) => classification.classification_type === "income"
         )
         .map((classification) => {
-          allMoney += parseFloat(String(classification.amount));
+          const money = classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+                classification.id &&
+              classificationMonthlyAmount.month === currentMonth
+          )[0];
+          allMoney += money && parseFloat(String(money.amount));
         });
     }
     return allMoney;
@@ -830,12 +930,7 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <PaymentNew
-              onPaymentAdd={newPayment}
-              onClassificationUpdate={newClassification}
-              onCategoryUpdate={newCategory}
-              onClose={handleCloseNewModal}
-            />
+            <PaymentNew onClose={handleCloseNewModal} />
           </div>
         </div>
       ) : isNewModalOpen && filter === "income" ? (
@@ -848,12 +943,7 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <IncomeNew
-              onIncomeAdd={newIncome}
-              onClassificationUpdate={newClassification}
-              onCategoryUpdate={newCategory}
-              onClose={handleCloseNewModal}
-            />
+            <IncomeNew onClose={handleCloseNewModal} />
           </div>
         </div>
       ) : (
@@ -867,7 +957,7 @@ export const MoneyTable: React.FC = () => {
               >
                 <CloseIcon />
               </button>
-              <AccountNew onAdd={newAccount} onClose={handleCloseNewModal} />
+              <AccountNew onClose={handleCloseNewModal} />
             </div>
           </div>
         )
@@ -883,11 +973,7 @@ export const MoneyTable: React.FC = () => {
             >
               <CloseIcon />
             </button>
-            <TransferNew
-              onAccountUpdate={updateAccount}
-              onTransferAdd={newTransfer}
-              onClose={handleCloseNewTransferModal}
-            />
+            <TransferNew onClose={handleCloseNewTransferModal} />
           </div>
         </div>
       )}
@@ -904,7 +990,6 @@ export const MoneyTable: React.FC = () => {
                 <CloseIcon />
               </button>
               <ClassificationNew
-                onClassificationAdd={newClassification}
                 onClose={handleCloseNewClassificationModal}
                 classification_type={filter}
               />
@@ -949,8 +1034,6 @@ export const MoneyTable: React.FC = () => {
                         key={category.id}
                         category={category}
                         category_type={filter}
-                        onCategoryUpdate={updateCategory}
-                        onCategoryDelete={deleteCategory}
                       />
                     ))}
                 </Table>
@@ -971,9 +1054,8 @@ export const MoneyTable: React.FC = () => {
                 <CloseIcon />
               </button>
               <CategoryNew
-                onClassificationAdd={newCategory}
                 onClose={handleCloseNewCategoryModal}
-                classification_type={filter}
+                category_type={filter}
               />
             </div>
           </div>
@@ -1003,13 +1085,9 @@ export const MoneyTable: React.FC = () => {
         <Button
           aria-controls="column-menu"
           aria-haspopup="true"
-          onClick={selected.length > 0 ? undefined : handleMenuClick}
+          onClick={handleMenuClick}
         >
-          {selected.length > 0 ? (
-            <DeleteIcon onClick={() => handleAllDelete()} />
-          ) : (
-            <KeyboardArrowDownIcon />
-          )}
+          <KeyboardArrowDownIcon />
         </Button>
         <div className="ml-auto">
           {filter === "account" ? (
@@ -1141,38 +1219,28 @@ export const MoneyTable: React.FC = () => {
           </TableHead>
           <TableBody>
             {filter === "payment"
-              ? sortedAllRows.map((row) => (
+              ? sortedPayemntRows.map((row) => (
                   <PaymentRow
                     key={row.id}
                     row={row}
+                    start={start}
+                    end={end}
                     visibleColumns={visibleColumns}
-                    onPaymentUpdate={updatePayment}
-                    onClassificationUpdate={updateClassification}
-                    onPaymentDelete={deleteData}
-                    onClassificationDelete={deleteClassification}
                   />
                 ))
               : filter === "income"
-              ? sortedAllRows.map((row) => (
+              ? sortedIncomeRows.map((row) => (
                   <IncomeRow
                     key={row.id}
                     row={row}
                     visibleColumns={visibleColumns}
-                    onIncomeUpdate={updateIncome}
-                    onClassificationUpdate={updateClassification}
-                    onIncomeDelete={deleteData}
-                    onClassificationDelete={deleteClassification}
                   />
                 ))
-              : sortedRows.map((row) => (
+              : sortedAccountRows.map((row) => (
                   <AccountRow
                     key={row.id}
                     row={row}
                     visibleColumns={visibleColumns}
-                    onAccountUpdate={updateAccount}
-                    onTransferUpdate={updateTransfer}
-                    onAccountDelete={deleteData}
-                    onTransferDelete={deleteTransfer}
                   />
                 ))}
           </TableBody>

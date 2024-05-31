@@ -22,11 +22,11 @@ export const incomeNew = async (
   category_id: string,
   classification_id: string,
   amount: number,
-  schedule: Date,
-  end_date: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string
 ): Promise<incomeData> => {
   try {
@@ -53,8 +53,6 @@ export const incomeNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post income");
@@ -66,13 +64,13 @@ export const incomeEdit = async (
   category_id: string,
   classification_id: string,
   amount: number,
-  schedule: Date,
-  end_date: Date,
+  schedule: string,
+  end_date: string,
   repetition: boolean,
   repetition_type: string,
-  repetition_settings: [],
+  repetition_settings: string[],
   body: string
-) => {
+): Promise<incomeData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/incomes/${id}`,
@@ -97,9 +95,7 @@ export const incomeEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit income");
   }
@@ -114,7 +110,6 @@ export const incomeDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete income");
   }

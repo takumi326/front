@@ -7,62 +7,62 @@ import jaLocale from "@fullcalendar/core/locales/ja";
 
 import { moneyContext } from "@/context/money-context";
 
-
-
 export const MoneyCalendar = (): JSX.Element => {
   const {
     classifications,
-    setClassifications,
-    classificationMonthlyAmounts,
-    setClassificationMonthlyAmounts,
-    categories,
-    setCategories,
-    allPayments,
-    setAllPayments,
-    payments,
-    setPayments,
-    allIncomes,
-    setAllIncomes,
-    incomes,
-    setIncomes,
-    accounts,
-    setAccounts,
-    allTransfers,
-    setAllTransfers,
-    transfers,
-    setTransfers,
+    calendarPayments,
+    calendarIncomes,
+    calendarTransfers,
     filter,
-    setFilter,
-    currentMonth,
     setCurrentMonth,
   } = useContext(moneyContext);
 
-  // useEffect(() => {
-  //   getData().then((data) => {
-  //     setTasks(data);
-  //   });
-  // }, []);
+  // const [selectedEvent, setSelectedEvent] = useState<taskData>();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const calendarRef = useRef(null);
 
   const handleDateChange = () => {
-    const calendarApi = calendarRef.current.getApi();
-    const currentDate = calendarApi.getDate();
-    setCurrentMonth(
-      `${currentDate.getFullYear()}${currentDate.getMonth() + 1}`
-    );
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+
+      const currentDate = calendarApi.getDate();
+      setCurrentMonth(
+        `${currentDate.getFullYear()}${currentDate.getMonth() + 1}`
+      );
+    }
   };
 
   useEffect(() => {
-    const calendarApi = calendarRef.current.getApi();
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
 
-    calendarApi.on("datesSet", handleDateChange); // datesSetイベントリスナーを追加
+      calendarApi.on("datesSet", handleDateChange);
 
-    // クリーンアップ
-    return () => {
-      calendarApi.off("datesSet", handleDateChange);
-    };
+      return () => {
+        calendarApi.off("datesSet", handleDateChange);
+      };
+    }
   }, []);
+
+  // const handleEventClick = (clickInfo) => {
+  //   const task = calendarTasks.find(
+  //     (task) => task.id === clickInfo.event.extendedProps.taskId
+  //   );
+  //   if (task !== undefined) {
+  //     if (allTasks) {
+  //       const showTask = allTasks.find(
+  //         (showTask: taskData) => showTask.id === task.id
+  //       );
+  //       setSelectedEvent(showTask);
+  //     }
+  //   }
+  //   setIsEditModalOpen(true);
+  // };
+
+  const handleEditCloseModal = () => {
+    setIsEditModalOpen(false);
+  };
 
   const formatAmountCommas = (number: number) => {
     const integerPart = Math.floor(number);
@@ -76,26 +76,28 @@ export const MoneyCalendar = (): JSX.Element => {
 
   const events =
     filter === "payment"
-      ? allPayments.map((item) => ({
-          title: item.category_name,
-          start: item.schedule,
-          allDay: item.schedule,
+      ? calendarPayments.map((payment) => ({
+          title: payment.category_name,
+          start: payment.schedule,
+          allDay: payment.schedule,
           backgroundColor: "green",
           borderColor: "green",
         }))
       : filter === "income"
-      ? allIncomes.map((item) => ({
-          title: item.category_name,
-          start: item.schedule,
-          allDay: item.schedule,
+      ? calendarIncomes.map((income) => ({
+          title: income.category_name,
+          start: income.schedule,
+          allDay: income.schedule,
           backgroundColor: "green",
           borderColor: "green",
         }))
-      : allTransfers.map((item) => ({
+      : calendarTransfers.map((transfer) => ({
           title:
-            item.after_account_name + "   " + formatAmountCommas(item.amount),
-          start: item.schedule,
-          allDay: item.schedule,
+            transfer.after_account_name +
+            "   " +
+            formatAmountCommas(transfer.amount),
+          start: transfer.schedule,
+          allDay: transfer.schedule,
           backgroundColor: "green",
           borderColor: "green",
         }));
@@ -148,6 +150,8 @@ export const MoneyCalendar = (): JSX.Element => {
           center: "title",
           end: "today prev,next",
         }}
+        // eventClick={handleEventClick}
+        eventClassNames="cursor-pointer"
       />
     </div>
   );

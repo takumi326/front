@@ -1,21 +1,24 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useContext } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
+
+import { moneyContext } from "@/context/money-context";
 
 import { categoryNew as New } from "@/lib/api/category-api";
 import { categoryNewProps } from "@/interface/category-interface";
 
 export const CategoryNew: React.FC<categoryNewProps> = (props) => {
-  const { onClassificationAdd, onClose, classification_type } = props;
+  const { onClose, category_type } = props;
+  const { setIsEditing } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
   const newCategory = async () => {
     try {
-      const response = await New(newName, classification_type);
-      onClassificationAdd(response);
+      await New(newName, category_type);
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create category:", error);
     }

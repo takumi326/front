@@ -12,7 +12,6 @@ export const categoryGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("get成功");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -40,8 +39,6 @@ export const categoryNew = async (
         },
       }
     );
-    console.log("new成功");
-    // レスポンスから作成された目的の情報を抽出して返す
     return response.data;
   } catch (error) {
     throw new Error("Failed to post category");
@@ -52,7 +49,7 @@ export const categoryEdit = async (
   id: string,
   name: string,
   category_type: string
-) => {
+): Promise<categoryData> => {
   try {
     const response = await axios.patch(
       `http://localhost:3000/categories/${id}`,
@@ -70,9 +67,7 @@ export const categoryEdit = async (
         },
       }
     );
-    console.log("update成功");
-    console.log(response);
-    return response;
+    return response.data;
   } catch (error) {
     throw new Error("Failed to edit category");
   }
@@ -87,7 +82,6 @@ export const categoryDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-    console.log("delete成功");
   } catch (error) {
     throw new Error("Failed to delete category");
   }

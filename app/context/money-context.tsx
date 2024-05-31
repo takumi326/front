@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, createContext,useEffect } from "react";
+import React, { useState, createContext, useEffect } from "react";
 
 import { paymentData } from "@/interface/payment-interface";
 import { incomeData } from "@/interface/income-interface";
@@ -10,16 +10,21 @@ import {
   classificationMonthlyAmountData,
 } from "@/interface/classification-interface";
 import { categoryData } from "@/interface/category-interface";
+import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 
-import { paymentGetData } from "@/lib/api/payment-api";
-import { incomeGetData} from "@/lib/api/income-api";
-import { accountGetData } from "@/lib/api/account-api";
-import { transferGetData} from "@/lib/api/transfer-api";
-import { categoryGetData } from "@/lib/api/category-api";
-import { classificationGetData } from "@/lib/api/classification-api";
-import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMonthlyAmount-api";
+// import { paymentGetData } from "@/lib/api/payment-api";
+// import { incomeGetData} from "@/lib/api/income-api";
+// import { accountGetData } from "@/lib/api/account-api";
+// import { transferGetData} from "@/lib/api/transfer-api";
+// import { categoryGetData } from "@/lib/api/category-api";
+// import { classificationGetData } from "@/lib/api/classification-api";
+// import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMonthlyAmount-api";
 
 export const moneyContext = createContext<{
+  repetitionMoneies: repetitionMoneyData[];
+  setRepetitionMoneies: React.Dispatch<
+    React.SetStateAction<repetitionMoneyData[]>
+  >;
   classifications: classificationData[];
   setClassifications: React.Dispatch<
     React.SetStateAction<classificationData[]>
@@ -30,18 +35,26 @@ export const moneyContext = createContext<{
   >;
   categories: categoryData[];
   setCategories: React.Dispatch<React.SetStateAction<categoryData[]>>;
-  allPayments: paymentData[];
-  setAllPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
+  // displayPayments: paymentData[];
+  // setDisplayPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
+  // calendarPayments: paymentData[];
+  // setCalendarPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
+  calendarPayments: paymentData[];
+  setCalendarPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   payments: paymentData[];
   setPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
-  allIncomes: incomeData[];
-  setAllIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
+  // displayIncomes: incomeData[];
+  // setDisplayIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
+  // calendarIncomes: incomeData[];
+  // setCalendarIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
+  calendarIncomes: incomeData[];
+  setCalendarIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   incomes: incomeData[];
   setIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   accounts: accountData[];
   setAccounts: React.Dispatch<React.SetStateAction<accountData[]>>;
-  allTransfers: transferData[];
-  setAllTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
+  calendarTransfers: transferData[];
+  setCalendarTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
   transfers: transferData[];
   setTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
   filter: string;
@@ -50,113 +63,103 @@ export const moneyContext = createContext<{
   >;
   currentMonth: string;
   setCurrentMonth: React.Dispatch<React.SetStateAction<string>>;
+  isEditing: boolean;
+  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
+  repetitionMoneies: [],
+  setRepetitionMoneies: () => {},
   classifications: [],
   setClassifications: () => {},
   classificationMonthlyAmounts: [],
   setClassificationMonthlyAmounts: () => {},
   categories: [],
   setCategories: () => {},
-  allPayments: [],
-  setAllPayments: () => {},
+  // displayPayments: [],
+  // setDisplayPayments: () => {},
+  // calendarPayments: [],
+  // setCalendarPayments: () => {},
+  calendarPayments: [],
+  setCalendarPayments: () => {},
   payments: [],
   setPayments: () => {},
-  allIncomes: [],
-  setAllIncomes: () => {},
+  // displayIncomes: [],
+  // setDisplayIncomes: () => {},
+  // calendarIncomes: [],
+  // setCalendarIncomes: () => {},
+  calendarIncomes: [],
+  setCalendarIncomes: () => {},
   incomes: [],
   setIncomes: () => {},
   accounts: [],
   setAccounts: () => {},
-  allTransfers: [],
-  setAllTransfers: () => {},
+  calendarTransfers: [],
+  setCalendarTransfers: () => {},
   transfers: [],
   setTransfers: () => {},
   filter: "payment",
   setFilter: () => {},
   currentMonth: "",
   setCurrentMonth: () => {},
+  isEditing: false,
+  setIsEditing: () => {},
 });
 
-export const MoneyProvider: React.FC = ({ children }) => {　
-  
+export const MoneyProvider: React.FC = ({ children }) => {
+  const [repetitionMoneies, setRepetitionMoneies] = useState<
+    repetitionMoneyData[]
+  >([]);
   const [classifications, setClassifications] = useState<classificationData[]>(
     []
   );
   const [classificationMonthlyAmounts, setClassificationMonthlyAmounts] =
     useState<classificationMonthlyAmountData[]>([]);
   const [categories, setCategories] = useState<categoryData[]>([]);
-  const [allPayments, setAllPayments] = useState<paymentData[]>([]);
+  const [calendarPayments, setCalendarPayments] = useState<paymentData[]>([]);
   const [payments, setPayments] = useState<paymentData[]>([]);
-  const [allIncomes, setAllIncomes] = useState<incomeData[]>([]);
+  const [calendarIncomes, setCalendarIncomes] = useState<incomeData[]>([]);
   const [incomes, setIncomes] = useState<incomeData[]>([]);
   const [accounts, setAccounts] = useState<accountData[]>([]);
-  const [allTransfers, setAllTransfers] = useState<transferData[]>([]);
+  const [calendarTransfers, setCalendarTransfers] = useState<transferData[]>(
+    []
+  );
   const [transfers, setTransfers] = useState<transferData[]>([]);
   const [filter, setFilter] = useState<"payment" | "income" | "account">(
     "payment"
   );
   const [currentMonth, setCurrentMonth] = useState("");
-
-  useEffect(() => {
-    paymentGetData().then((data) => {
-      setAllPayments(data);
-    });
-    paymentGetData().then((data) => {
-      setPayments(data);
-    });
-    incomeGetData().then((data) => {
-      setAllIncomes(data);
-    });
-    incomeGetData().then((data) => {
-      setIncomes(data);
-    });
-    accountGetData().then((data) => {
-      setAccounts(data);
-    });
-    categoryGetData().then((data) => {
-      setCategories(data);
-    });
-    classificationGetData().then((data) => {
-      setClassifications(data);
-    });
-    classificationMonthlyAmountGetData().then((data) => {
-      setClassificationMonthlyAmounts(data);
-    });
-    transferGetData().then((data) => {
-      setAllTransfers(data);
-    });
-    transferGetData().then((data) => {
-      setTransfers(data);
-    });
-  }, []);
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
     <moneyContext.Provider
       value={{
+        repetitionMoneies,
+        setRepetitionMoneies,
         classifications,
         setClassifications,
         classificationMonthlyAmounts,
         setClassificationMonthlyAmounts,
         categories,
         setCategories,
-        allPayments,
-        setAllPayments,
+        calendarPayments,
+        setCalendarPayments,
         payments,
         setPayments,
-        allIncomes,
-        setAllIncomes,
+        calendarIncomes,
+        setCalendarIncomes,
         incomes,
         setIncomes,
         accounts,
         setAccounts,
-        allTransfers,
-        setAllTransfers,
+        calendarTransfers,
+        setCalendarTransfers,
         transfers,
         setTransfers,
         filter,
         setFilter,
         currentMonth,
         setCurrentMonth,
+        isEditing,
+        setIsEditing,
       }}
     >
       {children}

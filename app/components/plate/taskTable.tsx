@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useContext } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -44,8 +43,8 @@ import { TaskNew } from "@/components/task/new";
 
 export const TaskTable: React.FC = () => {
   const {
-    displayTasks,
-    setDisplayTasks,
+    tableTasks,
+    setTableTasks,
     setCalendarTasks,
     allTasks,
     setAllTasks,
@@ -62,7 +61,6 @@ export const TaskTable: React.FC = () => {
     "incomplete"
   );
   const [displayedTasks, setDisplayedTasks] = useState<taskData[]>([]);
-  // const [isEditing, setIsEditing] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [completedSelected, setCompletedSelected] = useState<string[]>([]);
@@ -72,7 +70,10 @@ export const TaskTable: React.FC = () => {
     new Date(
       Number(currentMonth.slice(0, 4)),
       Number(currentMonth.slice(4)) - 1,
-      1
+      1,
+      0,
+      0,
+      0
     )
   );
   const [end, setEnd] = useState<Date>(
@@ -81,12 +82,13 @@ export const TaskTable: React.FC = () => {
       Number(currentMonth.slice(4)),
       0,
       23,
+      59,
       59
     )
   );
 
   const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof displayTasks)[0]>("schedule");
+    React.useState<keyof (typeof tableTasks)[0]>("schedule");
 
   const [order, setOrder] = React.useState<{
     [key: string]: "asc" | "desc" | "default";
@@ -103,14 +105,13 @@ export const TaskTable: React.FC = () => {
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
   }>(() => {
-    if (displayTasks.length > 0) {
+    if (tableTasks.length > 0) {
       const initialSettings: { [key: string]: boolean } = {};
-      Object.keys(displayTasks[0]).forEach((key) => {
+      Object.keys(tableTasks[0]).forEach((key) => {
         initialSettings[key] = true;
       });
       return initialSettings;
     } else {
-      // rows が空の場合は適切な初期設定を行う
       return {
         title: true,
         purpose_title: true,
@@ -143,115 +144,125 @@ export const TaskTable: React.FC = () => {
   }, [currentMonth]);
 
   useEffect(() => {
-    taskGetData().then((taskDatas) => {
-      const allTasks: Array<taskData> = [];
-      completedRepetitionTaskGetData().then((completedRepetitionTaskDatas) => {
-        taskDatas.forEach((taskData: taskData) => {
-          if (taskData.repetition === true) {
-            completedRepetitionTaskDatas
-              .filter(
-                (completedRepetitionTask: completedRepetitionTaskData) =>
-                  completedRepetitionTask.task_id === taskData.id
-              )
-              .forEach(
-                (completedRepetitionTask: completedRepetitionTaskData) => {
-                  const repetitionTaskData = {
-                    id: taskData.id,
-                    title: taskData.title,
-                    purpose_id: taskData.purpose_id,
-                    purpose_title: taskData.purpose_title,
-                    schedule: completedRepetitionTask.completed_date,
-                    end_date: taskData.end_date,
-                    repetition: taskData.repetition,
-                    repetition_type: taskData.repetition_type,
-                    repetition_settings: taskData.repetition_settings,
-                    body: taskData.body,
-                    completed: completedRepetitionTask.completed,
-                  };
-                  allTasks.push(repetitionTaskData);
-                }
-              );
-          } else {
-            allTasks.push(taskData);
+    const handleAllDataFetch = async () => {
+      await taskGetData().then((taskDatas) => {
+        const allTasks: Array<taskData> = [];
+        completedRepetitionTaskGetData().then(
+          (completedRepetitionTaskDatas) => {
+            taskDatas.forEach((taskData: taskData) => {
+              if (taskData.repetition === true) {
+                completedRepetitionTaskDatas
+                  .filter(
+                    (completedRepetitionTask: completedRepetitionTaskData) =>
+                      completedRepetitionTask.task_id === taskData.id
+                  )
+                  .forEach(
+                    (completedRepetitionTask: completedRepetitionTaskData) => {
+                      const repetitionTaskData = {
+                        id: taskData.id,
+                        title: taskData.title,
+                        purpose_id: taskData.purpose_id,
+                        purpose_title: taskData.purpose_title,
+                        schedule: completedRepetitionTask.completed_date,
+                        end_date: taskData.end_date,
+                        repetition: taskData.repetition,
+                        repetition_type: taskData.repetition_type,
+                        repetition_settings: taskData.repetition_settings,
+                        body: taskData.body,
+                        completed: completedRepetitionTask.completed,
+                      };
+                      allTasks.push(repetitionTaskData);
+                    }
+                  );
+              } else {
+                allTasks.push(taskData);
+              }
+            });
+            setCalendarTasks(allTasks);
           }
-        });
-        setCalendarTasks(allTasks);
+        );
       });
-    });
 
-    taskGetData().then((taskDatas) => {
-      const allTasks: Array<taskData> = [];
-      completedRepetitionTaskGetData().then((completedRepetitionTaskDatas) => {
-        taskDatas.forEach((taskData: taskData) => {
-          if (taskData.repetition === true) {
-            completedRepetitionTaskDatas
-              .filter(
-                (completedRepetitionTask: completedRepetitionTaskData) =>
-                  completedRepetitionTask.task_id === taskData.id &&
-                  new Date(completedRepetitionTask.completed_date).getTime() >=
-                    start.getTime() &&
-                  new Date(completedRepetitionTask.completed_date).getTime() <=
-                    end.getTime()
-              )
-              .forEach(
-                (completedRepetitionTask: completedRepetitionTaskData) => {
-                  const repetitionTaskData = {
-                    id: taskData.id,
-                    title: taskData.title,
-                    purpose_id: taskData.purpose_id,
-                    purpose_title: taskData.purpose_title,
-                    schedule: completedRepetitionTask.completed_date,
-                    end_date: taskData.end_date,
-                    repetition: taskData.repetition,
-                    repetition_type: taskData.repetition_type,
-                    repetition_settings: taskData.repetition_settings,
-                    body: taskData.body,
-                    completed: completedRepetitionTask.completed,
-                  };
-                  allTasks.push(repetitionTaskData);
+      await taskGetData().then((taskDatas) => {
+        const allTasks: Array<taskData> = [];
+        completedRepetitionTaskGetData().then(
+          (completedRepetitionTaskDatas) => {
+            taskDatas.forEach((taskData: taskData) => {
+              if (taskData.repetition === true) {
+                completedRepetitionTaskDatas
+                  .filter(
+                    (completedRepetitionTask: completedRepetitionTaskData) =>
+                      completedRepetitionTask.task_id === taskData.id &&
+                      new Date(
+                        completedRepetitionTask.completed_date
+                      ).getTime() >= start.getTime() &&
+                      new Date(
+                        completedRepetitionTask.completed_date
+                      ).getTime() <= end.getTime()
+                  )
+                  .forEach(
+                    (completedRepetitionTask: completedRepetitionTaskData) => {
+                      const repetitionTaskData = {
+                        id: taskData.id,
+                        title: taskData.title,
+                        purpose_id: taskData.purpose_id,
+                        purpose_title: taskData.purpose_title,
+                        schedule: completedRepetitionTask.completed_date,
+                        end_date: taskData.end_date,
+                        repetition: taskData.repetition,
+                        repetition_type: taskData.repetition_type,
+                        repetition_settings: taskData.repetition_settings,
+                        body: taskData.body,
+                        completed: completedRepetitionTask.completed,
+                      };
+                      allTasks.push(repetitionTaskData);
+                    }
+                  );
+              } else {
+                if (
+                  new Date(taskData.schedule).getTime() >= start.getTime() &&
+                  new Date(taskData.schedule).getTime() <= end.getTime()
+                ) {
+                  allTasks.push(taskData);
                 }
-              );
-          } else {
-            if (
-              new Date(taskData.schedule).getTime() >= start.getTime() &&
-              new Date(taskData.schedule).getTime() <= end.getTime()
-            ) {
-              allTasks.push(taskData);
-            }
+              }
+            });
+            setTableTasks(allTasks);
           }
-        });
-        setDisplayTasks(allTasks);
+        );
       });
-    });
 
-    taskGetData().then((data) => {
-      setAllTasks(data);
-    });
-    completedRepetitionTaskGetData().then((data) => {
-      setCompletedRepetitionTasks(data);
-    });
-    setIsEditing(false);
+      await taskGetData().then((data) => {
+        setAllTasks(data);
+      });
+      await completedRepetitionTaskGetData().then((data) => {
+        setCompletedRepetitionTasks(data);
+      });
+      setIsEditing(false);
+    };
+
+    handleAllDataFetch();
   }, [isEditing, currentMonth, start, end]);
 
   useEffect(() => {
-    const completed = displayTasks.filter((task) => task.completed);
-    const incomplete = displayTasks.filter((task) => !task.completed);
+    const completed = tableTasks.filter((task) => task.completed);
+    const incomplete = tableTasks.filter((task) => !task.completed);
     setCompletedTasks(completed);
     setIncompleteTasks(incomplete);
-    setDisplayedTasks(displayTasks);
-  }, [displayTasks, isEditing]);
+    setDisplayedTasks(tableTasks);
+  }, [tableTasks, isEditing]);
 
   useEffect(() => {
     let filteredTasks: taskData[] = [];
     if (filter === "all") {
-      filteredTasks = displayTasks;
+      filteredTasks = tableTasks;
     } else if (filter === "completed") {
       filteredTasks = completedTasks;
     } else if (filter === "incomplete") {
       filteredTasks = incompleteTasks;
     }
     setDisplayedTasks(filteredTasks);
-  }, [filter, displayTasks, completedTasks, incompleteTasks]);
+  }, [filter, tableTasks, completedTasks, incompleteTasks]);
 
   const handleFilterChange = (value: "all" | "completed" | "incomplete") => {
     setFilter(value);
@@ -295,7 +306,7 @@ export const TaskTable: React.FC = () => {
     }
   };
 
-  const handleRequestSort = (property: keyof (typeof displayTasks)[0]) => {
+  const handleRequestSort = (property: keyof (typeof tableTasks)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
       newOrder =
@@ -311,7 +322,7 @@ export const TaskTable: React.FC = () => {
   };
 
   const sortedRows = displayedTasks.slice().sort((a, b) => {
-    const compare = (key: keyof (typeof displayTasks)[0]) => {
+    const compare = (key: keyof (typeof tableTasks)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
       } else if (order[key] === "desc") {
@@ -342,12 +353,12 @@ export const TaskTable: React.FC = () => {
         setSelected([...selected, ...allIds]);
       }
     } else {
-      if (selected.length === displayTasks.length) {
+      if (selected.length === tableTasks.length) {
         setCompletedSelected([]);
         setIncompleteSelected([]);
         setSelected([]);
       } else {
-        const allIds = displayTasks.map((task) => task.id);
+        const allIds = tableTasks.map((task) => task.id);
         const allCompletedIds = completedTasks.map((task) => task.id);
         const allIncompleteIds = incompleteTasks.map((task) => task.id);
         setCompletedSelected(allCompletedIds);
@@ -475,8 +486,8 @@ export const TaskTable: React.FC = () => {
           horizontal: "left",
         }}
       >
-        {displayTasks.length > 0 &&
-          Object.keys(displayTasks[0]).map((key) =>
+        {tableTasks.length > 0 &&
+          Object.keys(tableTasks[0]).map((key) =>
             columnTaskNames[key as keyof selectTaskData] ? (
               <MenuItem
                 key={key}
@@ -498,28 +509,28 @@ export const TaskTable: React.FC = () => {
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length <
-                          displayTasks.filter((row) => !row.completed).length
+                          tableTasks.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length <
-                          displayTasks.filter((row) => row.completed).length
+                          tableTasks.filter((row) => row.completed).length
                       : filter === "all"
                       ? selected.length > 0 &&
-                        selected.length < displayTasks.length
+                        selected.length < tableTasks.length
                       : false
                   }
                   checked={
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length ===
-                          displayTasks.filter((row) => !row.completed).length
+                          tableTasks.filter((row) => !row.completed).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length ===
-                          displayTasks.filter((row) => row.completed).length
+                          tableTasks.filter((row) => row.completed).length
                       : filter === "all"
                       ? selected.length > 0 &&
-                        selected.length === displayTasks.length
+                        selected.length === tableTasks.length
                       : false
                   }
                   onChange={handleSelectAllClick}
@@ -534,7 +545,7 @@ export const TaskTable: React.FC = () => {
 
                     <IconButton
                       onClick={() =>
-                        handleRequestSort(key as keyof (typeof displayTasks)[0])
+                        handleRequestSort(key as keyof (typeof tableTasks)[0])
                       }
                     >
                       {orderBy === key ? (
