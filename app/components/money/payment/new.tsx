@@ -112,7 +112,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             editedClassificationAmount
           );
         } else {
-          let repetitionMoneies: repetitionMoneyData[] = [];
+          let repetitionMoneyDate: repetitionMoneyData[] = [];
           const schedules = calculateNextSchedules();
 
           await Promise.all(
@@ -128,7 +128,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
                 newAmount,
                 stringDate
               );
-              repetitionMoneies = [...repetitionMoneies, repetitionMoney];
+              repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
             })
           );
 
@@ -151,7 +151,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
               59
             );
 
-            for (const repetitionMoney of repetitionMoneies.filter(
+            for (const repetitionMoney of repetitionMoneyDate.filter(
               (repetitionMoney) =>
                 new Date(repetitionMoney.repetition_schedule).getTime() >=
                   start.getTime() &&
