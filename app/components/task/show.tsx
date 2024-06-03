@@ -555,17 +555,14 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
               variant="contained"
               onClick={handleSave}
               disabled={!isFormValid}
-              color="primary"
+              className="ml-60"
             >
               保存
             </Button>
+            <IconButton onClick={() => deleteTask(id)} className="ml-auto">
+              <DeleteIcon />
+            </IconButton>
           </Stack>
-          <IconButton
-            onClick={() => deleteTask(id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
         </li>
       </ul>
     </Box>

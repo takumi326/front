@@ -39,8 +39,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const { row, start, end, visibleColumns } = props;
   const {
     repetitionMoneies,
+    payments,
     classificationMonthlyAmounts,
     currentMonth,
+    isEditing,
     setIsEditing,
   } = useContext(moneyContext);
 
@@ -49,9 +51,11 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHistory, setIsHistory] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const handleClassificationMonthlyAmount = async () => {
+      setIsProcessing(true);
       try {
         const shouldCreateNewAmount = classificationMonthlyAmounts.some(
           (classificationMonthlyAmount) =>
@@ -74,18 +78,22 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 .map((repetitionMoney) => {
                   money += parseFloat(String(repetitionMoney.amount));
                 });
+            } else {
+              money += parseFloat(String(historyRow.payment_amount));
             }
           });
           await classificationMonthlyAmountNew(row.id, currentMonth, money);
         }
-        setIsEditing(true);
       } catch (error) {
         console.error("Failed to new classificationMonthlyAmount:", error);
+      } finally {
+        setIsProcessing(false);
       }
     };
-
-    handleClassificationMonthlyAmount();
-  }, [start, end]);
+    if (!isProcessing) {
+      handleClassificationMonthlyAmount();
+    }
+  }, [row]);
 
   const handleOpenEditPaymentModal = (index: number) => {
     setIsEditPaymentModalOpen(true);
@@ -113,7 +121,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     }
   };
 
-  const handlePaymentDelete = async (id: string, index: number) => {
+  const handlePaymentDelete = async (id: string) => {
     try {
       if (row.classification_name === "分類なし") {
         deletePayment(id);
@@ -281,9 +289,6 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               classification_id={
                 row.history[isHistory].payment_classification_id
               }
-              classification_name={
-                row.history[isHistory].payment_classification_name
-              }
               amount={row.history[isHistory].payment_amount}
               schedule={row.history[isHistory].payment_schedule}
               end_date={row.history[isHistory].payment_end_date}
@@ -369,7 +374,9 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
-                  {String(row[key as keyof displayPaymentData])}
+                  {row[key as keyof displayPaymentData] === null
+                    ? ""
+                    : String(row[key as keyof displayPaymentData])}
                 </TableCell>
               )}
             </>
@@ -440,10 +447,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              handlePaymentDelete(
-                                historyRow.payment_id,
-                                historyIndex
-                              )
+                              handlePaymentDelete(historyRow.payment_id)
                             }
                           >
                             <DeleteIcon />

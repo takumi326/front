@@ -29,6 +29,7 @@ import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthly
 
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { paymentNewProps } from "@/interface/payment-interface";
+import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
@@ -58,6 +59,9 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   const [newAmountString, setNewAmountString] = useState("0");
   const [newAmountError, setNewAmountError] = useState<boolean>(false);
   const [newSchedule, setNewSchedule] = useState(initialDateObject);
+  const [newMonth, setNewMonth] = useState(
+    `${new Date().getFullYear()}${new Date().getMonth() + 1}`
+  );
   const [newEndDate, setNewEndDate] = useState(endDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
@@ -78,99 +82,99 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   }, [newAmount]);
 
   const newPayment = async () => {
-    const selectedClassificationMonthlyAmount =
-      classificationMonthlyAmounts.find(
-        (classificationMonthlyAmount) =>
-          classificationMonthlyAmount.classification_id ===
-            newClassificationId &&
-          classificationMonthlyAmount.month === currentMonth
+    try {
+      const response = await paymentNew(
+        newCategoryId,
+        newClassificationId,
+        newAmount,
+        newSchedule,
+        newEndDate,
+        newRepetition,
+        newRepetitionType,
+        newRepetitionSettings,
+        newBody
       );
 
-    try {
-      if (selectedClassificationMonthlyAmount) {
-        const response = await paymentNew(
-          newCategoryId,
-          newClassificationId,
-          newAmount,
-          newSchedule,
-          newEndDate,
-          newRepetition,
-          newRepetitionType,
-          newRepetitionSettings,
-          newBody
-        );
+      if (newRepetition === false) {
+        const selectedClassificationMonthlyAmount: classificationMonthlyAmountData =
+          classificationMonthlyAmounts.find(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+                newClassificationId &&
+              classificationMonthlyAmount.month === newMonth
+          );
 
-        if (newRepetition === false) {
-          const editedClassificationAmount =
-            parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
-            parseFloat(String(newAmount));
+        const editedClassificationAmount =
+          parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
+          parseFloat(String(newAmount));
 
+        if (selectedClassificationMonthlyAmount) {
           await classificationMonthlyAmountEdit(
             selectedClassificationMonthlyAmount.id,
             selectedClassificationMonthlyAmount.classification_id,
-            selectedClassificationMonthlyAmount.month,
+            selectedClassificationMonthlyAmount.schedule,
             editedClassificationAmount
           );
-        } else {
-          let repetitionMoneyDate: repetitionMoneyData[] = [];
-          const schedules = calculateNextSchedules();
+        }
+      } else {
+        let repetitionMoneyDate: repetitionMoneyData[] = [];
+        const schedules = calculateNextSchedules();
 
-          await Promise.all(
-            schedules.map(async (schedule) => {
-              const stringDate = new Date(schedule)
-                .toLocaleDateString()
-                .split("T")[0];
-              const repetitionMoney = await repetitionMoneyNew(
-                "payment",
-                response.id,
-                "",
-                "",
-                newAmount,
-                stringDate
-              );
-              repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-            })
+        await Promise.all(
+          schedules.map(async (schedule) => {
+            const stringDate = new Date(schedule)
+              .toLocaleDateString()
+              .split("T")[0];
+            const repetitionMoney = await repetitionMoneyNew(
+              "payment",
+              response.id,
+              "",
+              "",
+              newAmount,
+              stringDate
+            );
+            repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
+          })
+        );
+
+        for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+          (classificationMonthlyAmount) =>
+            classificationMonthlyAmount.classification_id ===
+            newClassificationId
+        )) {
+          let money = parseFloat(String(classificationMonthlyAmount.amount));
+          const start = new Date(
+            Number(classificationMonthlyAmount.month.slice(0, 4)),
+            Number(classificationMonthlyAmount.month.slice(4)) - 1,
+            1
+          );
+          const end = new Date(
+            Number(classificationMonthlyAmount.month.slice(0, 4)),
+            Number(classificationMonthlyAmount.month.slice(4)),
+            0,
+            23,
+            59
           );
 
-          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-            (classificationMonthlyAmount) =>
-              classificationMonthlyAmount.classification_id ===
-              newClassificationId
+          for (const repetitionMoney of repetitionMoneyDate.filter(
+            (repetitionMoney) =>
+              new Date(repetitionMoney.repetition_schedule).getTime() >=
+                start.getTime() &&
+              new Date(repetitionMoney.repetition_schedule).getTime() <=
+                end.getTime()
           )) {
-            let money = parseFloat(String(classificationMonthlyAmount.amount));
-            const start = new Date(
-              Number(classificationMonthlyAmount.month.slice(0, 4)),
-              Number(classificationMonthlyAmount.month.slice(4)) - 1,
-              1
-            );
-            const end = new Date(
-              Number(classificationMonthlyAmount.month.slice(0, 4)),
-              Number(classificationMonthlyAmount.month.slice(4)),
-              0,
-              23,
-              59
-            );
-
-            for (const repetitionMoney of repetitionMoneyDate.filter(
-              (repetitionMoney) =>
-                new Date(repetitionMoney.repetition_schedule).getTime() >=
-                  start.getTime() &&
-                new Date(repetitionMoney.repetition_schedule).getTime() <=
-                  end.getTime()
-            )) {
-              money += parseFloat(String(repetitionMoney.amount));
-            }
-
-            await classificationMonthlyAmountEdit(
-              classificationMonthlyAmount.id,
-              classificationMonthlyAmount.classification_id,
-              classificationMonthlyAmount.month,
-              money
-            );
+            money += parseFloat(String(repetitionMoney.amount));
           }
+
+          await classificationMonthlyAmountEdit(
+            classificationMonthlyAmount.id,
+            classificationMonthlyAmount.classification_id,
+            classificationMonthlyAmount.month,
+            money
+          );
         }
-        setIsEditing(true);
       }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create payment:", error);
     }
@@ -258,7 +262,9 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
 
   const handleSchedulChange = (date: Date) => {
     const stringDate = date.toLocaleDateString().split("T")[0];
+    const StringMonth = `${date.getFullYear()}${date.getMonth() + 1}`;
     setNewSchedule(stringDate);
+    setNewMonth(StringMonth);
   };
 
   const handleEndDateChange = (date: Date) => {
@@ -395,7 +401,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     (period === "weekly" && selectedDays.length > 0);
 
   return (
-    <Box width={560} height={770}>
+    <Box width={560} height={810}>
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -470,7 +476,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
       </Dialog>
 
       <ul className="w-full">
-        <li className="pt-10">
+        <li className="pt-5">
           <Typography variant="subtitle1">分類</Typography>
           <Select
             fullWidth
@@ -543,16 +549,27 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           )}
         </li>
         <li className="pt-5">
-          <button
-            style={{
-              color: "blue",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-            onClick={handleRepetitionDialogOpen}
-          >
-            繰り返し
-          </button>
+          <Stack direction="row" spacing={1}>
+            <button
+              style={{
+                color: "blue",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+              onClick={handleRepetitionDialogOpen}
+            >
+              繰り返し
+            </button>
+            {newRepetition === true ? (
+              <Typography align="left" variant="subtitle1">
+                ON
+              </Typography>
+            ) : (
+              <Typography align="left" variant="subtitle1">
+                OFF
+              </Typography>
+            )}
+          </Stack>
           <Typography>
             {newRepetitionSettings && (
               <>

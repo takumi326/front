@@ -21,8 +21,7 @@ import { purposeShowProps } from "@/interface/purpose-interface";
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeShow: React.FC<purposeShowProps> = (props) => {
-  const { id, title, result, deadline, body, completed, onClose} =
-    props;
+  const { id, title, result, deadline, body, completed, onClose } = props;
   const { setIsEditing } = useContext(purposeContext);
 
   const [editTitle, setEditTitle] = useState(title);
@@ -152,17 +151,14 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
               variant="contained"
               onClick={handleSave}
               disabled={!isFormValid}
-              color="primary"
+              className="ml-60"
             >
               保存
             </Button>
+            <IconButton onClick={() => deletePurpose(id)} className="ml-auto">
+              <DeleteIcon />
+            </IconButton>
           </Stack>
-          <IconButton
-            onClick={() => deletePurpose (id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
         </li>
       </ul>
     </Box>

@@ -82,7 +82,6 @@ export interface paymentShowProps {
   id: string;
   category_id: string;
   classification_id: string;
-  classification_name: string;
   amount: number;
   schedule: string;
   end_date: string;
@@ -91,7 +90,7 @@ export interface paymentShowProps {
   repetition_settings: string[];
   body: string;
   onClose: () => void;
-  onPaymentDelete: (id: string, index: number) => void;
+  onPaymentDelete: (id: string) => void;
 }
 
 export interface paymentNewProps {
