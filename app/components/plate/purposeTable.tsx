@@ -54,9 +54,9 @@ export const PurposeTable: React.FC = () => {
   const [incompleteSelected, setIncompleteSelected] = useState<string[]>([]);
 
   const [orderBy, setOrderBy] =
-    React.useState<keyof (typeof purposes)[0]>("deadline");
+    useState<keyof (typeof purposes)[0]>("deadline");
 
-  const [order, setOrder] = React.useState<{
+  const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
   }>({
     title: "default",
@@ -64,7 +64,7 @@ export const PurposeTable: React.FC = () => {
     deadline: "asc",
   });
 
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const [columnSettings, setColumnSettings] = useState<{
     [key: string]: boolean;
@@ -138,7 +138,6 @@ export const PurposeTable: React.FC = () => {
   const handleRequestSort = (property: keyof (typeof purposes)[0]) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
-      // すでにソートされているカラムをクリックした場合、ソート順を切り替える
       newOrder =
         order[property] === "asc"
           ? "desc"

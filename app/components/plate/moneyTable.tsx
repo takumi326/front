@@ -72,11 +72,13 @@ import { CategoryRow } from "@/components/money/category/row";
 import { CategoryNew } from "@/components/money/category/new";
 
 import { classificationGetData } from "@/lib/api/classification-api";
-import { classificationData } from "@/interface/classification-interface";
+import {
+  classificationData,
+  classificationMonthlyAmountData,
+} from "@/interface/classification-interface";
 import { ClassificationNew } from "@/components/money/classification/new";
 
 import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMonthlyAmount-api";
-import { classificationMonthlyAmountData } from "@/lib/api/classification-api";
 
 export const MoneyTable: React.FC = () => {
   const {
@@ -233,10 +235,10 @@ export const MoneyTable: React.FC = () => {
           const repetitonPayments = payments.filter(
             (payment: paymentData) =>
               payment.repetition === true &&
-              ((new Date(payment.schedule).getTime() >= start.getTime() &&
-                new Date(payment.schedule).getTime() <= end.getTime()) ||
-                (new Date(payment.end_date).getTime() >= start.getTime() &&
-                  new Date(payment.end_date).getTime() <= end.getTime()))
+              !(
+                new Date(payment.end_date).getTime() <= start.getTime() ||
+                new Date(payment.schedule).getTime() >= end.getTime()
+              )
           );
           setPayments(() => [...noRepetitonPayments, ...repetitonPayments]);
         } else {
@@ -349,7 +351,7 @@ export const MoneyTable: React.FC = () => {
     };
 
     handleAllDataFetch();
-  }, [isEditing, currentMonth, start, end]);
+  }, [start, isEditing]);
 
   useEffect(() => {
     let initialColumnSettings: { [key: string]: boolean } = {};
@@ -1140,6 +1142,7 @@ export const MoneyTable: React.FC = () => {
           horizontal: "left",
         }}
       >
+        
         {rows.length > 0 &&
           Object.keys(rows[0]).map((key) =>
             filter === "payment" ? (
