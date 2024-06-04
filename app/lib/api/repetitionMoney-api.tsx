@@ -101,7 +101,5 @@ export const repetitionMoneyDelete = async (id: string) => {
         uid: Cookies.get("_uid"),
       },
     });
-  } catch (error) {
-    throw new Error("Failed to delete repetitionMoney");
-  }
+  } catch (error) {}
 };

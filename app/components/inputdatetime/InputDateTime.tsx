@@ -23,12 +23,8 @@ export const InputDateTime: React.FC<{
   };
 
   const [isYearMonthView, setIsYearMonthView] = useState(false);
-  const [editRepetitionScheduleWeek, setEditRepetitionScheduleWeek] = useState(
-    () => {
-      const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
-      return daysOfWeek[resetTime(selectedDate).getDay()];
-    }
-  );
+  const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
+  const editRepetitionScheduleWeek = daysOfWeek[resetTime(selectedDate).getDay()]
 
   const handleYearMonthClick = () => {
     setIsYearMonthView(!isYearMonthView);

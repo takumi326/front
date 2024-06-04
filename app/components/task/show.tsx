@@ -283,6 +283,8 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     endDate.setHours(23, 59, 59, 999);
     let schedules = [];
     let currentDate = startDate;
+    const repetitionWeek = editRepetitionSettings.slice(1).length;
+    let times = 1;
 
     while (currentDate <= endDate) {
       schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
@@ -301,16 +303,31 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
           let currentDayOfWeek = currentDate.getDay();
           let nextDayOfWeek = currentDayOfWeek;
 
-          for (let i = 1; i <= 7; i++) {
-            nextDayOfWeek = (currentDayOfWeek + i) % 7;
-            if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              currentDate.setDate(currentDate.getDate() + i);
-              break;
+          const repetitionTimes = 7 * (Number(editRepetitionSettings[0]) - 1);
+          if (repetitionWeek === 1 || times === 1) {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(
+                  currentDate.getDate() + i + repetitionTimes
+                );
+                times += 1;
+                break;
+              }
             }
-          }
-
-          if (currentDayOfWeek === nextDayOfWeek) {
-            currentDate.setDate(currentDate.getDate() + 7);
+          } else {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(currentDate.getDate() + i);
+                if (times === repetitionWeek) {
+                  times = 1;
+                } else if (times < repetitionWeek) {
+                  times += 1;
+                }
+                break;
+              }
+            }
           }
           break;
 

@@ -38,7 +38,8 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState<boolean>(false);
+  const [repetitionDialogOpen, setRepetitionDialogOpen] =
+    useState<boolean>(false);
   const [frequency, setFrequency] = useState<number>(1);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [period, setPeriod] = useState("");
@@ -216,6 +217,8 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     endDate.setHours(23, 59, 59, 999);
     let schedules = [];
     let currentDate = startDate;
+    const repetitionWeek = newRepetitionSettings.slice(1).length;
+    let times = 1;
 
     while (currentDate <= endDate) {
       schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
@@ -234,16 +237,31 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
           let currentDayOfWeek = currentDate.getDay();
           let nextDayOfWeek = currentDayOfWeek;
 
-          for (let i = 1; i <= 7; i++) {
-            nextDayOfWeek = (currentDayOfWeek + i) % 7;
-            if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              currentDate.setDate(currentDate.getDate() + i);
-              break;
+          const repetitionTimes = 7 * (Number(newRepetitionSettings[0]) - 1);
+          if (repetitionWeek === 1 || times === 1) {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(
+                  currentDate.getDate() + i + repetitionTimes
+                );
+                times += 1;
+                break;
+              }
             }
-          }
-
-          if (currentDayOfWeek === nextDayOfWeek) {
-            currentDate.setDate(currentDate.getDate() + 7);
+          } else {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(currentDate.getDate() + i);
+                if (times === repetitionWeek) {
+                  times = 1;
+                } else if (times < repetitionWeek) {
+                  times += 1;
+                }
+                break;
+              }
+            }
           }
           break;
 

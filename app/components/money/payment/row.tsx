@@ -31,6 +31,7 @@ import {
   paymentRowProps,
   displayPaymentData,
 } from "@/interface/Payment-interface";
+import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
 
 import { PaymentShow } from "@/components/money/payment/show";
 import { ClassificationShow } from "@/components/money/classification/show";
@@ -112,60 +113,72 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     setIsEditClassificationModalOpen(false);
   };
 
-  const deletePayment = async (id: string) => {
-    try {
-      await paymentDelete(id);
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete payment:", error);
-    }
-  };
-
-  const handlePaymentDelete = async (id: string) => {
+  const handlePaymentDelete = async (id: string, index: number) => {
     try {
       if (row.classification_name === "分類なし") {
-        deletePayment(id);
+        paymentDelete(id);
       } else {
-        for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-          (classificationMonthlyAmount) =>
-            classificationMonthlyAmount.classification_id === row.id
-        )) {
-          let money = parseFloat(String(classificationMonthlyAmount.amount));
-          const start = new Date(
-            Number(classificationMonthlyAmount.month.slice(0, 4)),
-            Number(classificationMonthlyAmount.month.slice(4)) - 1,
-            1
-          );
-          const end = new Date(
-            Number(classificationMonthlyAmount.month.slice(0, 4)),
-            Number(classificationMonthlyAmount.month.slice(4)),
-            0,
-            23,
-            59
-          );
-
-          for (const repetitionMoney of repetitionMoneies.filter(
-            (repetitionMoney) =>
-              repetitionMoney.transaction_type === "payment" &&
-              repetitionMoney.payment_id === id &&
-              new Date(repetitionMoney.repetition_schedule).getTime() >=
-                start.getTime() &&
-              new Date(repetitionMoney.repetition_schedule).getTime() <=
-                end.getTime()
+        if (row.history[index].payment_repetition === true) {
+          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id === row.id
           )) {
-            money -= parseFloat(String(repetitionMoney.amount));
+            let money = parseFloat(String(classificationMonthlyAmount.amount));
+            const start = new Date(
+              Number(classificationMonthlyAmount.month.slice(0, 4)),
+              Number(classificationMonthlyAmount.month.slice(4)) - 1,
+              1
+            );
+            const end = new Date(
+              Number(classificationMonthlyAmount.month.slice(0, 4)),
+              Number(classificationMonthlyAmount.month.slice(4)),
+              0,
+              23,
+              59
+            );
+
+            for (const repetitionMoney of repetitionMoneies.filter(
+              (repetitionMoney) =>
+                repetitionMoney.transaction_type === "payment" &&
+                repetitionMoney.payment_id === id &&
+                new Date(repetitionMoney.repetition_schedule).getTime() >=
+                  start.getTime() &&
+                new Date(repetitionMoney.repetition_schedule).getTime() <=
+                  end.getTime()
+            )) {
+              money -= parseFloat(String(repetitionMoney.amount));
+            }
+
+            await classificationMonthlyAmountEdit(
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              money
+            );
           }
+        } else {
+          const editClassificationMonthlyAmount: classificationMonthlyAmountData =
+            classificationMonthlyAmounts.find(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id === row.id &&
+                classificationMonthlyAmount.month === currentMonth
+            );
 
-          await classificationMonthlyAmountEdit(
-            classificationMonthlyAmount.id,
-            classificationMonthlyAmount.classification_id,
-            classificationMonthlyAmount.month,
-            money
-          );
+          if (editClassificationMonthlyAmount) {
+            const editClassificationAmount =
+              parseFloat(String(editClassificationMonthlyAmount.amount)) -
+              parseFloat(String(row.history[index].payment_amount));
 
-          deletePayment(id);
-          setIsEditing(true);
+            await classificationMonthlyAmountEdit(
+              editClassificationMonthlyAmount.id,
+              editClassificationMonthlyAmount.classification_id,
+              editClassificationMonthlyAmount.month,
+              Math.max(0, editClassificationAmount)
+            );
+          }
         }
+        paymentDelete(id);
+        setIsEditing(true);
       }
     } catch (error) {
       console.error("Failed to edit payment:", error);
@@ -383,9 +396,11 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          <IconButton onClick={() => deleteClassification(row.id)}>
-            <DeleteIcon />
-          </IconButton>
+          {row.classification_name !== "分類なし" && (
+            <IconButton onClick={() => deleteClassification(row.id)}>
+              <DeleteIcon />
+            </IconButton>
+          )}
         </TableCell>
       </TableRow>
       {row.history.length > 0 && (
@@ -447,7 +462,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              handlePaymentDelete(historyRow.payment_id)
+                              handlePaymentDelete(
+                                historyRow.payment_id,
+                                isHistory
+                              )
                             }
                           >
                             <DeleteIcon />
