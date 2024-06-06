@@ -5,11 +5,11 @@ import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
 import { moneyContext } from "@/context/money-context";
 
-import { categoryNew as New } from "@/lib/api/category-api";
+import { categoryNew } from "@/lib/api/category-api";
 import { categoryNewProps } from "@/interface/category-interface";
 
 export const CategoryNew: React.FC<categoryNewProps> = (props) => {
-  const { onClose, category_type } = props;
+  const { category_type, onClose } = props;
   const { setIsEditing } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
@@ -17,7 +17,7 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
 
   const newCategory = async () => {
     try {
-      await New(newName, category_type);
+      await categoryNew(newName, category_type);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create category:", error);

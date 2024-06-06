@@ -21,7 +21,6 @@ export const classificationGetData = async () => {
 export const classificationNew = async (
   account_id: string,
   name: string,
-  date: string,
   classification_type: string
 ): Promise<classificationData> => {
   try {
@@ -31,7 +30,6 @@ export const classificationNew = async (
         classification: {
           account_id: account_id,
           name: name,
-          date: date,
           classification_type: classification_type,
         },
       },
@@ -53,7 +51,6 @@ export const classificationEdit = async (
   id: string,
   account_id: string,
   name: string,
-  date: string,
   classification_type: string
 ): Promise<classificationData> => {
   try {
@@ -63,7 +60,6 @@ export const classificationEdit = async (
         classification: {
           account_id: account_id,
           name: name,
-          date: date,
           classification_type: classification_type,
         },
       },

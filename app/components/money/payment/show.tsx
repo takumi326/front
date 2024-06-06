@@ -59,7 +59,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     repetition_settings,
     body,
     onClose,
-    onPaymentDelete,
   } = props;
   const {
     repetitionMoneies,
@@ -213,6 +212,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 classificationMonthlyAmount.id,
                 classificationMonthlyAmount.classification_id,
                 classificationMonthlyAmount.month,
+                classificationMonthlyAmount.date,
                 Math.max(0, money)
               );
             }
@@ -272,6 +272,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   classificationMonthlyAmount.id,
                   classificationMonthlyAmount.classification_id,
                   classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
                   Math.max(0, money)
                 );
               } else {
@@ -279,6 +280,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   classificationMonthlyAmount.id,
                   classificationMonthlyAmount.classification_id,
                   classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
                   Math.max(0, money)
                 );
               }
@@ -328,6 +330,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   classificationMonthlyAmount.id,
                   classificationMonthlyAmount.classification_id,
                   classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
                   Math.max(0, money)
                 );
               } else {
@@ -335,6 +338,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   classificationMonthlyAmount.id,
                   classificationMonthlyAmount.classification_id,
                   classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
                   Math.max(0, money)
                 );
               }
@@ -357,6 +361,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               editClassificationMonthlyAmount.id,
               editClassificationMonthlyAmount.classification_id,
               editClassificationMonthlyAmount.month,
+              editClassificationMonthlyAmount.date,
               Math.max(0, money)
             );
           }
@@ -393,6 +398,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 classificationMonthlyAmount.id,
                 classificationMonthlyAmount.classification_id,
                 classificationMonthlyAmount.month,
+                classificationMonthlyAmount.date,
                 Math.max(0, money)
               );
             }
@@ -413,6 +419,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               initialClassificationMonthlyAmount.id,
               initialClassificationMonthlyAmount.classification_id,
               initialClassificationMonthlyAmount.month,
+              initialClassificationMonthlyAmount.date,
               Math.max(0, initialClassificationAmount)
             );
           }
@@ -462,6 +469,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               classificationMonthlyAmount.id,
               classificationMonthlyAmount.classification_id,
               classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
               Math.max(0, money)
             );
           }
@@ -483,6 +491,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               editClassificationMonthlyAmount.id,
               editClassificationMonthlyAmount.classification_id,
               editClassificationMonthlyAmount.month,
+              editClassificationMonthlyAmount.date,
               Math.max(0, editClassificationAmount)
             );
           }
@@ -497,13 +506,14 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
 
   const handlePaymentDelete = async (id: string) => {
     try {
-      if (editClassificationId === null) {
+      if (initialClassificationId === null) {
         paymentDelete(id);
       } else {
-        if (row.history[index].payment_repetition === true) {
+        if (initialRepetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
-              classificationMonthlyAmount.classification_id === row.id
+              classificationMonthlyAmount.classification_id ===
+              initialClassificationId
           )) {
             let money = parseFloat(String(classificationMonthlyAmount.amount));
             const start = new Date(
@@ -534,7 +544,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             await classificationMonthlyAmountEdit(
               classificationMonthlyAmount.id,
               classificationMonthlyAmount.classification_id,
-              classificationMonthlyAmount.month,
+              classificationMonthlyAmount.month,classificationMonthlyAmount.date,
               money
             );
           }
@@ -542,25 +552,28 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           const editClassificationMonthlyAmount: classificationMonthlyAmountData =
             classificationMonthlyAmounts.find(
               (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id === row.id &&
+                classificationMonthlyAmount.classification_id ===
+                  initialClassificationId &&
                 classificationMonthlyAmount.month === currentMonth
             );
 
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(row.history[index].payment_amount));
+              parseFloat(String(initialAmount));
 
             await classificationMonthlyAmountEdit(
               editClassificationMonthlyAmount.id,
               editClassificationMonthlyAmount.classification_id,
               editClassificationMonthlyAmount.month,
+              editClassificationMonthlyAmount.date,
               Math.max(0, editClassificationAmount)
             );
           }
         }
         paymentDelete(id);
         setIsEditing(true);
+        onClose();
       }
     } catch (error) {
       console.error("Failed to edit payment:", error);
@@ -1118,7 +1131,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 保存
               </Button>
               <IconButton
-                onClick={() => onPaymentDelete(id, index)}
+                onClick={() => handlePaymentDelete(id)}
                 className="ml-auto"
               >
                 <DeleteIcon />

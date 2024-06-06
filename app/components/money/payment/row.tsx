@@ -40,10 +40,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const { row, start, end, visibleColumns } = props;
   const {
     repetitionMoneies,
-    payments,
     classificationMonthlyAmounts,
     currentMonth,
-    isEditing,
     setIsEditing,
   } = useContext(moneyContext);
 
@@ -58,13 +56,45 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     const handleClassificationMonthlyAmount = async () => {
       setIsProcessing(true);
       try {
-        const shouldCreateNewAmount = classificationMonthlyAmounts.some(
-          (classificationMonthlyAmount) =>
-            classificationMonthlyAmount.classification_id === row.id &&
-            classificationMonthlyAmount.month === currentMonth
+        const shouldCreateNewAmount: classificationMonthlyAmountData =
+          classificationMonthlyAmounts.some(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id === row.id &&
+              classificationMonthlyAmount.month === currentMonth
+          );
+
+        const selectedClassificationMonthlyAmounts: classificationMonthlyAmountData[] =
+          classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id === row.id
+          );
+
+        const dateCounts: { [key: string]: number } = {};
+
+        selectedClassificationMonthlyAmounts.forEach(
+          (classificationMonthlyAmount) => {
+            const date = classificationMonthlyAmount.date;
+            if (dateCounts[date]) {
+              dateCounts[date]++;
+            } else {
+              dateCounts[date] = 1;
+            }
+          }
         );
+
+        let maxCount = 0;
+        let mostFrequentDate: string = "";
+
+        for (const date in dateCounts) {
+          if (dateCounts[date] > maxCount) {
+            maxCount = dateCounts[date];
+            mostFrequentDate = date;
+          }
+        }
+
         let money = 0;
         if (!shouldCreateNewAmount) {
+          console.log(shouldCreateNewAmount.date);
           row.history.map((historyRow) => {
             if (historyRow.payment_repetition === true) {
               repetitionMoneies
@@ -83,7 +113,12 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               money += parseFloat(String(historyRow.payment_amount));
             }
           });
-          await classificationMonthlyAmountNew(row.id, currentMonth, money);
+          await classificationMonthlyAmountNew(
+            row.id,
+            currentMonth,
+            mostFrequentDate,
+            money
+          );
         }
       } catch (error) {
         console.error("Failed to new classificationMonthlyAmount:", error);
@@ -153,6 +188,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               classificationMonthlyAmount.id,
               classificationMonthlyAmount.classification_id,
               classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
               money
             );
           }
@@ -173,6 +209,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               editClassificationMonthlyAmount.id,
               editClassificationMonthlyAmount.classification_id,
               editClassificationMonthlyAmount.month,
+              editClassificationMonthlyAmount.date,
               Math.max(0, editClassificationAmount)
             );
           }
@@ -277,7 +314,6 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               account_id={row.classification_account_id}
               account_name={row.classification_account_name}
               name={row.classification_name}
-              date={row.classification_date}
               classification_type={"payment"}
               onClose={handleCloseEditClassificationModal}
               onDelete={deleteClassification}
@@ -312,7 +348,6 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               }
               body={row.history[isHistory].payment_body}
               onClose={handleCloseEditPaymentModal}
-              onPaymentDelete={handlePaymentDelete}
             />
           </div>
         </div>
@@ -385,11 +420,28 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                       )
                     : ""}
                 </TableCell>
-              ) : (
+              ) : key === "classification_account_name" ? (
                 <TableCell key={key} component="th" scope="row">
-                  {row[key as keyof displayPaymentData] === null
+                  {row.classification_account_name === null
                     ? ""
                     : String(row[key as keyof displayPaymentData])}
+                </TableCell>
+              ) : (
+                <TableCell key={key} component="th" scope="row">
+                  {row.classification_account_name === null
+                    ? ""
+                    : classificationMonthlyAmounts
+                        .filter(
+                          (classificationMonthlyAmount) =>
+                            classificationMonthlyAmount.month ===
+                              currentMonth &&
+                            classificationMonthlyAmount.classification_id ===
+                              row.id
+                        )
+                        .map(
+                          (classificationMonthlyAmount) =>
+                            classificationMonthlyAmount.date
+                        )[0]}
                 </TableCell>
               )}
             </>

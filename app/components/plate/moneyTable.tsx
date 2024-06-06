@@ -24,10 +24,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import {
-  repetitionMoneyGetData,
-  repetitionMoneyDelete,
-} from "@/lib/api/repetitionMoney-api";
+import { repetitionMoneyGetData } from "@/lib/api/repetitionMoney-api";
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 
 import { paymentGetData } from "@/lib/api/payment-api";
@@ -82,7 +79,6 @@ import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMont
 
 export const MoneyTable: React.FC = () => {
   const {
-    repetitionMoneies,
     setRepetitionMoneies,
     classifications,
     setClassifications,
@@ -159,6 +155,7 @@ export const MoneyTable: React.FC = () => {
         classification_name: true,
         classification_amount: true,
         clsasfication_account_name: true,
+        classification_date: true,
       };
     }
   });
@@ -373,6 +370,7 @@ export const MoneyTable: React.FC = () => {
         classification_name: true,
         classification_amount: true,
         classification_account_name: true,
+        classification_date: true,
       };
       updateRows = classifications
         .filter(
@@ -383,7 +381,6 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: classification.account_id,
           classification_account_name: classification.account_name,
           classification_name: classification.name,
-          classification_date: classification.date,
           classification_classification_type:
             classification.classification_type,
           history: payments
@@ -428,7 +425,6 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: "",
           classification_account_name: "",
           classification_name: "分類なし",
-          classification_date: "",
           classification_classification_type: "payment",
           history: classificationNilDatas,
         },
@@ -437,12 +433,14 @@ export const MoneyTable: React.FC = () => {
         classification_name: "asc",
         classification_amount: "default",
         classification_account_name: "default",
+        classification_date: "default",
       };
     } else if (filter === "income") {
       initialColumnSettings = {
         classification_name: true,
         classification_amount: true,
         classification_account_name: true,
+        classification_date: true,
       };
       updateRows = classifications
         .filter(
@@ -453,7 +451,6 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: classification.account_id,
           classification_account_name: classification.account_name,
           classification_name: classification.name,
-          classification_date: classification.date,
           classification_classification_type:
             classification.classification_type,
           history: incomes
@@ -496,7 +493,6 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: "",
           classification_account_name: "",
           classification_name: "分類なし",
-          classification_date: "",
           classification_classification_type: "income",
           history: classificationNilDatas,
         },
@@ -505,6 +501,7 @@ export const MoneyTable: React.FC = () => {
         classification_name: "asc",
         classification_amount: "default",
         classification_account_name: "default",
+        classification_date: "default",
       };
     } else {
       initialColumnSettings = {
@@ -594,23 +591,8 @@ export const MoneyTable: React.FC = () => {
     setIsNewCategoryModalOpen(false);
   };
 
-  // const newPayment = (newData: paymentData) => {
-  //   setPayments([...payments, newData]);
-  //   setIsAdding(true);
-  // };
-
   // const newIncome = (newData: incomeData) => {
   //   setIncomes([...incomes, newData]);
-  //   setIsAdding(true);
-  // };
-
-  // const newClassification = (newData: classificationData) => {
-  //   setClassifications([...classifications, newData]);
-  //   setIsAdding(true);
-  // };
-
-  // const newCategory = (newData: categoryData) => {
-  //   setCategories([...categories, newData]);
   //   setIsAdding(true);
   // };
 
@@ -622,17 +604,6 @@ export const MoneyTable: React.FC = () => {
   // const newTransfer = (newData: transferData) => {
   //   // setTransfers([...transfers, newData]);
   //   setIsAdding(true);
-  // };
-
-  // const updatePayment = (updatePayment: paymentData) => {
-  //   const updatedPayments = payments.map((payment) => {
-  //     if (payment.id === updatePayment.id) {
-  //       return updatePayment;
-  //     }
-  //     return payment;
-  //   });
-  //   setPayments(updatedPayments);
-  //   setIsEditing(true);
   // };
 
   // const updateIncome = (updateIncome: incomeData) => {
@@ -668,28 +639,6 @@ export const MoneyTable: React.FC = () => {
   //   setIsEditing(true);
   // };
 
-  // const updateClassification = () => {
-  //   // const updatedTransfers = transfers.map((transfer) => {
-  //   //   if (transfer.id === updateTransfer.id) {
-  //   //     return updateTransfer;
-  //   //   }
-  //   //   return transfer;
-  //   // });
-  //   // setTransfers(updatedTransfers);
-  //   setIsEditing(true);
-  // };
-
-  // const updateCategory = () => {
-  //   // const updatedTransfers = transfers.map((transfer) => {
-  //   //   if (transfer.id === updateTransfer.id) {
-  //   //     return updateTransfer;
-  //   //   }
-  //   //   return transfer;
-  //   // });
-  //   // setTransfers(updatedTransfers);
-  //   setIsEditing(true);
-  // };
-
   const deleteData = async (id: string) => {
     try {
       await incomeDelete(id);
@@ -706,23 +655,8 @@ export const MoneyTable: React.FC = () => {
     }
   };
 
-  const deleteCategory = async (id: string) => {
-    try {
-      await categoryDelete(id);
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete category :", error);
-    }
-  };
-
   // const deleteAllData = async (ids: string[]) => {
-  //   if (filter === "payment") {
-  //     try {
-  //       await Promise.all(ids.map((id) => paymentDelete(id)));
-  //       setPayments(payments.filter((payment) => !ids.includes(payment.id)));
-  //     } catch (error) {
-  //       console.error("Failed to delete payment:", error);
-  //     }
+
   //   } else if (filter === "income") {
   //     try {
   //       await Promise.all(ids.map((id) => incomeDelete(id)));
@@ -738,11 +672,6 @@ export const MoneyTable: React.FC = () => {
   //       console.error("Failed to delete todo:", error);
   //     }
   //   }
-  // };
-
-  // const handleAllDelete = () => {
-  //   deleteAllData(selected);
-  //   setSelected([]);
   // };
 
   const handleRequestSort = (property: keyof (typeof rows)[0]) => {
@@ -771,10 +700,6 @@ export const MoneyTable: React.FC = () => {
     };
     return compare(orderBy);
   });
-
-  // const unclassifiedRow = sortedRows.filter(
-  //   (row) => row.classification_name === "分類なし" && row.history.length > 0
-  // );
 
   const sortedPayemntRows = [
     ...sortedRows.filter(
@@ -807,41 +732,6 @@ export const MoneyTable: React.FC = () => {
       (row): row is displayAccountData => "account_name" in row
     ),
   ];
-
-  // const handleAllSelect = () => {
-  //   if (filter === "payment") {
-  //     if (selected.length === rows.length) {
-  //       setSelected([]);
-  //     } else {
-  //       const allIds = payments.map((payment) => payment.id);
-  //       setSelected(allIds);
-  //     }
-  //   } else if (filter === "income") {
-  //     if (selected.length === rows.length) {
-  //       setSelected([]);
-  //     } else {
-  //       const allIds = incomes.map((income) => income.id);
-  //       setSelected(allIds);
-  //     }
-  //   } else {
-  //     if (selected.length === rows.length) {
-  //       setSelected([]);
-  //     } else {
-  //       const allIds = accounts.map((account) => account.id);
-  //       setSelected(allIds);
-  //     }
-  //   }
-  // };
-
-  // const handleSelect = (id: string) => {
-  //   if (selected.includes(id)) {
-  //     setSelected(selected.filter((item) => item !== id));
-  //   } else {
-  //     setSelected([...selected, id]);
-  //   }
-  // };
-
-  // const isSelected = (id: string) => selected.includes(id);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(event.currentTarget);
@@ -1023,7 +913,11 @@ export const MoneyTable: React.FC = () => {
                 component={Paper}
                 sx={{ maxHeight: 700, minWidth: 500 }}
               >
-                <Table stickyHeader aria-label="collapsible table sticky table">
+                <Table
+                  stickyHeader
+                  size="small"
+                  aria-label="collapsible table sticky table"
+                >
                   <TableHead>
                     <TableRow>
                       <TableCell>カテゴリ名</TableCell>
@@ -1142,7 +1036,6 @@ export const MoneyTable: React.FC = () => {
           horizontal: "left",
         }}
       >
-        
         {rows.length > 0 &&
           Object.keys(rows[0]).map((key) =>
             filter === "payment" ? (

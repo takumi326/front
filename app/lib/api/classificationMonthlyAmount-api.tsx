@@ -24,6 +24,7 @@ export const classificationMonthlyAmountGetData = async () => {
 export const classificationMonthlyAmountNew = async (
   classification_id: string,
   month: string,
+  date: string,
   amount: number
 ): Promise<classificationMonthlyAmountData> => {
   try {
@@ -33,6 +34,7 @@ export const classificationMonthlyAmountNew = async (
         classification_monthlyamount: {
           classification_id: classification_id,
           month: month,
+          date: date,
           amount: amount,
         },
       },
@@ -54,6 +56,7 @@ export const classificationMonthlyAmountEdit = async (
   id: string,
   classification_id: string,
   month: string,
+  date: string,
   amount: number
 ): Promise<classificationMonthlyAmountData> => {
   try {
@@ -63,6 +66,7 @@ export const classificationMonthlyAmountEdit = async (
         classification_monthlyamount: {
           classification_id: classification_id,
           month: month,
+          date: date,
           amount: amount,
         },
       },

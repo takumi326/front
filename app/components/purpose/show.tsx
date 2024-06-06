@@ -51,6 +51,7 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
     try {
       await purposeDelete(id);
       setIsEditing(true);
+      onClose();
     } catch (error) {
       console.error("Failed to delete purpose:", error);
     }
