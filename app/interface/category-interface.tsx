@@ -1,5 +1,6 @@
 export type categoryData = {
   id: string;
+  user_id: string;
   name: string;
   category_type: string;
 };
@@ -24,9 +25,10 @@ export interface categoryShowProps {
   name: string;
   category_type: string;
   onClose: () => void;
+  onDelete: (id: string) => void;
 }
 
 export interface categoryNewProps {
-  onClose: () => void;
   category_type: string;
+  onClose: () => void;
 }

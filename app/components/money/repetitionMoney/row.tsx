@@ -7,39 +7,18 @@ import {
   TextField,
   Button,
   Typography,
-  Stack,
-  Select,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
-  ToggleButton,
-  ToggleButtonGroup,
-  TableContainer,
   TableCell,
   TableRow,
-  Table,
-  TableHead,
-  TableBody,
-  Paper,
 } from "@mui/material";
-import { SelectChangeEvent } from "@mui/material/Select";
-import { styled } from "@mui/material/styles";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
-import RemoveIcon from "@mui/icons-material/Remove";
-import AddIcon from "@mui/icons-material/Add";
 
 import { moneyContext } from "@/context/money-context";
-
-import { paymentDelete } from "@/lib/api/payment-api";
-import { classificationDelete } from "@/lib/api/classification-api";
-import {
-  classificationMonthlyAmountNew,
-  classificationMonthlyAmountEdit,
-} from "@/lib/api/classificationMonthlyAmount-api";
 
 import {
   repetitionMoneyEdit,
@@ -55,10 +34,6 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
   const { id, amount, repetition_schedule } = props;
   const {
     repetitionMoneies,
-    payments,
-    categories,
-    classificationMonthlyAmounts,
-    currentMonth,
     setIsEditing,
   } = useContext(moneyContext);
 

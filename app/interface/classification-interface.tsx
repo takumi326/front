@@ -3,7 +3,6 @@ export type classificationData = {
   account_id: string;
   account_name: string;
   name: string;
-  date: string;
   classification_type: string;
 };
 
@@ -11,6 +10,7 @@ export type classificationMonthlyAmountData = {
   id: string;
   classification_id: string;
   month: string;
+  date: string;
   amount: number;
 };
 
@@ -18,7 +18,6 @@ export type selectClassificationData = {
   name: string;
   account_name: string;
   amount: number;
-  date: string;
 };
 
 export interface classificationRowProps {
@@ -26,7 +25,6 @@ export interface classificationRowProps {
   onSelect: (id: string) => void;
   isSelected: boolean;
   visibleColumns: { [key: string]: boolean };
-
 }
 
 export interface classificationShowProps {
@@ -34,7 +32,6 @@ export interface classificationShowProps {
   account_id: string;
   account_name: string;
   name: string;
-  date: string;
   classification_type: string;
   onClose: () => void;
   onDelete: (id: string) => void;

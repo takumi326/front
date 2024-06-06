@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 
 import {
   Box,
@@ -25,7 +25,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
 
   const [newAccountId, setNewAccountId] = useState("");
   const [newName, setNewName] = useState("");
-  const [newDate, setNewDate] = useState<number>(1);
+  const [newDate, setNewDate] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newMonthlyAmount, setNewMonthlyAmount] = useState<number>(0);
   const [isFormValid, setIsFormValid] = useState(false);
@@ -37,24 +37,24 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         const response = await classificationNew(
           newAccountId,
           newName,
-          "即日",
           classification_type
         );
         await classificationMonthlyAmountNew(
           response.id,
           currentMonth,
+          "即日",
           newMonthlyAmount
         );
       } else {
         const response = await classificationNew(
           newAccountId,
           newName,
-          String(newDate),
           classification_type
         );
         await classificationMonthlyAmountNew(
           response.id,
           currentMonth,
+          String(newDate),
           newMonthlyAmount
         );
       }
@@ -102,6 +102,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const handleAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewAccountId(value);
+    setNewDate(1);
   };
 
   const handleSave = () => {
@@ -158,35 +159,37 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             <span>円</span>
           </div>
         </li>
-        <li className="pt-10">
-          {classification_type === "payment" ? (
-            <Typography variant="subtitle1">支払い日</Typography>
-          ) : (
-            <Typography variant="subtitle1">振込み日</Typography>
-          )}
-          <div className="flex items-center">
-            <TextField
-              variant="outlined"
-              name="date"
-              value={newDate}
-              onChange={handleChange}
-              disabled={completed}
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-              }}
-            />
-            <span>日</span>
-          </div>
-          <Stack direction="row" alignItems="center">
-            <Checkbox
-              checked={completed}
-              onChange={handleCheckboxChange}
-              color="primary"
-            />
-            <Typography>即日反映</Typography>
-          </Stack>
-        </li>
+        {newAccountId && (
+          <li className="pt-10">
+            {classification_type === "payment" ? (
+              <Typography variant="subtitle1">支払い日</Typography>
+            ) : (
+              <Typography variant="subtitle1">振込み日</Typography>
+            )}
+            <div className="flex items-center">
+              <TextField
+                variant="outlined"
+                name="date"
+                value={newDate}
+                onChange={handleChange}
+                disabled={completed}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
+              <span>日</span>
+            </div>
+            <Stack direction="row" alignItems="center">
+              <Checkbox
+                checked={completed}
+                onChange={handleCheckboxChange}
+                color="primary"
+              />
+              <Typography>即日反映</Typography>
+            </Stack>
+          </li>
+        )}
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button

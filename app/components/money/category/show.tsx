@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -11,17 +11,21 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import { categoryEdit as Edit } from "@/lib/api/category-api";
+import { moneyContext } from "@/context/money-context";
+
+import { categoryEdit } from "@/lib/api/category-api";
 import { categoryShowProps } from "@/interface/category-interface";
 
 export const CategoryShow: React.FC<categoryShowProps> = (props) => {
-  const { id, name, category_type, onUpdate, onClose, onDelete } = props;
+  const { id, name, category_type, onClose, onDelete } = props;
+  const { setIsEditing } = useContext(moneyContext);
+
   const [editName, setEditName] = useState<string>(name);
 
   const editCategory = async (id: string) => {
     try {
-      await Edit(id, editName, category_type);
-      onUpdate();
+      await categoryEdit(id, editName, category_type);
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit category:", error);
     }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 
 import {
   Box,
@@ -21,71 +21,70 @@ import { classificationEdit } from "@/lib/api/classification-api";
 
 import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthlyAmount-api";
 import { classificationShowProps } from "@/interface/classification-interface";
-import {
-  classificationData,
-  classificationMonthlyAmountData,
-} from "@/interface/classification-interface";
+import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 export const ClassificationShow: React.FC<classificationShowProps> = (
   props
 ) => {
-  const {
-    id,
-    account_id,
-    account_name,
-    name,
-    date,
-    classification_type,
-    onClose,
-    onDelete,
-  } = props;
+  const { id, account_id, name, classification_type, onClose, onDelete } =
+    props;
   const { accounts, classificationMonthlyAmounts, currentMonth, setIsEditing } =
     useContext(moneyContext);
 
-  const [editAccountId, setEditAccountId] = useState(account_id);
-  const [editAccountName, setEditAccountName] = useState(account_name);
-  const [editName, setEditName] = useState(name);
-  const [editDate, setEditDate] = useState<number>(Number(date));
-  const [editAmount, setEditAmount] = useState<number>(
+  const classificationMonthlyAmount: classificationMonthlyAmountData =
     classificationMonthlyAmounts.filter(
       (classificationMonthlyAmount) =>
         classificationMonthlyAmount.classification_id === id &&
         classificationMonthlyAmount.month === currentMonth
-    )[0].amount
+    )[0];
+
+  const [editAccountId, setEditAccountId] = useState(account_id);
+  const [editName, setEditName] = useState(name);
+  const [editDate, setEditDate] = useState(classificationMonthlyAmount.date);
+  const [editDateNumber, setEditDateNumber] = useState<number>(
+    classificationMonthlyAmount.date === "即日"
+      ? 0
+      : Number(classificationMonthlyAmount.date)
+  );
+  const [editAmount, setEditAmount] = useState<number>(
+    classificationMonthlyAmount.amount
   );
   const [editAmountString, setEditAmountString] = useState<string>(
-    String(
-      Math.floor(
-        classificationMonthlyAmounts.filter(
-          (classificationMonthlyAmount) =>
-            classificationMonthlyAmount.classification_id === id &&
-            classificationMonthlyAmount.month === currentMonth
-        )[0].amount
-      )
-    ).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    String(Math.floor(classificationMonthlyAmount.amount)).replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ","
+    )
   );
-  const [completed, setCompleted] = useState<boolean>(false);
+  const [completed, setCompleted] = useState<boolean>(
+    classificationMonthlyAmount.date === "即日" ? true : false
+  );
+
+  useEffect(() => {
+    if (editAccountId === null) {
+      setEditDateNumber(0);
+    } else {
+      if (editDateNumber >= 32) {
+        setEditDateNumber(31);
+      } else if (editDateNumber <= 0) {
+        setEditDateNumber(1);
+      }
+    }
+  }, [editDate, editDateNumber]);
 
   const editClassification = async (id: string) => {
-    const selectedClassificationMonthlyAmount: classificationMonthlyAmountData =
-      classificationMonthlyAmounts.filter(
-        (classificationMonthlyAmount) =>
-          classificationMonthlyAmount.classification_id === id &&
-          classificationMonthlyAmount.month === currentMonth
-      )[0];
     try {
       if (completed === true) {
         await classificationEdit(
           id,
           editAccountId,
           editName,
-          "即日",
           classification_type
         );
         await classificationMonthlyAmountEdit(
-          selectedClassificationMonthlyAmount.id,
-          selectedClassificationMonthlyAmount.classification_id,
-          selectedClassificationMonthlyAmount.month,
+          classificationMonthlyAmount.id,
+          classificationMonthlyAmount.classification_id,
+          classificationMonthlyAmount.month,
+          editDate,
           editAmount
         );
       } else {
@@ -93,13 +92,13 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
           id,
           editAccountId,
           editName,
-          String(editDate),
           classification_type
         );
         await classificationMonthlyAmountEdit(
-          selectedClassificationMonthlyAmount.id,
-          selectedClassificationMonthlyAmount.classification_id,
-          selectedClassificationMonthlyAmount.month,
+          classificationMonthlyAmount.id,
+          classificationMonthlyAmount.classification_id,
+          classificationMonthlyAmount.month,
+          String(editDateNumber),
           editAmount
         );
       }
@@ -113,25 +112,17 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   const handleAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditAccountId(value);
+    if (editAccountId === null) {
+      setEditDateNumber(1);
+    }
   };
 
   const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
     setCompleted(!completed);
+    if (completed === false) {
+      setEditDate("即日");
+    }
   };
-
-  // const handleSelectChange = (event: SelectChangeEvent<string>) => {
-  //   const { name, value } = event.target;
-  //   switch (name) {
-  //     case "account":
-  //       setEditAccountId(value);
-  //       break;
-  //     case "date":
-  //       setEditDate(value);
-  //       break;
-  //     default:
-  //       break;
-  //   }
-  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -155,7 +146,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         );
         break;
       case "date":
-        setEditDate(Number(value));
+        setEditDateNumber(Number(value));
         break;
       default:
         break;
@@ -166,8 +157,6 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     editClassification(id);
     onClose();
   };
-
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
     <Box width={560} height={650}>
@@ -215,35 +204,41 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             <span>円</span>
           </div>
         </li>
-        <li className="pt-10">
-          {classification_type === "payment" ? (
-            <Typography variant="subtitle1">支払い日</Typography>
-          ) : (
-            <Typography variant="subtitle1">振込み日</Typography>
-          )}
-          <div className="flex items-center">
-            <TextField
-              variant="outlined"
-              name="date"
-              value={editDate}
-              onChange={handleChange}
-              disabled={completed}
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-              }}
-            />
-            <span>日</span>
-          </div>
-          <Stack direction="row" alignItems="center">
-            <Checkbox
-              checked={completed}
-              onChange={handleCheckboxChange}
-              color="primary"
-            />
-            <Typography>即日反映</Typography>
-          </Stack>
-        </li>
+        {editAccountId && (
+          <li className="pt-10">
+            {classification_type === "payment" ? (
+              <Typography variant="subtitle1">
+                {currentMonth.slice(4)}月支払い日
+              </Typography>
+            ) : (
+              <Typography variant="subtitle1">
+                {currentMonth.slice(4)}月振込み日
+              </Typography>
+            )}
+            <div className="flex items-center">
+              <TextField
+                variant="outlined"
+                name="date"
+                value={editDateNumber}
+                onChange={handleChange}
+                disabled={completed}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
+              <span>日</span>
+            </div>
+            <Stack direction="row" alignItems="center">
+              <Checkbox
+                checked={completed}
+                onChange={handleCheckboxChange}
+                color="primary"
+              />
+              <Typography>即日反映</Typography>
+            </Stack>
+          </li>
+        )}
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button variant="contained" onClick={handleSave} color="primary">

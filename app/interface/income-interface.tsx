@@ -1,6 +1,3 @@
-import { displayPaymentData } from "@/interface/payment-interface";
-import { displayAccountData } from "@/interface/account-interface";
-
 export type incomeData = {
   id: string;
   category_id: string;
@@ -36,7 +33,6 @@ export type displayIncomeData = {
   classification_account_id: string;
   classification_account_name: string;
   classification_name: string;
-  classification_date: string;
   classification_classification_type: string;
   history: {
     income_id: string;
@@ -63,11 +59,14 @@ export type selectIncomeData = {
 export const columnIncomeNames = {
   classification_name: "分類",
   classification_amount: "合計金額",
-  classification_account_name: "振込用口座",
+  classification_account_name: "支払い口座",
+  classification_date: "支払い日時",
 };
 
 export interface incomeRowProps {
   row: displayIncomeData;
+  start: Date;
+  end: Date;
   visibleColumns: { [key: string]: boolean };
 }
 
@@ -79,9 +78,7 @@ export interface classificationNilIncomeRowProps {
 export interface incomeShowProps {
   id: string;
   category_id: string;
-  category_name: string;
   classification_id: string;
-  classification_name: string;
   amount: number;
   schedule: string;
   end_date: string;
@@ -90,7 +87,6 @@ export interface incomeShowProps {
   repetition_settings: string[];
   body: string;
   onClose: () => void;
-  onIncomeDelete: (id: string, index: number) => void;
 }
 
 export interface incomeNewProps {

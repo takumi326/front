@@ -127,6 +127,7 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     try {
       await taskDelete(taskId);
       setIsEditing(true);
+      onClose();
     } catch (error) {
       console.error("Failed to delete task:", error);
     }

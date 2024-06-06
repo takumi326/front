@@ -39,7 +39,6 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     classifications,
     categories,
     classificationMonthlyAmounts,
-    currentMonth,
     setIsEditing,
   } = useContext(moneyContext);
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
@@ -112,7 +111,8 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           await classificationMonthlyAmountEdit(
             selectedClassificationMonthlyAmount.id,
             selectedClassificationMonthlyAmount.classification_id,
-            selectedClassificationMonthlyAmount.schedule,
+            selectedClassificationMonthlyAmount.month,
+            selectedClassificationMonthlyAmount.date,
             editedClassificationAmount
           );
         }
@@ -170,6 +170,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             classificationMonthlyAmount.id,
             classificationMonthlyAmount.classification_id,
             classificationMonthlyAmount.month,
+            classificationMonthlyAmount.date,
             money
           );
         }

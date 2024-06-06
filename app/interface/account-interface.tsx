@@ -1,6 +1,3 @@
-import { displayPaymentData } from "@/interface/payment-interface";
-import { displayIncomeData } from "@/interface/income-interface";
-
 export type accountData = {
   id: string;
   name: string;
