@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent, useContext } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -18,112 +17,55 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
 import { moneyContext } from "@/context/money-context";
 
+import { repetitionMoneyNew } from "@/lib/api/repetitionMoney-api";
+import { accountData } from "@/interface/account-interface";
 import { transferNew } from "@/lib/api/transfer-api";
 import { accountEdit } from "@/lib/api/account-api";
-import { transferNewProps } from "@/interface/account-interface";
+import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
+import { transferNewProps } from "@/interface/transfer-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TransferNew: React.FC<transferNewProps> = (props) => {
-  const { onAccountUpdate, onTransferAdd, onClose } = props;
-  const { accounts } = useContext(moneyContext);
-  const initialDateObject = new Date();
+  const { onClose } = props;
+  const { accounts, setIsEditing } = useContext(moneyContext);
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
+  const currentDate = new Date();
+  currentDate.setFullYear(currentDate.getFullYear() + 5);
+  const endDateObject = currentDate.toLocaleDateString();
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(1);
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [period, setPeriod] = useState("");
+  const [repetitionDialogOpen, setRepetitionDialogOpen] =
+    useState<boolean>(false);
+  const [frequency, setFrequency] = useState<number>(1);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [period, setPeriod] = useState("daily");
 
   const [newBeforeAccountId, setNewBeforeAccountId] = useState("");
-  const [newBeforeAccountName, setNewBeforeAccountName] = useState("");
   const [newBeforeAccountAmount, setNewBeforeAccountAmount] =
     useState<number>(0);
-  const [newBeforeAccountBody, setNewBeforeAccountBody] = useState("");
   const [newAfterAccountId, setNewAfterAccountId] = useState("");
-  const [newAfterAccountName, setNewAfterAccountName] = useState("");
-  const [newAfterAccountAmount, setNewAfterAccountAmount] = useState<number>(0);
-  const [newAfterAccountBody, setNewAfterAccountBody] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
   const [newAmountError, setNewAmountError] = useState<boolean>(false);
   const [newAmountOverError, setNewAmountOverError] = useState<boolean>(false);
-  const [newSchedule, setNewSchedule] = useState<Date>(initialDateObject);
+  const [newSchedule, setNewSchedule] = useState(initialDateObject);
+  const [newEndDate, setNewEndDate] = useState(endDateObject);
   const [newRepetition, setNewRepetition] = useState<boolean>(false);
   const [newRepetitionType, setNewRepetitionType] = useState("");
-  const [newRepetitionSettings, setNewRepetitionSettings] = useState([]);
+  const [newRepetitionSettings, setNewRepetitionSettings] = useState<string[]>(
+    []
+  );
   const [newBody, setNewBody] = useState("");
-  const [isBeforeTitleFormValid, setIsBeforeTitleFormValid] = useState(true);
-  const [isAfterTitleFormValid, setIsAfterTitleFormValid] = useState(true);
-
-  const newTransfer = async () => {
-    try {
-      const beforeAccountEditedAmount =
-        parseFloat(String(newBeforeAccountAmount)) -
-        parseFloat(String(newAmount));
-      const afterAccountEditedAmount =
-        parseFloat(String(newAfterAccountAmount)) +
-        parseFloat(String(newAmount));
-
-      const transferResponse = await transferNew(
-        newBeforeAccountId,
-        newAfterAccountId,
-        newAmount,
-        newSchedule,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-      await accountEdit(
-        newBeforeAccountId,
-        newBeforeAccountName,
-        beforeAccountEditedAmount,
-        newBeforeAccountBody
-      );
-      await accountEdit(
-        newAfterAccountId,
-        newAfterAccountName,
-        afterAccountEditedAmount,
-        newAfterAccountBody
-      );
-
-      const newTransfer = {
-        id: transferResponse.id,
-        before_account_id: transferResponse.before_account_id,
-        after_account_id: transferResponse.after_account_id,
-        after_account_name: newAfterAccountName,
-        amount: transferResponse.amount,
-        schedule: transferResponse.schedule,
-        repetition: transferResponse.repetition,
-        repetition_type: transferResponse.repetition_type,
-        repetition_settings: transferResponse.repetition_settings,
-        body: transferResponse.body,
-      };
-      const beforeAccount = {
-        id: newBeforeAccountId,
-        name: newBeforeAccountName,
-        amount: beforeAccountEditedAmount,
-        body: newBeforeAccountBody,
-      };
-      const afterAccount = {
-        id: newAfterAccountId,
-        name: newAfterAccountName,
-        amount: afterAccountEditedAmount,
-        body: newAfterAccountBody,
-      };
-
-      onAccountUpdate(beforeAccount);
-      onAccountUpdate(afterAccount);
-      onTransferAdd(newTransfer);
-    } catch (error) {
-      console.error("Failed to create transfer:", error);
-    }
-  };
+  const [isBeforeTitleFormValid, setIsBeforeTitleFormValid] =
+    useState<boolean>(true);
+  const [isAfterTitleFormValid, setIsAfterTitleFormValid] =
+    useState<boolean>(true);
 
   useEffect(() => {
     if (newAmount > 0) {
@@ -136,9 +78,122 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     } else {
       setNewAmountOverError(true);
     }
-  }, [newAmount, newBeforeAccountId]);
+  }, [newAmount, newBeforeAccountAmount]);
 
-  // フォームの変更を処理するハンドラー
+  const newTransfer = async () => {
+    const now = new Date();
+    const endOfCurrentDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      0,
+      0
+    );
+
+    try {
+      const response = await transferNew(
+        newBeforeAccountId,
+        newAfterAccountId,
+        newAmount,
+        newSchedule,
+        newEndDate,
+        newRepetition,
+        newRepetitionType,
+        newRepetitionSettings,
+        newBody
+      );
+
+      const selectedBeforeAccount: accountData = accounts.filter(
+        (account) => account.id === newBeforeAccountId
+      )[0];
+      const selectedAfterAccount: accountData = accounts.filter(
+        (account) => account.id === newAfterAccountId
+      )[0];
+
+      if (newRepetition === false) {
+        const beforeAccountEditedAmount =
+          parseFloat(String(selectedBeforeAccount.amount)) -
+          parseFloat(String(newAmount));
+        const afterAccountEditedAmount =
+          parseFloat(String(selectedBeforeAccount.amount)) +
+          parseFloat(String(newAmount));
+
+        if (new Date(newSchedule).getTime() <= endOfCurrentDay.getTime()) {
+          await accountEdit(
+            selectedBeforeAccount.id,
+            selectedBeforeAccount.name,
+            beforeAccountEditedAmount,
+            selectedBeforeAccount.body
+          );
+          await accountEdit(
+            selectedAfterAccount.id,
+            selectedAfterAccount.name,
+            afterAccountEditedAmount,
+            selectedAfterAccount.body
+          );
+        }
+      } else {
+        let repetitionMoneyDate: repetitionMoneyData[] = [];
+        const schedules = calculateNextSchedules();
+
+        await Promise.all(
+          schedules.map(async (schedule) => {
+            const stringDate = new Date(schedule)
+              .toLocaleDateString()
+              .split("T")[0];
+            const repetitionMoney = await repetitionMoneyNew(
+              "transfer",
+              "",
+              "",
+              response.id,
+              newAmount,
+              stringDate
+            );
+            repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
+          })
+        );
+
+        let beforeAccountEditedAmount = parseFloat(
+          String(selectedBeforeAccount.amount)
+        );
+        let afterAccountEditedAmount = parseFloat(
+          String(selectedBeforeAccount.amount)
+        );
+
+        for (const repetitionMoney of repetitionMoneyDate.filter(
+          (repetitionMoney) =>
+            new Date(repetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+        )) {
+          beforeAccountEditedAmount -= parseFloat(
+            String(repetitionMoney.amount)
+          );
+          afterAccountEditedAmount += parseFloat(
+            String(repetitionMoney.amount)
+          );
+        }
+
+        await accountEdit(
+          selectedBeforeAccount.id,
+          selectedBeforeAccount.name,
+          beforeAccountEditedAmount,
+          selectedBeforeAccount.body
+        );
+        await accountEdit(
+          selectedAfterAccount.id,
+          selectedAfterAccount.name,
+          afterAccountEditedAmount,
+          selectedAfterAccount.body
+        );
+      }
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to create transfer:", error);
+    }
+  };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     switch (name) {
@@ -165,38 +220,22 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     }
   };
 
-  const handleBeforeAccountChange = (
-    event: ChangeEvent<{ value: unknown }>
-  ) => {
+  const handleBeforeAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewBeforeAccountId(value);
+    setIsBeforeTitleFormValid(false);
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
-      setNewBeforeAccountName(selectedAccount.name);
       setNewBeforeAccountAmount(selectedAccount.amount);
-      setNewBeforeAccountBody(selectedAccount.body);
-      setIsBeforeTitleFormValid(false);
     } else {
-      setNewBeforeAccountName("");
       setNewBeforeAccountAmount(0);
-      setNewBeforeAccountBody("");
     }
   };
 
-  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleAfterAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setNewAfterAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setNewAfterAccountName(selectedAccount.name);
-      setNewAfterAccountAmount(selectedAccount.amount);
-      setNewAfterAccountBody(selectedAccount.body);
-      setIsAfterTitleFormValid(false);
-    } else {
-      setNewAfterAccountName("");
-      setNewAfterAccountAmount(0);
-      setNewAfterAccountBody("");
-    }
+    setIsAfterTitleFormValid(false);
   };
 
   const formatAmountCommas = (number: number) => {
@@ -209,18 +248,15 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     );
   };
 
-  // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
-    setPeriod("daily");
   };
 
-  // 繰り返しダイアログの枠外をクリックされたとき
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
       newRepetitionSettings && newRepetitionSettings[0]
-        ? newRepetitionSettings[0]
+        ? Number(newRepetitionSettings[0])
         : 1
     );
     setSelectedDays(
@@ -228,10 +264,9 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         ? newRepetitionSettings.slice(1)
         : []
     );
-    setPeriod(newRepetitionType ? newRepetitionType : "");
+    setPeriod(newRepetitionType ? newRepetitionType : "daily");
   };
 
-  // 繰り返しダイアログの削除ボタン押されたとき
   const handleRepetitionDialogDelete = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(false);
@@ -239,33 +274,44 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     setNewRepetitionSettings([]);
     setFrequency(1);
     setSelectedDays([]);
-    setPeriod("");
+    setPeriod("daily");
   };
 
-  // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
     setNewRepetition(true);
     setNewRepetitionType(period);
-    setNewRepetitionSettings([frequency, ...selectedDays]);
+    setNewRepetitionSettings([frequency.toString(), ...selectedDays]);
   };
 
-  // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setNewSchedule(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setNewSchedule(stringDate);
   };
 
-  // 保存ボタン押したとき
+  const handleEndDateChange = (date: Date) => {
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      stringDate = endDateObject;
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+    setNewEndDate(stringDate);
+  };
+
   const handleSave = () => {
     newTransfer();
     onClose();
   };
 
-  const handleFrequencyChange = (delta) => {
+  const handleFrequencyChange = (delta: number) => {
     setFrequency((prev) => Math.max(1, prev + delta));
   };
 
-  const handlePeriodChange = (event, newPeriod: string | null) => {
+  const handlePeriodChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newPeriod: string | null
+  ) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
       if (newPeriod !== "weekly") {
@@ -274,7 +320,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     }
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
         ? prev.filter((d) => d !== day)
@@ -285,11 +331,8 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     );
   };
 
-  const calculateNextSchedule = () => {
-    if (!newRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek) => {
+  const calculateNextSchedules = () => {
+    const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
           return 1;
@@ -306,83 +349,89 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         case "日":
           return 0;
         default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
+          return NaN;
       }
     };
 
-    const date = new Date(newSchedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
+    const startDate = new Date(newSchedule);
+    const endDate = new Date(newEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    let schedules = [];
+    let currentDate = startDate;
+    const repetitionWeek = newRepetitionSettings.slice(1).length;
+    let times = 1;
 
-    switch (newRepetitionType) {
-      case "daily":
-        nextSchedule += newRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
+    while (currentDate <= endDate) {
+      schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
 
-      case "weekly":
-        if (newRepetitionSettings.length > 1) {
+      switch (newRepetitionType) {
+        case "daily":
+          currentDate.setDate(
+            currentDate.getDate() + Number(newRepetitionSettings[0])
+          );
+          break;
+
+        case "weekly":
           const targetDaysOfWeek = newRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
+          let currentDayOfWeek = currentDate.getDay();
+          let nextDayOfWeek = currentDayOfWeek;
 
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
-          for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
-            if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
-              break;
+          const repetitionTimes = 7 * (Number(newRepetitionSettings[0]) - 1);
+          if (repetitionWeek === 1 || times === 1) {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(
+                  currentDate.getDate() + i + repetitionTimes
+                );
+                times += 1;
+                break;
+              }
+            }
+          } else {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(currentDate.getDate() + i);
+                if (times === repetitionWeek) {
+                  times = 1;
+                } else if (times < repetitionWeek) {
+                  times += 1;
+                }
+                break;
+              }
             }
           }
+          break;
 
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
+        case "monthly":
+          let nextMonth =
+            currentDate.getMonth() + Number(newRepetitionSettings[0]);
+          let nextYear = currentDate.getFullYear();
+          if (nextMonth > 11) {
+            nextYear += Math.floor(nextMonth / 12);
+            nextMonth = nextMonth % 12;
           }
+          const daysInNextMonth = new Date(
+            nextYear,
+            nextMonth + 1,
+            0
+          ).getDate();
+          currentDate = new Date(
+            nextYear,
+            nextMonth,
+            Math.min(currentDate.getDate(), daysInNextMonth)
+          );
+          break;
 
-          nextSchedule +=
-            (daysUntilNextSchedule + (newRepetitionSettings[0] - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
-
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + newRepetitionSettings[0];
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
+        default:
+          return schedules;
+      }
     }
 
-    // 次の予定日を Date オブジェクトに変換して返す
-    return new Date(nextSchedule);
-  };
-
-  const nextSchedule = calculateNextSchedule();
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
-    return moment(date).format("MM/DD/YY");
+    return schedules;
   };
 
   const isDialogFormValid =
@@ -391,7 +440,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     (period === "weekly" && selectedDays.length > 0);
 
   return (
-    <Box width={560} height={770}>
+    <Box width={560} height={810}>
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -569,15 +618,15 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             {newRepetitionSettings && (
               <>
                 {newRepetitionType === "daily" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎日`}
                 {newRepetitionType === "weekly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎週 ${newRepetitionSettings.slice(1).join(" ")}`}
                 {newRepetitionType === "monthly" &&
-                  newRepetitionSettings[0] === 1 &&
+                  Number(newRepetitionSettings[0]) === 1 &&
                   `毎月`}
-                {newRepetitionSettings[0] > 1 &&
+                {Number(newRepetitionSettings[0]) > 1 &&
                   newRepetitionSettings &&
                   `毎${newRepetitionSettings[0]}${
                     newRepetitionType === "daily"
@@ -589,11 +638,6 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
               </>
             )}
           </Typography>
-          {/* <Typography>
-            {newRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography> */}
         </li>
         <li className="pt-5">
           {newRepetition === true ? (
@@ -614,6 +658,24 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             />
           </Box>
         </li>
+        {newRepetition === true && (
+          <li className="pt-5">
+            <Typography variant="subtitle1">繰り返し終了日</Typography>
+            <Box
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={newEndDate}
+                onChange={handleEndDateChange}
+              />
+            </Box>
+            <Typography>※設定できるのは最大で今日から5年後です</Typography>
+          </li>
+        )}
         <li className="pt-5">
           <Typography variant="subtitle1">備考</Typography>
           <TextField

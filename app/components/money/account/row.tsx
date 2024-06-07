@@ -20,9 +20,11 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import { accountEdit } from "@/lib/api/account-api";
+import { accountEdit, accountDelete } from "@/lib/api/account-api";
+import { transferDelete } from "@/lib/api/transfer-api";
 
 import {
+  accountData,
   accountRowProps,
   displayAccountData,
 } from "@/interface/account-interface";
@@ -32,7 +34,8 @@ import { TransferShow } from "@/components/money/transfer/show";
 
 export const AccountRow: React.FC<accountRowProps> = (props) => {
   const { row, visibleColumns } = props;
-  const { accounts, setIsEditing } = useContext(moneyContext);
+  const { accounts, repetitionMoneies, setIsEditing } =
+    useContext(moneyContext);
 
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
   const [isEditTransferModalOpen, setIsEditTransferModalOpen] = useState(false);
@@ -57,15 +60,61 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     setIsHistory(0);
   };
 
-  const handleTransferDelete = async (id: string, index: number) => {
-    const selectedBeforeAccount = accounts.find(
+  const deleteTransfer = async (id: string, index: number) => {
+    const selectedBeforeAccount: accountData = accounts.filter(
       (account) => account.id === row.history[index].transfer_before_account_id
-    );
-    const selectedAfterAccount = accounts.find(
+    )[0];
+    const selectedAfterAccount: accountData = accounts.filter(
       (account) => account.id === row.history[index].transfer_after_account_id
-    );
+    )[0];
     try {
-      if (selectedBeforeAccount && selectedAfterAccount) {
+      if (row.history[index].transfer_repetition === true) {
+        let beforeAccountEditedAmount = parseFloat(
+          String(selectedBeforeAccount.amount)
+        );
+        let afterAccountEditedAmount = parseFloat(
+          String(selectedAfterAccount.amount)
+        );
+
+        const now = new Date();
+        const endOfCurrentDay = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          0,
+          0
+        );
+
+        for (const repetitionMoney of repetitionMoneies.filter(
+          (repetitionMoney) =>
+            repetitionMoney.transaction_type === "transfer" &&
+            repetitionMoney.transfer_id === id &&
+            new Date(repetitionMoney.repetition_schedule).getTime() <=
+              endOfCurrentDay.getTime()
+        )) {
+          beforeAccountEditedAmount += parseFloat(
+            String(repetitionMoney.amount)
+          );
+          afterAccountEditedAmount -= parseFloat(
+            String(repetitionMoney.amount)
+          );
+        }
+
+        await accountEdit(
+          selectedBeforeAccount.id,
+          selectedBeforeAccount.name,
+          beforeAccountEditedAmount,
+          selectedBeforeAccount.body
+        );
+        await accountEdit(
+          selectedAfterAccount.id,
+          selectedAfterAccount.name,
+          afterAccountEditedAmount,
+          selectedAfterAccount.body
+        );
+      } else {
         const beforeAccountEditedAmount =
           parseFloat(String(selectedBeforeAccount.amount)) +
           parseFloat(String(row.history[index].transfer_amount));
@@ -85,11 +134,20 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
           afterAccountEditedAmount,
           selectedAfterAccount.body
         );
-
-        setIsEditing(true);
       }
+      transferDelete(id);
+      setIsEditing(true);
     } catch (error) {
-      console.error("Failed to edit account:", error);
+      console.error("Failed to edit  transfer:", error);
+    }
+  };
+
+  const deleteAccount = async (id: string) => {
+    try {
+      await accountDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete account:", error);
     }
   };
 
@@ -136,7 +194,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     }
   };
 
-  const formatDate = (date: Date | ""): string => {
+  const formatDate = (date: string): string => {
     if (!date) return "";
     return moment(date).format("MM/DD/YY");
   };
@@ -159,7 +217,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
               amount={row.account_amount}
               body={row.account_body}
               onClose={handleCloseEditAccountModal}
-              onDelete={onAccountDelete}
+              onDelete={deleteAccount}
             />
           </div>
         </div>
@@ -188,22 +246,21 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
               }
               amount={row.history[isHistory].transfer_amount}
               schedule={row.history[isHistory].transfer_schedule}
+              end_date={row.history[isHistory].transfer_end_date}
               repetition={row.history[isHistory].transfer_repetition}
               repetition_type={row.history[isHistory].transfer_repetition_type}
               repetition_settings={
                 row.history[isHistory].transfer_repetition_settings
               }
               body={row.history[isHistory].transfer_body}
-              onAccountUpdate={onAccountUpdate}
-              onTransferUpdate={onTransferUpdate}
               onClose={handleCloseEditTransferModal}
-              onDelete={handleTransferDelete}
             />
           </div>
         </div>
       )}
 
       <TableRow
+        key={row.id}
         sx={{
           "& > *": {
             borderBottom: "unset",
@@ -247,7 +304,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          <IconButton onClick={() => onAccountDelete(row.id)}>
+          <IconButton onClick={() => deleteAccount(row.id)}>
             <DeleteIcon />
           </IconButton>
         </TableCell>
@@ -299,19 +356,11 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
                         <TableCell>
                           {formatAmountCommas(historyRow.transfer_amount)}
                         </TableCell>
-                        <TableCell>
-                          {renderRepetition(historyIndex)}
-                          {/* {historyRow.transfer_repetition === true && (
-                            <Typography>
-                              次回の予定：
-                              {formatDate(nextSchedule(historyIndex))}
-                            </Typography>
-                          )} */}
-                        </TableCell>
+                        <TableCell>{renderRepetition(historyIndex)}</TableCell>
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              handleTransferDelete(
+                              deleteTransfer(
                                 historyRow.transfer_id,
                                 historyIndex
                               )

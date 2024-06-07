@@ -26,7 +26,9 @@ import { moneyContext } from "@/context/money-context";
 
 import { transferEdit } from "@/lib/api/transfer-api";
 import { accountEdit } from "@/lib/api/account-api";
-import { transferShowProps } from "@/interface/account-interface";
+import { transferShowProps } from "@/interface/transfer-interface";
+
+import { accountData } from "@/interface/account-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
@@ -38,28 +40,33 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     after_account_name,
     amount,
     schedule,
+    end_date,
     repetition,
     repetition_type,
     repetition_settings,
     body,
-    onAccountUpdate,
-    onTransferUpdate,
     onClose,
-    onDelete,
   } = props;
-  const { accounts } = useContext(moneyContext);
+  const { accounts, setIsEditing } = useContext(moneyContext);
+  const currentDate = new Date();
+  currentDate.setFullYear(currentDate.getFullYear() + 5);
+  const endDateObject = currentDate.toLocaleDateString();
 
-  const [repetitionDialogOpen, setRepetitionDialogOpen] = useState(false);
-  const [frequency, setFrequency] = useState(
-    repetition_settings && repetition_settings[0] ? repetition_settings[0] : 1
+  const [repetitionDialogOpen, setRepetitionDialogOpen] =
+    useState<boolean>(false);
+  const [frequency, setFrequency] = useState<number>(
+    repetition_settings && Number(repetition_settings[0])
+      ? Number(repetition_settings[0])
+      : 1
   );
-  const [selectedDays, setSelectedDays] = useState(
+  const [selectedDays, setSelectedDays] = useState<string[]>(
     repetition_settings && repetition_settings.length > 1
       ? repetition_settings.slice(1)
       : []
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
+  const initialAmount = amount;
   const initialBeforeAccountId = before_account_id;
   const [initialBeforeAccountName, setInitialBeforeAccountName] = useState("");
   const [initialBeforeAccountAmount, setInitialBeforeAccountAmount] =
@@ -67,13 +74,15 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   const [initialBeforeAccountBody, setInitialBeforeAccountBody] = useState("");
   const initialAfterAccountId = after_account_id;
   const initialAfterAccountName = after_account_name;
-  const [initialAfterAccountAmount, setInitialAfterAccountAmount] = useState(0);
+  const [initialAfterAccountAmount, setInitialAfterAccountAmount] =
+    useState<number>(0);
   const [initialAfterAccountBody, setInitialAfterAccountBody] = useState("");
 
   const [editBeforeAccountId, setEditBeforeAccountId] =
     useState(before_account_id);
   const [editBeforeAccountName, setEditBeforeAccountName] = useState("");
-  const [editBeforeAccountAmount, setEditBeforeAccountAmount] = useState(0);
+  const [editBeforeAccountAmount, setEditBeforeAccountAmount] =
+    useState<number>(0);
   const [editBeforeAccountBody, setEditBeforeAccountBody] = useState("");
 
   const [editAfterAccountId, setEditAfterAccountId] =
@@ -84,18 +93,18 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   const [editAfterAccountBody, setEditAfterAccountBody] = useState("");
 
   const [editAmount, setEditAmount] = useState(amount);
-  const initialAmount = amount;
-  const [editAmountString, setEditAmountString] = useState<string>(
+  const [editAmountString, setEditAmountString] = useState(
     String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   );
   const [editAmountError, setEditAmountError] = useState<boolean>(false);
   const [editAmountOverError, setEditAmountOverError] =
     useState<boolean>(false);
-  const [editSchedule, setEditSchedule] = useState<Date>(schedule);
+  const [editSchedule, setEditSchedule] = useState(schedule);
+  const [editEndDate, setEditEndDate] = useState(end_date);
   const [editRepetition, setEditRepetition] = useState<boolean>(repetition);
   const [editRepetitionType, setEditRepetitionType] = useState(repetition_type);
   const [editRepetitionSettings, setEditRepetitionSettings] =
-    useState(repetition_settings);
+    useState<string[]>(repetition_settings);
   const [editBody, setEditBody] = useState(body);
 
   useEffect(() => {
@@ -113,7 +122,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       setInitialAfterAccountAmount(selectedAfterAccount.amount);
       setInitialAfterAccountBody(selectedAfterAccount.body);
 
-      console.log(typeof selectedBeforeAccount.amount);
       setEditBeforeAccountName(selectedBeforeAccount.name);
       setEditBeforeAccountAmount(selectedBeforeAccount.amount);
       setEditBeforeAccountBody(selectedBeforeAccount.body);
@@ -125,332 +133,201 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
 
   const editTransfer = async (id: string) => {
     try {
-      if (!editAfterAccountName) {
-        console.error("Name field is empty. Request not sent.");
-        throw new Error("Name field cannot be empty.");
-      } else {
-        if (
-          editBeforeAccountId === initialBeforeAccountId &&
-          editAfterAccountId === initialAfterAccountId
-        ) {
-          const beforeAccountEditedAmount =
-            parseFloat(String(editBeforeAccountAmount)) +
-            parseFloat(String(initialAmount)) -
-            parseFloat(String(editAmount));
-          const afterAccountEditedAmount =
-            parseFloat(String(editAfterAccountAmount)) -
-            parseFloat(String(initialAmount)) +
-            parseFloat(String(editAmount));
+      await transferEdit(
+        id,
+        editBeforeAccountId,
+        editAfterAccountId,
+        editAmount,
+        editSchedule,
+        editEndDate,
+        editRepetition,
+        editRepetitionType,
+        editRepetitionSettings,
+        editBody
+      );
 
-          await transferEdit(
-            id,
-            editBeforeAccountId,
-            editAfterAccountId,
-            editAmount,
-            editSchedule,
-            editRepetition,
-            editRepetitionType,
-            editRepetitionSettings,
-            editBody
-          );
-          await accountEdit(
-            editBeforeAccountId,
-            editBeforeAccountName,
-            beforeAccountEditedAmount,
-            editBeforeAccountBody
-          );
-          await accountEdit(
-            editAfterAccountId,
-            editAfterAccountName,
-            afterAccountEditedAmount,
-            editAfterAccountBody
-          );
+      const initialBeforeAccount: accountData = accounts.filter(
+        (account) => account.id === initialBeforeAccountId
+      )[0];
+      const initialAfterAccount: accountData = accounts.filter(
+        (account) => account.id === initialAfterAccountId
+      )[0];
+      const editBeforeAccount: accountData = accounts.filter(
+        (account) => account.id === editBeforeAccountId
+      )[0];
+      const editAfterAccount: accountData = accounts.filter(
+        (account) => account.id === editAfterAccountId
+      )[0];
 
-          const editedTransfer = {
-            id: id,
-            before_account_id: editBeforeAccountId,
-            after_account_id: editAfterAccountId,
-            after_account_name: editAfterAccountName,
-            amount: editAmount,
-            schedule: editSchedule,
-            repetition: editRepetition,
-            repetition_type: editRepetitionType,
-            repetition_settings: editRepetitionSettings,
-            body: editBody,
-          };
-          const editedBeforeAccount = {
-            id: editBeforeAccountId,
-            name: editBeforeAccountName,
-            amount: beforeAccountEditedAmount,
-            body: editBeforeAccountBody,
-          };
-          const editedAfterAccount = {
-            id: editAfterAccountId,
-            name: editAfterAccountName,
-            amount: afterAccountEditedAmount,
-            body: editAfterAccountBody,
-          };
+      const changeAmount =
+        parseFloat(String(initialAmount)) + parseFloat(String(editAmount));
 
-          onAccountUpdate(editedBeforeAccount);
-          onAccountUpdate(editedAfterAccount);
-          onTransferUpdate(editedTransfer);
-        } else if (
-          editBeforeAccountId !== initialBeforeAccountId &&
-          editAfterAccountId === initialAfterAccountId
-        ) {
-          const initialBeforeAccountEditedAmount =
-            parseFloat(String(initialBeforeAccountAmount)) +
-            parseFloat(String(initialAmount));
-          const beforeAccountEditedAmount =
-            parseFloat(String(editBeforeAccountAmount)) -
-            parseFloat(String(editAmount));
-          const afterAccountEditedAmount =
-            parseFloat(String(editAfterAccountAmount)) -
-            parseFloat(String(initialAmount)) +
-            parseFloat(String(editAmount));
+      if (
+        editBeforeAccountId === initialBeforeAccountId &&
+        editAfterAccountId === initialAfterAccountId
+      ) {
+        const beforeAccountEditedAmount =
+          parseFloat(String(editBeforeAccountAmount)) + changeAmount;
+        const afterAccountEditedAmount =
+          parseFloat(String(editAfterAccountAmount)) - changeAmount;
 
-          await transferEdit(
-            id,
-            editBeforeAccountId,
-            editAfterAccountId,
-            editAmount,
-            editSchedule,
-            editRepetition,
-            editRepetitionType,
-            editRepetitionSettings,
-            editBody
-          );
-          await accountEdit(
-            initialBeforeAccountId,
-            initialBeforeAccountName,
-            initialBeforeAccountEditedAmount,
-            initialBeforeAccountBody
-          );
-          await accountEdit(
-            editBeforeAccountId,
-            editBeforeAccountName,
-            beforeAccountEditedAmount,
-            editBeforeAccountBody
-          );
-          await accountEdit(
-            editAfterAccountId,
-            editAfterAccountName,
-            afterAccountEditedAmount,
-            editAfterAccountBody
-          );
+        await accountEdit(
+          editBeforeAccount.id,
+          editBeforeAccount.name,
+          beforeAccountEditedAmount,
+          editBeforeAccount.body
+        );
+        await accountEdit(
+          editAfterAccount.id,
+          editAfterAccount.name,
+          afterAccountEditedAmount,
+          editAfterAccount.body
+        );
+      } else if (
+        editBeforeAccountId !== initialBeforeAccountId &&
+        editAfterAccountId === initialAfterAccountId
+      ) {
+        const initialBeforeAccountEditedAmount =
+          parseFloat(String(initialBeforeAccountAmount)) +
+          parseFloat(String(initialAmount));
+        const beforeAccountEditedAmount =
+          parseFloat(String(editBeforeAccountAmount)) -
+          parseFloat(String(editAmount));
+        const afterAccountEditedAmount =
+          parseFloat(String(editAfterAccountAmount)) -
+          parseFloat(String(initialAmount)) +
+          parseFloat(String(editAmount));
 
-          const editedTransfer = {
-            id: id,
-            before_account_id: editBeforeAccountId,
-            after_account_id: editAfterAccountId,
-            after_account_name: editAfterAccountName,
-            amount: editAmount,
-            schedule: editSchedule,
-            repetition: editRepetition,
-            repetition_type: editRepetitionType,
-            repetition_settings: editRepetitionSettings,
-            body: editBody,
-          };
-          const editedInitialBeforeAccount = {
-            id: initialBeforeAccountId,
-            name: initialBeforeAccountName,
-            amount: initialBeforeAccountEditedAmount,
-            body: initialBeforeAccountBody,
-          };
-          const editedBeforeAccount = {
-            id: editBeforeAccountId,
-            name: editBeforeAccountName,
-            amount: beforeAccountEditedAmount,
-            body: editBeforeAccountBody,
-          };
-          const editedAfterAccount = {
-            id: editAfterAccountId,
-            name: editAfterAccountName,
-            amount: afterAccountEditedAmount,
-            body: editAfterAccountBody,
-          };
+        await transferEdit(
+          id,
+          editBeforeAccountId,
+          editAfterAccountId,
+          editAmount,
+          editSchedule,
+          editEndDate,
+          editRepetition,
+          editRepetitionType,
+          editRepetitionSettings,
+          editBody
+        );
+        await accountEdit(
+          initialBeforeAccountId,
+          initialBeforeAccountName,
+          initialBeforeAccountEditedAmount,
+          initialBeforeAccountBody
+        );
+        await accountEdit(
+          editBeforeAccountId,
+          editBeforeAccountName,
+          beforeAccountEditedAmount,
+          editBeforeAccountBody
+        );
+        await accountEdit(
+          editAfterAccountId,
+          editAfterAccountName,
+          afterAccountEditedAmount,
+          editAfterAccountBody
+        );
+      } else if (
+        editBeforeAccountId === initialBeforeAccountId &&
+        editAfterAccountId !== initialAfterAccountId
+      ) {
+        const initialAfterAccountEditedAmount =
+          parseFloat(String(initialAfterAccountAmount)) -
+          parseFloat(String(initialAmount));
+        const beforeAccountEditedAmount =
+          parseFloat(String(editBeforeAccountAmount)) +
+          parseFloat(String(initialAmount)) -
+          parseFloat(String(editAmount));
+        const afterAccountEditedAmount =
+          parseFloat(String(editAfterAccountAmount)) +
+          parseFloat(String(editAmount));
 
-          onAccountUpdate(editedInitialBeforeAccount);
-          onAccountUpdate(editedBeforeAccount);
-          onAccountUpdate(editedAfterAccount);
-          onTransferUpdate(editedTransfer);
-        } else if (
-          editBeforeAccountId === initialBeforeAccountId &&
-          editAfterAccountId !== initialAfterAccountId
-        ) {
-          const initialAfterAccountEditedAmount =
-            parseFloat(String(initialAfterAccountAmount)) -
-            parseFloat(String(initialAmount));
-          const beforeAccountEditedAmount =
-            parseFloat(String(editBeforeAccountAmount)) +
-            parseFloat(String(initialAmount)) -
-            parseFloat(String(editAmount));
-          const afterAccountEditedAmount =
-            parseFloat(String(editAfterAccountAmount)) +
-            parseFloat(String(editAmount));
+        await transferEdit(
+          id,
+          editBeforeAccountId,
+          editAfterAccountId,
+          editAmount,
+          editSchedule,
+          editEndDate,
+          editRepetition,
+          editRepetitionType,
+          editRepetitionSettings,
+          editBody
+        );
+        await accountEdit(
+          initialAfterAccountId,
+          initialAfterAccountName,
+          initialAfterAccountEditedAmount,
+          initialAfterAccountBody
+        );
+        await accountEdit(
+          editBeforeAccountId,
+          editBeforeAccountName,
+          beforeAccountEditedAmount,
+          editBeforeAccountBody
+        );
+        await accountEdit(
+          editAfterAccountId,
+          editAfterAccountName,
+          afterAccountEditedAmount,
+          editAfterAccountBody
+        );
+      } else if (
+        editBeforeAccountId !== initialBeforeAccountId &&
+        editAfterAccountId !== initialAfterAccountId
+      ) {
+        const initialBeforeAccountEditedAmount =
+          parseFloat(String(initialBeforeAccountAmount)) +
+          parseFloat(String(initialAmount));
+        const initialAfterAccountEditedAmount =
+          parseFloat(String(initialAfterAccountAmount)) -
+          parseFloat(String(initialAmount));
+        const beforeAccountEditedAmount =
+          parseFloat(String(editBeforeAccountAmount)) -
+          parseFloat(String(editAmount));
+        const afterAccountEditedAmount =
+          parseFloat(String(editAfterAccountAmount)) +
+          parseFloat(String(editAmount));
 
-          await transferEdit(
-            id,
-            editBeforeAccountId,
-            editAfterAccountId,
-            editAmount,
-            editSchedule,
-            editRepetition,
-            editRepetitionType,
-            editRepetitionSettings,
-            editBody
-          );
-          await accountEdit(
-            initialAfterAccountId,
-            initialAfterAccountName,
-            initialAfterAccountEditedAmount,
-            initialAfterAccountBody
-          );
-          await accountEdit(
-            editBeforeAccountId,
-            editBeforeAccountName,
-            beforeAccountEditedAmount,
-            editBeforeAccountBody
-          );
-          await accountEdit(
-            editAfterAccountId,
-            editAfterAccountName,
-            afterAccountEditedAmount,
-            editAfterAccountBody
-          );
-
-          const editedTransfer = {
-            id: id,
-            before_account_id: editBeforeAccountId,
-            after_account_id: editAfterAccountId,
-            after_account_name: editAfterAccountName,
-            amount: editAmount,
-            schedule: editSchedule,
-            repetition: editRepetition,
-            repetition_type: editRepetitionType,
-            repetition_settings: editRepetitionSettings,
-            body: editBody,
-          };
-          const editedInitialAfterAccount = {
-            id: initialAfterAccountId,
-            name: initialAfterAccountName,
-            amount: initialAfterAccountEditedAmount,
-            body: initialAfterAccountBody,
-          };
-          const editedBeforeAccount = {
-            id: editBeforeAccountId,
-            name: editBeforeAccountName,
-            amount: beforeAccountEditedAmount,
-            body: editBeforeAccountBody,
-          };
-          const editedAfterAccount = {
-            id: editAfterAccountId,
-            name: editAfterAccountName,
-            amount: afterAccountEditedAmount,
-            body: editAfterAccountBody,
-          };
-
-          onAccountUpdate(editedInitialAfterAccount);
-          onAccountUpdate(editedBeforeAccount);
-          onAccountUpdate(editedAfterAccount);
-          onTransferUpdate(editedTransfer);
-        } else if (
-          editBeforeAccountId !== initialBeforeAccountId &&
-          editAfterAccountId !== initialAfterAccountId
-        ) {
-          const initialBeforeAccountEditedAmount =
-            parseFloat(String(initialBeforeAccountAmount)) +
-            parseFloat(String(initialAmount));
-          const initialAfterAccountEditedAmount =
-            parseFloat(String(initialAfterAccountAmount)) -
-            parseFloat(String(initialAmount));
-          const beforeAccountEditedAmount =
-            parseFloat(String(editBeforeAccountAmount)) -
-            parseFloat(String(editAmount));
-          const afterAccountEditedAmount =
-            parseFloat(String(editAfterAccountAmount)) +
-            parseFloat(String(editAmount));
-
-          await transferEdit(
-            id,
-            editBeforeAccountId,
-            editAfterAccountId,
-            editAmount,
-            editSchedule,
-            editRepetition,
-            editRepetitionType,
-            editRepetitionSettings,
-            editBody
-          );
-          await accountEdit(
-            initialBeforeAccountId,
-            initialBeforeAccountName,
-            initialBeforeAccountEditedAmount,
-            initialBeforeAccountBody
-          );
-          await accountEdit(
-            initialAfterAccountId,
-            initialAfterAccountName,
-            initialAfterAccountEditedAmount,
-            initialAfterAccountBody
-          );
-          await accountEdit(
-            editBeforeAccountId,
-            editBeforeAccountName,
-            beforeAccountEditedAmount,
-            editBeforeAccountBody
-          );
-          await accountEdit(
-            editAfterAccountId,
-            editAfterAccountName,
-            afterAccountEditedAmount,
-            editAfterAccountBody
-          );
-
-          const editedTransfer = {
-            id: id,
-            before_account_id: editBeforeAccountId,
-            after_account_id: editAfterAccountId,
-            after_account_name: editAfterAccountName,
-            amount: editAmount,
-            schedule: editSchedule,
-            repetition: editRepetition,
-            repetition_type: editRepetitionType,
-            repetition_settings: editRepetitionSettings,
-            body: editBody,
-          };
-          const editedInitialBeforeAccount = {
-            id: initialBeforeAccountId,
-            name: initialBeforeAccountName,
-            amount: initialBeforeAccountEditedAmount,
-            body: initialBeforeAccountBody,
-          };
-          const editedInitialAfterAccount = {
-            id: initialAfterAccountId,
-            name: initialAfterAccountName,
-            amount: initialAfterAccountEditedAmount,
-            body: initialAfterAccountBody,
-          };
-          const editedBeforeAccount = {
-            id: editBeforeAccountId,
-            name: editBeforeAccountName,
-            amount: beforeAccountEditedAmount,
-            body: editBeforeAccountBody,
-          };
-          const editedAfterAccount = {
-            id: editAfterAccountId,
-            name: editAfterAccountName,
-            amount: afterAccountEditedAmount,
-            body: editAfterAccountBody,
-          };
-
-          onAccountUpdate(editedInitialBeforeAccount);
-          onAccountUpdate(editedInitialAfterAccount);
-          onAccountUpdate(editedBeforeAccount);
-          onAccountUpdate(editedAfterAccount);
-          onTransferUpdate(editedTransfer);
-        }
+        await transferEdit(
+          id,
+          editBeforeAccountId,
+          editAfterAccountId,
+          editAmount,
+          editSchedule,
+          editEndDate,
+          editRepetition,
+          editRepetitionType,
+          editRepetitionSettings,
+          editBody
+        );
+        await accountEdit(
+          initialBeforeAccountId,
+          initialBeforeAccountName,
+          initialBeforeAccountEditedAmount,
+          initialBeforeAccountBody
+        );
+        await accountEdit(
+          initialAfterAccountId,
+          initialAfterAccountName,
+          initialAfterAccountEditedAmount,
+          initialAfterAccountBody
+        );
+        await accountEdit(
+          editBeforeAccountId,
+          editBeforeAccountName,
+          beforeAccountEditedAmount,
+          editBeforeAccountBody
+        );
+        await accountEdit(
+          editAfterAccountId,
+          editAfterAccountName,
+          afterAccountEditedAmount,
+          editAfterAccountBody
+        );
       }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit transfer:", error);
     }

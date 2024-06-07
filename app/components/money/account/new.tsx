@@ -1,13 +1,16 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, useContext, ChangeEvent } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
-import { accountNew as New } from "@/lib/api/account-api";
+import { moneyContext } from "@/context/money-context";
+
+import { accountNew } from "@/lib/api/account-api";
 import { accountNewProps } from "@/interface/account-interface";
 
 export const AccountNew: React.FC<accountNewProps> = (props) => {
-  const { onAdd, onClose } = props;
+  const { onClose } = props;
+  const { setIsEditing } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
@@ -17,8 +20,8 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
 
   const newAccount = async () => {
     try {
-      const response = await New(newName, newAmount, newBody);
-      onAdd(response);
+      await accountNew(newName, newAmount, newBody);
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to create account:", error);
     }

@@ -124,6 +124,22 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   }, [editAmount]);
 
   const editPayment = async (id: string) => {
+    const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
+      classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            initialClassificationId &&
+          classificationMonthlyAmount.month === currentMonth
+      )[0];
+
+    const editClassificationMonthlyAmount: classificationMonthlyAmountData =
+      classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            editClassificationId &&
+          classificationMonthlyAmount.month === editMonth
+      )[0];
+
     const initialRepetitionDelete = async () =>
       await Promise.all(
         repetitionMoneies
@@ -133,10 +149,62 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           })
       );
 
+    let repetitionMoneyDate: repetitionMoneyData[] = [];
+
+    const editRepetitionAdd = async () => {
+      const schedules = calculateNextSchedules();
+      await Promise.all(
+        schedules.map(async (schedule) => {
+          const stringDate = new Date(schedule)
+            .toLocaleDateString()
+            .split("T")[0];
+          const repetitionMoney = await repetitionMoneyNew(
+            "payment",
+            id,
+            "",
+            "",
+            editAmount,
+            stringDate
+          );
+          repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
+        })
+      );
+    };
+
     const startDate = (date: string) =>
       new Date(Number(date.slice(0, 4)), Number(date.slice(4)) - 1, 1);
     const endDate = (date: string) =>
       new Date(Number(date.slice(0, 4)), Number(date.slice(4)), 0, 23, 59);
+
+    const initialRepetitionMoneyReduce = async (start: Date, end: Date) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "payment" &&
+          repetitionMoney.payment_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const editRepetitionMoneyIncrease = async (start: Date, end: Date) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneyDate.filter(
+        (repetitionMoney) =>
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
 
     try {
       await paymentEdit(
@@ -153,60 +221,24 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
       );
       if (initialClassificationId === editClassificationId) {
         if (editRepetition === true) {
-          let repetitionMoneyDate: repetitionMoneyData[] = [];
-          const schedules = calculateNextSchedules();
           if (initialRepetition === true) {
-            initialRepetitionDelete();
-
-            await Promise.all(
-              schedules.map(async (schedule) => {
-                const stringDate = new Date(schedule)
-                  .toLocaleDateString()
-                  .split("T")[0];
-                const repetitionMoney = await repetitionMoneyNew(
-                  "payment",
-                  id,
-                  "",
-                  "",
-                  editAmount,
-                  stringDate
-                );
-                repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-              })
-            );
+            await initialRepetitionDelete();
+            await editRepetitionAdd();
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              console.log(classificationMonthlyAmount);
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "payment" &&
-                  repetitionMoney.payment_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
-
-              for (const repetitionMoney of repetitionMoneyDate.filter(
-                (repetitionMoney) =>
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money += parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end)) +
+                (await editRepetitionMoneyIncrease(start, end));
 
               await classificationMonthlyAmountEdit(
                 classificationMonthlyAmount.id,
@@ -217,51 +249,20 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               );
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              );
-
-            await Promise.all(
-              schedules.map(async (schedule) => {
-                const stringDate = new Date(schedule)
-                  .toLocaleDateString()
-                  .split("T")[0];
-                const repetitionMoney = await repetitionMoneyNew(
-                  "payment",
-                  id,
-                  "",
-                  "",
-                  editAmount,
-                  stringDate
-                );
-                repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-              })
-            );
+            editRepetitionAdd();
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
-                editClassificationId
+                initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneyDate.filter(
-                (repetitionMoney) =>
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money += parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) +
+                (await editRepetitionMoneyIncrease(start, end));
 
               if (
                 classificationMonthlyAmount.id ===
@@ -289,14 +290,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         } else {
           if (initialRepetition === true) {
             initialRepetitionDelete();
-
-            const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    editClassificationId &&
-                  classificationMonthlyAmount.month === editMonth
-              );
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
@@ -344,26 +337,64 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               }
             }
           } else {
+            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
+              classificationMonthlyAmounts.filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                    initialClassificationId &&
+                  classificationMonthlyAmount.month === currentMonth
+              )[0];
+
             const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
+              classificationMonthlyAmounts.filter(
                 (classificationMonthlyAmount) =>
                   classificationMonthlyAmount.classification_id ===
                     editClassificationId &&
                   classificationMonthlyAmount.month === editMonth
+              )[0];
+
+            if (
+              initialClassificationMonthlyAmount.month ===
+              editClassificationMonthlyAmount.month
+            ) {
+              const initialMoney =
+                parseFloat(String(initialClassificationMonthlyAmount.amount)) -
+                parseFloat(String(initialAmount)) +
+                parseFloat(String(editAmount));
+
+              await classificationMonthlyAmountEdit(
+                initialClassificationMonthlyAmount.id,
+                initialClassificationMonthlyAmount.classification_id,
+                initialClassificationMonthlyAmount.month,
+                initialClassificationMonthlyAmount.date,
+                Math.max(0, initialMoney)
               );
+            } else {
+              const initialMoney =
+                parseFloat(String(initialClassificationMonthlyAmount.amount)) -
+                parseFloat(String(initialAmount));
 
-            const money =
-              parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(initialAmount)) +
-              parseFloat(String(editAmount));
+              await classificationMonthlyAmountEdit(
+                initialClassificationMonthlyAmount.id,
+                initialClassificationMonthlyAmount.classification_id,
+                initialClassificationMonthlyAmount.month,
+                initialClassificationMonthlyAmount.date,
+                Math.max(0, initialMoney)
+              );
+              if (editClassificationMonthlyAmount) {
+                const editMoney =
+                  parseFloat(String(editClassificationMonthlyAmount.amount)) +
+                  parseFloat(String(editAmount));
 
-            await classificationMonthlyAmountEdit(
-              editClassificationMonthlyAmount.id,
-              editClassificationMonthlyAmount.classification_id,
-              editClassificationMonthlyAmount.month,
-              editClassificationMonthlyAmount.date,
-              Math.max(0, money)
-            );
+                await classificationMonthlyAmountEdit(
+                  editClassificationMonthlyAmount.id,
+                  editClassificationMonthlyAmount.classification_id,
+                  editClassificationMonthlyAmount.month,
+                  editClassificationMonthlyAmount.date,
+                  Math.max(0, editMoney)
+                );
+              }
+            }
           }
         }
       } else {
@@ -426,25 +457,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         }
 
         if (editRepetition === true) {
-          let repetitionMoneyDate: repetitionMoneyData[] = [];
-          const schedules = calculateNextSchedules();
-
-          await Promise.all(
-            schedules.map(async (schedule) => {
-              const stringDate = new Date(schedule)
-                .toLocaleDateString()
-                .split("T")[0];
-              const repetitionMoney = await repetitionMoneyNew(
-                "payment",
-                id,
-                "",
-                "",
-                editAmount,
-                stringDate
-              );
-              repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-            })
-          );
+          editRepetitionAdd();
 
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
@@ -544,7 +557,8 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             await classificationMonthlyAmountEdit(
               classificationMonthlyAmount.id,
               classificationMonthlyAmount.classification_id,
-              classificationMonthlyAmount.month,classificationMonthlyAmount.date,
+              classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
               money
             );
           }
@@ -1092,9 +1106,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 />
               </Box>
               <Typography>※設定できるのは最大で今日から5年後です</Typography>
-              <Typography>
-                ※設定しない場合は今日から5年後が設定されます
-              </Typography>
             </li>
           )}
           <li className="pt-5">

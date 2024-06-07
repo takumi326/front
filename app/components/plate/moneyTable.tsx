@@ -63,7 +63,7 @@ import { transferGetData } from "@/lib/api/transfer-api";
 import { transferData } from "@/interface/transfer-interface";
 import { TransferNew } from "@/components/money/transfer/new";
 
-import { categoryGetData, categoryDelete } from "@/lib/api/category-api";
+import { categoryGetData } from "@/lib/api/category-api";
 import { categoryData } from "@/interface/category-interface";
 import { CategoryRow } from "@/components/money/category/row";
 import { CategoryNew } from "@/components/money/category/new";
@@ -183,6 +183,12 @@ export const MoneyTable: React.FC = () => {
 
   useEffect(() => {
     const handleAllDataFetch = async () => {
+      await repetitionMoneyGetData().then(
+        (repetitionMoneies: repetitionMoneyData[]) => {
+          setRepetitionMoneies(repetitionMoneies);
+        }
+      );
+
       await paymentGetData().then((paymentDatas: paymentData[]) => {
         const allPayments: Array<paymentData> = [];
         repetitionMoneyGetData().then(
@@ -280,6 +286,7 @@ export const MoneyTable: React.FC = () => {
           }
         );
       });
+
       await incomeGetData().then((incomes: incomeData[]) => {
         if (start !== undefined && end !== undefined) {
           const noRepetitonIncomes = incomes.filter(
@@ -300,10 +307,6 @@ export const MoneyTable: React.FC = () => {
         }
       });
 
-      await accountGetData().then((accounts: accountData[]) => {
-        setAccounts(accounts);
-      });
-
       await categoryGetData().then((categories: categoryData[]) => {
         setCategories(categories);
       });
@@ -320,31 +323,66 @@ export const MoneyTable: React.FC = () => {
         }
       );
 
-      await transferGetData().then((transfers: transferData[]) => {
-        setCalendarTransfers(transfers);
+      await accountGetData().then((accounts: accountData[]) => {
+        setAccounts(accounts);
+      });
+
+      await transferGetData().then((transferDatas: transferData[]) => {
+        const allTransfers: Array<transferData> = [];
+        repetitionMoneyGetData().then(
+          (repetitionMoneies: repetitionMoneyData[]) => {
+            transferDatas.forEach((transferData: transferData) => {
+              if (transferData.repetition === true) {
+                repetitionMoneies
+                  .filter(
+                    (repetitionMoney: repetitionMoneyData) =>
+                      repetitionMoney.transfer_id === transferData.id
+                  )
+                  .forEach((repetitionMoney: repetitionMoneyData) => {
+                    const repetitionMoneyData = {
+                      id: transferData.id,
+                      before_account_id: transferData.before_account_id,
+                      after_account_id: transferData.after_account_id,
+                      after_account_name: transferData.after_account_name,
+                      amount: transferData.amount,
+                      schedule: repetitionMoney.repetition_schedule,
+                      end_date: transferData.end_date,
+                      repetition: transferData.repetition,
+                      repetition_type: transferData.repetition_type,
+                      repetition_settings: transferData.repetition_settings,
+                      body: transferData.body,
+                    };
+                    allTransfers.push(repetitionMoneyData);
+                  });
+              } else {
+                allTransfers.push(transferData);
+              }
+            });
+            setCalendarTransfers(allTransfers);
+            repetitionMoneies;
+          }
+        );
       });
 
       await transferGetData().then((transfers: transferData[]) => {
         if (start !== undefined && end !== undefined) {
-          transfers
-            .filter(
-              (transfer: transferData) =>
-                new Date(transfer.schedule).getTime() >= start.getTime() &&
-                new Date(transfer.schedule).getTime() <= end.getTime()
-            )
-            .map((transfer: transferData) => {
-              setTransfers((prevTransfers) => [...prevTransfers, transfer]);
-            });
+          const noRepetitonIncomes = transfers.filter(
+            (transfer: transferData) =>
+              transfer.repetition === false &&
+              new Date(transfer.schedule).getTime() >= start.getTime() &&
+              new Date(transfer.schedule).getTime() <= end.getTime()
+          );
+          const repetitonIncomes = transfers.filter(
+            (transfer: transferData) =>
+              transfer.repetition === true &&
+              (new Date(transfer.schedule).getTime() >= start.getTime() ||
+                new Date(transfer.end_date).getTime() <= end.getTime())
+          );
+          setTransfers(() => [...noRepetitonIncomes, ...repetitonIncomes]);
         } else {
           setTransfers(transfers);
         }
       });
-
-      await repetitionMoneyGetData().then(
-        (repetitionMoneies: repetitionMoneyData[]) => {
-          setRepetitionMoneies(repetitionMoneies);
-        }
-      );
     };
 
     handleAllDataFetch();
@@ -1129,6 +1167,8 @@ export const MoneyTable: React.FC = () => {
                   <IncomeRow
                     key={row.id}
                     row={row}
+                    start={start}
+                    end={end}
                     visibleColumns={visibleColumns}
                   />
                 ))

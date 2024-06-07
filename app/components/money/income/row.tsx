@@ -53,6 +53,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    console.log(repetitionMoneies);
     const handleClassificationMonthlyAmount = async () => {
       setIsProcessing(true);
       try {
@@ -94,7 +95,6 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
 
         let money = 0;
         if (!shouldCreateNewAmount) {
-          console.log(shouldCreateNewAmount.date);
           row.history.map((historyRow) => {
             if (historyRow.income_repetition === true) {
               repetitionMoneies
