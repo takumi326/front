@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -11,40 +11,38 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import { accountEdit as Edit } from "@/lib/api/account-api";
+import { moneyContext } from "@/context/money-context";
+
+import { accountEdit } from "@/lib/api/account-api";
 import { accountShowProps } from "@/interface/account-interface";
 
 export const AccountShow: React.FC<accountShowProps> = (props) => {
-  const { id, name, amount, body, onUpdate, onClose, onDelete } = props;
+  const { id, name, amount, body, onClose, onDelete } = props;
+  const { setIsEditing } = useContext(moneyContext);
+
   const [editName, setEditName] = useState<string>(name);
   const [editAmount, setEditAmount] = useState<number>(amount);
   const [editAmountString, setEditAmountString] = useState<string>(
     String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   );
   const [editBody, setEditBody] = useState<string>(body);
+  const [isFormValid, setIsFormValid] = useState(true);
 
   const editAccount = async (id: string) => {
     try {
-      await Edit(id, editName, editAmount, editBody);
-      const editedData = {
-        id: id,
-        name: editName,
-        amount: editAmount,
-        body: editBody,
-      };
-      onUpdate(editedData);
+      await accountEdit(id, editName, editAmount, editBody);
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit account:", error);
     }
   };
 
-  // フォームの変更を処理するハンドラー
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // name属性に基づいて対応する状態を更新
     switch (name) {
       case "title":
         setEditName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
         setEditAmountString(
@@ -116,7 +114,12 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               保存
             </Button>
           </Stack>

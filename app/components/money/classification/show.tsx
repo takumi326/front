@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -55,6 +55,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
       ","
     )
   );
+  const [isFormValid, setIsFormValid] = useState(true);
   const [completed, setCompleted] = useState<boolean>(
     classificationMonthlyAmount.date === "即日" ? true : false
   );
@@ -129,6 +130,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     switch (name) {
       case "name":
         setEditName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
         setEditAmountString(
@@ -241,7 +243,12 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         )}
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               保存
             </Button>
           </Stack>

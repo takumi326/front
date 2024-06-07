@@ -94,7 +94,6 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
         let money = 0;
         if (!shouldCreateNewAmount) {
-          console.log(shouldCreateNewAmount.date);
           row.history.map((historyRow) => {
             if (historyRow.payment_repetition === true) {
               repetitionMoneies
@@ -148,7 +147,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     setIsEditClassificationModalOpen(false);
   };
 
-  const handlePaymentDelete = async (id: string, index: number) => {
+  const deletePayment = async (id: string, index: number) => {
     try {
       if (row.classification_name === "分類なし") {
         paymentDelete(id);
@@ -514,7 +513,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              handlePaymentDelete(
+                              deletePayment(
                                 historyRow.payment_id,
                                 isHistory
                               )

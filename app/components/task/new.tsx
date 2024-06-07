@@ -472,9 +472,6 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
               />
             </Box>
             <Typography>※設定できるのは最大で今日から5年後です</Typography>
-            <Typography>
-              ※設定しない場合は今日から5年後が設定されます
-            </Typography>
           </li>
         )}
         <li className="pt-5">

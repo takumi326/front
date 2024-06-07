@@ -21,6 +21,7 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
   const { setIsEditing } = useContext(moneyContext);
 
   const [editName, setEditName] = useState<string>(name);
+  const [isFormValid, setIsFormValid] = useState(true);
 
   const editCategory = async (id: string) => {
     try {
@@ -36,6 +37,7 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
     switch (name) {
       case "name":
         setEditName(value);
+        setIsFormValid(value.trim().length > 0);
         break;
       default:
         break;
@@ -62,7 +64,12 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!isFormValid}
+              color="primary"
+            >
               保存
             </Button>
           </Stack>

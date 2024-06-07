@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent, useContext } from "react";
+import React, { useState, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -26,8 +26,8 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const [newAccountId, setNewAccountId] = useState("");
   const [newName, setNewName] = useState("");
   const [newDate, setNewDate] = useState<number>(0);
-  const [newAmountString, setNewAmountString] = useState("0");
   const [newMonthlyAmount, setNewMonthlyAmount] = useState<number>(0);
+  const [newMonthlAmountString, setNewMonthlAmountString] = useState("0");
   const [isFormValid, setIsFormValid] = useState(false);
   const [completed, setCompleted] = useState<boolean>(false);
 
@@ -73,7 +73,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
-        setNewAmountString(
+        setNewMonthlAmountString(
           value.startsWith("0") && value.length > 1
             ? value
                 .replace(/^0+/, "")
@@ -149,7 +149,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             <TextField
               variant="outlined"
               name="amount"
-              value={newAmountString}
+              value={newMonthlAmountString}
               onChange={handleChange}
               inputProps={{
                 inputMode: "numeric",

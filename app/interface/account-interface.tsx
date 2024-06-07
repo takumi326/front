@@ -46,6 +46,7 @@ export interface accountShowProps {
   amount: number;
   body: string;
   onClose: () => void;
+  onDelete: (id: string) => void;
 }
 
 export interface accountNewProps {
