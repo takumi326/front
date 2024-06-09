@@ -20,6 +20,7 @@ import {
 import { SelectChangeEvent } from "@mui/material/Select";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
@@ -112,29 +113,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         (account) => account.id === newAfterAccountId
       )[0];
 
-      if (newRepetition === false) {
-        const beforeAccountEditedAmount =
-          parseFloat(String(selectedBeforeAccount.amount)) -
-          parseFloat(String(newAmount));
-        const afterAccountEditedAmount =
-          parseFloat(String(selectedBeforeAccount.amount)) +
-          parseFloat(String(newAmount));
-
-        if (new Date(newSchedule).getTime() <= endOfCurrentDay.getTime()) {
-          await accountEdit(
-            selectedBeforeAccount.id,
-            selectedBeforeAccount.name,
-            beforeAccountEditedAmount,
-            selectedBeforeAccount.body
-          );
-          await accountEdit(
-            selectedAfterAccount.id,
-            selectedAfterAccount.name,
-            afterAccountEditedAmount,
-            selectedAfterAccount.body
-          );
-        }
-      } else {
+      if (newRepetition === true) {
         let repetitionMoneyDate: repetitionMoneyData[] = [];
         const schedules = calculateNextSchedules();
 
@@ -187,6 +166,28 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           afterAccountEditedAmount,
           selectedAfterAccount.body
         );
+      } else {
+        const beforeAccountEditedAmount =
+          parseFloat(String(selectedBeforeAccount.amount)) -
+          parseFloat(String(newAmount));
+        const afterAccountEditedAmount =
+          parseFloat(String(selectedBeforeAccount.amount)) +
+          parseFloat(String(newAmount));
+
+        if (new Date(newSchedule).getTime() <= endOfCurrentDay.getTime()) {
+          await accountEdit(
+            selectedBeforeAccount.id,
+            selectedBeforeAccount.name,
+            beforeAccountEditedAmount,
+            selectedBeforeAccount.body
+          );
+          await accountEdit(
+            selectedAfterAccount.id,
+            selectedAfterAccount.name,
+            afterAccountEditedAmount,
+            selectedAfterAccount.body
+          );
+        }
       }
       setIsEditing(true);
     } catch (error) {
@@ -445,8 +446,18 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
         fullWidth
-        maxWidth="xs"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "350px",
+          },
+        }}
       >
+        <button
+          onClick={handleRepetitionDialogCancel}
+          className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+        >
+          <CloseIcon />
+        </button>
         <DialogTitle sx={{ textAlign: "center" }}>繰り返しの設定</DialogTitle>
         <DialogContent>
           <Box
@@ -477,7 +488,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             </Box>
             {period === "weekly" && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                {["月", "火", "水", "木", "金", "土", "日"].map(
+                {["日", "月", "火", "水", "木", "金", "土"].map(
                   (day, index) => (
                     <ToggleButton
                       key={day}
@@ -604,16 +615,27 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           )}
         </li>
         <li className="pt-5">
-          <button
-            style={{
-              color: "blue",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-            onClick={handleRepetitionDialogOpen}
-          >
-            繰り返し
-          </button>
+          <Stack direction="row" spacing={1}>
+            <button
+              style={{
+                color: "blue",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+              onClick={handleRepetitionDialogOpen}
+            >
+              繰り返し
+            </button>
+            {newRepetition === true ? (
+              <Typography align="left" variant="subtitle1">
+                ON
+              </Typography>
+            ) : (
+              <Typography align="left" variant="subtitle1">
+                OFF
+              </Typography>
+            )}
+          </Stack>
           <Typography>
             {newRepetitionSettings && (
               <>

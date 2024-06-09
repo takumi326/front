@@ -72,13 +72,14 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
             >
               保存
             </Button>
+
+            <IconButton
+              onClick={() => onDelete(id)}
+              className="absolute right-0 bottom-0 m-8"
+            >
+              <DeleteIcon />
+            </IconButton>
           </Stack>
-          <IconButton
-            onClick={() => onDelete(id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
         </li>
       </ul>
     </Box>

@@ -124,6 +124,22 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   }, [editAmount]);
 
   const editIncome = async (id: string) => {
+    const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
+      classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            initialClassificationId &&
+          classificationMonthlyAmount.month === currentMonth
+      )[0];
+
+    const editClassificationMonthlyAmount: classificationMonthlyAmountData =
+      classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+            editClassificationId &&
+          classificationMonthlyAmount.month === editMonth
+      )[0];
+
     const initialRepetitionDelete = async () =>
       await Promise.all(
         repetitionMoneies
@@ -133,10 +149,62 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           })
       );
 
+    let repetitionMoneyDate: repetitionMoneyData[] = [];
+
+    const editRepetitionAdd = async () => {
+      const schedules = calculateNextSchedules();
+      await Promise.all(
+        schedules.map(async (schedule) => {
+          const stringDate = new Date(schedule)
+            .toLocaleDateString()
+            .split("T")[0];
+          const repetitionMoney = await repetitionMoneyNew(
+            "income",
+            "",
+            id,
+            "",
+            editAmount,
+            stringDate
+          );
+          repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
+        })
+      );
+    };
+
     const startDate = (date: string) =>
       new Date(Number(date.slice(0, 4)), Number(date.slice(4)) - 1, 1);
     const endDate = (date: string) =>
       new Date(Number(date.slice(0, 4)), Number(date.slice(4)), 0, 23, 59);
+
+    const initialRepetitionMoneyReduce = async (start: Date, end: Date) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "income" &&
+          repetitionMoney.income_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const editRepetitionMoneyIncrease = async (start: Date, end: Date) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneyDate.filter(
+        (repetitionMoney) =>
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
 
     try {
       await incomeEdit(
@@ -153,60 +221,23 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
       );
       if (initialClassificationId === editClassificationId) {
         if (editRepetition === true) {
-          let repetitionMoneyDate: repetitionMoneyData[] = [];
-          const schedules = calculateNextSchedules();
           if (initialRepetition === true) {
-            initialRepetitionDelete();
-
-            await Promise.all(
-              schedules.map(async (schedule) => {
-                const stringDate = new Date(schedule)
-                  .toLocaleDateString()
-                  .split("T")[0];
-                const repetitionMoney = await repetitionMoneyNew(
-                  "income",
-                  "",
-                  id,
-                  "",
-                  editAmount,
-                  stringDate
-                );
-                repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-              })
-            );
+            await initialRepetitionDelete();
+            await editRepetitionAdd();
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "income" &&
-                  repetitionMoney.income_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
-
-              for (const repetitionMoney of repetitionMoneyDate.filter(
-                (repetitionMoney) =>
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money += parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end)) +
+                (await editRepetitionMoneyIncrease(start, end));
 
               await classificationMonthlyAmountEdit(
                 classificationMonthlyAmount.id,
@@ -217,51 +248,20 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               );
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              );
-
-            await Promise.all(
-              schedules.map(async (schedule) => {
-                const stringDate = new Date(schedule)
-                  .toLocaleDateString()
-                  .split("T")[0];
-                const repetitionMoney = await repetitionMoneyNew(
-                  "income",
-                  "",
-                  id,
-                  "",
-                  editAmount,
-                  stringDate
-                );
-                repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-              })
-            );
+            editRepetitionAdd();
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
-                editClassificationId
+                initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneyDate.filter(
-                (repetitionMoney) =>
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money += parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) +
+                (await editRepetitionMoneyIncrease(start, end));
 
               if (
                 classificationMonthlyAmount.id ===
@@ -290,36 +290,18 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           if (initialRepetition === true) {
             initialRepetitionDelete();
 
-            const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    editClassificationId &&
-                  classificationMonthlyAmount.month === editMonth
-              );
-
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "income" &&
-                  repetitionMoney.income_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
 
               if (
                 classificationMonthlyAmount.id ===
@@ -344,27 +326,11 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               }
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.filter(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              )[0];
-
-            const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.filter(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    editClassificationId &&
-                  classificationMonthlyAmount.month === editMonth
-              )[0];
-
             if (
               initialClassificationMonthlyAmount.month ===
               editClassificationMonthlyAmount.month
             ) {
-              const initialMoney =
+              const editMoney =
                 parseFloat(String(initialClassificationMonthlyAmount.amount)) -
                 parseFloat(String(initialAmount)) +
                 parseFloat(String(editAmount));
@@ -374,7 +340,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
                 initialClassificationMonthlyAmount.classification_id,
                 initialClassificationMonthlyAmount.month,
                 initialClassificationMonthlyAmount.date,
-                Math.max(0, initialMoney)
+                Math.max(0, editMoney)
               );
             } else {
               const initialMoney =
@@ -414,23 +380,13 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "income" &&
-                  repetitionMoney.income_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
 
               await classificationMonthlyAmountEdit(
                 classificationMonthlyAmount.id,
@@ -441,14 +397,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               );
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              );
-
             const initialClassificationAmount =
               parseFloat(String(initialClassificationMonthlyAmount.amount)) -
               parseFloat(String(initialAmount));
@@ -464,44 +412,20 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
         }
 
         if (editRepetition === true) {
-          let repetitionMoneyDate: repetitionMoneyData[] = [];
-          const schedules = calculateNextSchedules();
-
-          await Promise.all(
-            schedules.map(async (schedule) => {
-              const stringDate = new Date(schedule)
-                .toLocaleDateString()
-                .split("T")[0];
-              const repetitionMoney = await repetitionMoneyNew(
-                "income",
-                "",
-                id,
-                "",
-                editAmount,
-                stringDate
-              );
-              repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
-            })
-          );
+          editRepetitionAdd();
 
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id ===
               editClassificationId
           )) {
-            let money = parseFloat(String(classificationMonthlyAmount.amount));
+            let money = 0;
             const start = startDate(classificationMonthlyAmount.month);
             const end = endDate(classificationMonthlyAmount.month);
 
-            for (const repetitionMoney of repetitionMoneyDate.filter(
-              (repetitionMoney) =>
-                new Date(repetitionMoney.repetition_schedule).getTime() >=
-                  start.getTime() &&
-                new Date(repetitionMoney.repetition_schedule).getTime() <=
-                  end.getTime()
-            )) {
-              money += parseFloat(String(repetitionMoney.amount));
-            }
+            money =
+              parseFloat(String(classificationMonthlyAmount.amount)) +
+              (await editRepetitionMoneyIncrease(start, end));
 
             await classificationMonthlyAmountEdit(
               classificationMonthlyAmount.id,
@@ -512,14 +436,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
             );
           }
         } else {
-          const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                  editClassificationId &&
-                classificationMonthlyAmount.month === editMonth
-            );
-
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) +
@@ -535,7 +451,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           }
         }
       }
-
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit income:", error);

@@ -95,7 +95,7 @@ export const TaskTable: React.FC = () => {
   }>({
     title: "default",
     purpose_title: "default",
-    schedule: "asc",
+    schedule: "default",
     repetition_type: "default",
     time: "default",
   });
@@ -322,13 +322,14 @@ export const TaskTable: React.FC = () => {
   };
 
   const sortedRows = displayedTasks.slice().sort((a, b) => {
+    console.log(displayedTasks);
     const compare = (key: keyof (typeof tableTasks)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
       } else if (order[key] === "desc") {
         return a[key] < b[key] ? 1 : -1;
       }
-      return 0;
+      return a.id > b.id ? 1 : -1;
     };
     return compare(orderBy);
   });

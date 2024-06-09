@@ -30,6 +30,7 @@ import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { paymentGetData } from "@/lib/api/payment-api";
 import {
   paymentData,
+  paymentOrderByType,
   classificationNilPaymentData,
   columnPaymentNames,
   displayPaymentData,
@@ -38,7 +39,7 @@ import {
 import { PaymentRow } from "@/components/money/payment/row";
 import { PaymentNew } from "@/components/money/payment/new";
 
-import { incomeGetData, incomeDelete } from "@/lib/api/income-api";
+import { incomeGetData } from "@/lib/api/income-api";
 import {
   incomeData,
   columnIncomeNames,
@@ -49,9 +50,10 @@ import {
 import { IncomeRow } from "@/components/money/income/row";
 import { IncomeNew } from "@/components/money/income/new";
 
-import { accountGetData, accountDelete } from "@/lib/api/account-api";
+import { accountGetData } from "@/lib/api/account-api";
 import {
   accountData,
+  accountOrderByType,
   columnAccountNames,
   displayAccountData,
   selectAccountData,
@@ -131,14 +133,17 @@ export const MoneyTable: React.FC = () => {
     )
   );
 
-  const [orderBy, setOrderBy] = useState<keyof (typeof rows)[0]>("id");
+  const [orderBy, setOrderBy] = useState<
+    accountOrderByType | paymentOrderByType
+  >("id");
 
   const [order, setOrder] = useState<{
     [key: string]: "asc" | "desc" | "default";
   }>({
-    classification_name: "asc",
+    classification_name: "default",
     classification_amount: "default",
     classification_account_name: "default",
+    classification_date: "default",
   });
 
   const [columnSettings, setColumnSettings] = useState<{
@@ -416,9 +421,30 @@ export const MoneyTable: React.FC = () => {
         )
         .map((classification) => ({
           id: classification.id,
+          classification_name: classification.name,
+          classification_amount: classificationMonthlyAmounts
+            .filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.month === currentMonth &&
+                classificationMonthlyAmount.classification_id ===
+                  classification.id
+            )
+            .map(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.amount
+            )[0],
           classification_account_id: classification.account_id,
           classification_account_name: classification.account_name,
-          classification_name: classification.name,
+          classification_date: classificationMonthlyAmounts
+            .filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.month === currentMonth &&
+                classificationMonthlyAmount.classification_id ===
+                  classification.id
+            )
+            .map(
+              (classificationMonthlyAmount) => classificationMonthlyAmount.date
+            )[0],
           classification_classification_type:
             classification.classification_type,
           history: payments
@@ -460,15 +486,17 @@ export const MoneyTable: React.FC = () => {
         ...updateRows,
         {
           id: "",
+          classification_name: "分類なし",
+          classification_amount: 0,
           classification_account_id: "",
           classification_account_name: "",
-          classification_name: "分類なし",
+          classification_date: "",
           classification_classification_type: "payment",
           history: classificationNilDatas,
         },
       ];
       updateOrder = {
-        classification_name: "asc",
+        classification_name: "default",
         classification_amount: "default",
         classification_account_name: "default",
         classification_date: "default",
@@ -486,9 +514,30 @@ export const MoneyTable: React.FC = () => {
         )
         .map((classification) => ({
           id: classification.id,
+          classification_name: classification.name,
+          classification_amount: classificationMonthlyAmounts
+            .filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.month === currentMonth &&
+                classificationMonthlyAmount.classification_id ===
+                  classification.id
+            )
+            .map(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.amount
+            )[0],
           classification_account_id: classification.account_id,
           classification_account_name: classification.account_name,
-          classification_name: classification.name,
+          classification_date: classificationMonthlyAmounts
+            .filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.month === currentMonth &&
+                classificationMonthlyAmount.classification_id ===
+                  classification.id
+            )
+            .map(
+              (classificationMonthlyAmount) => classificationMonthlyAmount.date
+            )[0],
           classification_classification_type:
             classification.classification_type,
           history: incomes
@@ -528,15 +577,17 @@ export const MoneyTable: React.FC = () => {
         ...updateRows,
         {
           id: "",
+          classification_name: "分類なし",
+          classification_amount: 0,
           classification_account_id: "",
           classification_account_name: "",
-          classification_name: "分類なし",
-          classification_classification_type: "income",
+          classification_date: "",
+          classification_classification_type: "payment",
           history: classificationNilDatas,
         },
       ];
       updateOrder = {
-        classification_name: "asc",
+        classification_name: "default",
         classification_amount: "default",
         classification_account_name: "default",
         classification_date: "default",
@@ -567,7 +618,7 @@ export const MoneyTable: React.FC = () => {
             transfer_body: transfer.body,
           })),
       }));
-      updateOrder = { account_name: "asc", account_amount: "default" };
+      updateOrder = { account_name: "default", account_amount: "default" };
     }
     setColumnSettings(initialColumnSettings);
     setRows(allRows);
@@ -629,90 +680,9 @@ export const MoneyTable: React.FC = () => {
     setIsNewCategoryModalOpen(false);
   };
 
-  // const newIncome = (newData: incomeData) => {
-  //   setIncomes([...incomes, newData]);
-  //   setIsAdding(true);
-  // };
-
-  // const newAccount = (newData: accountData) => {
-  //   setAccounts([...accounts, newData]);
-  //   setIsAdding(true);
-  // };
-
-  // const newTransfer = (newData: transferData) => {
-  //   // setTransfers([...transfers, newData]);
-  //   setIsAdding(true);
-  // };
-
-  // const updateIncome = (updateIncome: incomeData) => {
-  //   const updatedIncomes = incomes.map((income) => {
-  //     if (income.id === updateIncome.id) {
-  //       return updateIncome;
-  //     }
-  //     return income;
-  //   });
-  //   setIncomes(updatedIncomes);
-  //   setIsEditing(true);
-  // };
-
-  // const updateAccount = (updateAccount: accountData) => {
-  //   const updatedAccounts = accounts.map((account) => {
-  //     if (account.id === updateAccount.id) {
-  //       return updateAccount;
-  //     }
-  //     return account;
-  //   });
-  //   setAccounts(updatedAccounts);
-  //   setIsEditing(true);
-  // };
-
-  // const updateTransfer = (updateTransfer: transferData) => {
-  //   // const updatedTransfers = transfers.map((transfer) => {
-  //   //   if (transfer.id === updateTransfer.id) {
-  //   //     return updateTransfer;
-  //   //   }
-  //   //   return transfer;
-  //   // });
-  //   // setTransfers(updatedTransfers);
-  //   setIsEditing(true);
-  // };
-
-  const deleteData = async (id: string) => {
-    try {
-      await incomeDelete(id);
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete income:", error);
-    }
-
-    try {
-      await accountDelete(id);
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete account:", error);
-    }
-  };
-
-  // const deleteAllData = async (ids: string[]) => {
-
-  //   } else if (filter === "income") {
-  //     try {
-  //       await Promise.all(ids.map((id) => incomeDelete(id)));
-  //       setIncomes(incomes.filter((income) => !ids.includes(income.id)));
-  //     } catch (error) {
-  //       console.error("Failed to delete income:", error);
-  //     }
-  //   } else {
-  //     try {
-  //       await Promise.all(ids.map((id) => accountDelete(id)));
-  //       setAccounts(accounts.filter((account) => !ids.includes(account.id)));
-  //     } catch (error) {
-  //       console.error("Failed to delete todo:", error);
-  //     }
-  //   }
-  // };
-
-  const handleRequestSort = (property: keyof (typeof rows)[0]) => {
+  const handleRequestSort = (
+    property: accountOrderByType | paymentOrderByType
+  ) => {
     let newOrder: "asc" | "desc" | "default" = "asc";
     if (orderBy === property) {
       newOrder =
@@ -722,19 +692,52 @@ export const MoneyTable: React.FC = () => {
           ? "default"
           : "asc";
     }
+
     const newOrderState = { ...order, [property]: newOrder };
     setOrder(newOrderState);
-    setOrderBy(property);
+    if (newOrder === "default") {
+      setOrderBy("id");
+    } else {
+      setOrderBy(property);
+    }
   };
 
   const sortedRows = rows.slice().sort((a, b) => {
-    const compare = (key: keyof (typeof rows)[0]) => {
+    const compare = (key: accountOrderByType | paymentOrderByType) => {
       if (order[key] === "asc") {
-        return a[key] > b[key] ? 1 : -1;
+        if (key === "classification_amount" || key === "account_amount") {
+          return a[key] - b[key];
+        } else if (key === "classification_date") {
+          if (a[key] === null || a[key] === "") {
+            return 1;
+          } else if (b[key] === null || b[key] === "") {
+            return -1;
+          } else {
+            return Number(a[key]) - Number(b[key]);
+          }
+        } else {
+          if (a[key] === null || a[key] === "") {
+            return 1;
+          } else if (b[key] === null || b[key] === "") {
+            return -1;
+          }
+          return a[key] > b[key] ? 1 : -1;
+        }
       } else if (order[key] === "desc") {
-        return a[key] < b[key] ? 1 : -1;
+        if (key === "classification_amount" || key === "account_amount") {
+          return b[key] - a[key];
+        } else if (key === "classification_date") {
+          return Number(b[key]) - Number(a[key]);
+        } else {
+          if (a[key] === null || a[key] === "") {
+            return 1;
+          } else if (b[key] === null || b[key] === "") {
+            return -1;
+          }
+          return a[key] < b[key] ? 1 : -1;
+        }
       }
-      return 0;
+      return a.id > b.id ? 1 : -1;
     };
     return compare(orderBy);
   });
@@ -1130,7 +1133,9 @@ export const MoneyTable: React.FC = () => {
                     </Typography>
                     <IconButton
                       onClick={() =>
-                        handleRequestSort(key as keyof (typeof rows)[0])
+                        handleRequestSort(
+                          key as accountOrderByType | paymentOrderByType
+                        )
                       }
                     >
                       {orderBy === key ? (

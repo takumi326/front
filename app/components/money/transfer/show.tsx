@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent, useContext, useEffect } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -17,27 +16,42 @@ import {
   IconButton,
   ToggleButton,
   ToggleButtonGroup,
+  TableContainer,
+  TableCell,
+  TableRow,
+  Table,
+  TableHead,
+  TableBody,
+  Paper,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import { transferEdit } from "@/lib/api/transfer-api";
+import {
+  repetitionMoneyNew,
+  repetitionMoneyDelete,
+} from "@/lib/api/repetitionMoney-api";
+import { transferEdit, transferDelete } from "@/lib/api/transfer-api";
 import { accountEdit } from "@/lib/api/account-api";
 import { transferShowProps } from "@/interface/transfer-interface";
 
 import { accountData } from "@/interface/account-interface";
 
+import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
+
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
+import { RepetitionMoneyRow } from "@/components/money/repetitionMoney/row";
 
 export const TransferShow: React.FC<transferShowProps> = (props) => {
   const {
     id,
     before_account_id,
     after_account_id,
-    after_account_name,
     amount,
     schedule,
     end_date,
@@ -47,7 +61,8 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     body,
     onClose,
   } = props;
-  const { accounts, setIsEditing } = useContext(moneyContext);
+  const { accounts, repetitionMoneies, setIsEditing } =
+    useContext(moneyContext);
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
@@ -68,30 +83,18 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
 
   const initialAmount = amount;
   const initialBeforeAccountId = before_account_id;
-  const [initialBeforeAccountName, setInitialBeforeAccountName] = useState("");
-  const [initialBeforeAccountAmount, setInitialBeforeAccountAmount] =
-    useState(0);
-  const [initialBeforeAccountBody, setInitialBeforeAccountBody] = useState("");
   const initialAfterAccountId = after_account_id;
-  const initialAfterAccountName = after_account_name;
-  const [initialAfterAccountAmount, setInitialAfterAccountAmount] =
-    useState<number>(0);
-  const [initialAfterAccountBody, setInitialAfterAccountBody] = useState("");
+  const initialSchedule = schedule;
+  const initialRepetition = repetition;
 
   const [editBeforeAccountId, setEditBeforeAccountId] =
     useState(before_account_id);
-  const [editBeforeAccountName, setEditBeforeAccountName] = useState("");
   const [editBeforeAccountAmount, setEditBeforeAccountAmount] =
-    useState<number>(0);
-  const [editBeforeAccountBody, setEditBeforeAccountBody] = useState("");
-
+    useState<number>(
+      accounts.filter((account) => account.id === before_account_id)[0].amount
+    );
   const [editAfterAccountId, setEditAfterAccountId] =
     useState(after_account_id);
-  const [editAfterAccountName, setEditAfterAccountName] =
-    useState(after_account_name);
-  const [editAfterAccountAmount, setEditAfterAccountAmount] = useState(0);
-  const [editAfterAccountBody, setEditAfterAccountBody] = useState("");
-
   const [editAmount, setEditAmount] = useState(amount);
   const [editAmountString, setEditAmountString] = useState(
     String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
@@ -106,32 +109,121 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   const [editRepetitionSettings, setEditRepetitionSettings] =
     useState<string[]>(repetition_settings);
   const [editBody, setEditBody] = useState(body);
+  const [isBeforeTitleFormValid, setIsBeforeTitleFormValid] =
+    useState<boolean>(false);
+  const [isAfterTitleFormValid, setIsAfterTitleFormValid] =
+    useState<boolean>(false);
 
   useEffect(() => {
-    const selectedBeforeAccount = accounts.find(
-      (account) => account.id === initialBeforeAccountId
-    );
-    const selectedAfterAccount = accounts.find(
-      (account) => account.id === initialAfterAccountId
-    );
-    if (selectedBeforeAccount && selectedAfterAccount) {
-      setInitialBeforeAccountName(selectedBeforeAccount.name);
-      setInitialBeforeAccountAmount(selectedBeforeAccount.amount);
-      setInitialBeforeAccountBody(selectedBeforeAccount.body);
-
-      setInitialAfterAccountAmount(selectedAfterAccount.amount);
-      setInitialAfterAccountBody(selectedAfterAccount.body);
-
-      setEditBeforeAccountName(selectedBeforeAccount.name);
-      setEditBeforeAccountAmount(selectedBeforeAccount.amount);
-      setEditBeforeAccountBody(selectedBeforeAccount.body);
-
-      setEditAfterAccountAmount(selectedAfterAccount.amount);
-      setEditAfterAccountBody(selectedAfterAccount.body);
+    console.log(editRepetition);
+    if (editAmount > 0) {
+      setEditAmountError(false);
+    } else {
+      setEditAmountError(true);
     }
-  }, []);
+
+    if (editBeforeAccountAmount >= editAmount) {
+      setEditAmountOverError(false);
+    } else {
+      setEditAmountOverError(true);
+    }
+  }, [editAmount, editBeforeAccountAmount]);
 
   const editTransfer = async (id: string) => {
+    const initialBeforeAccount: accountData = accounts.filter(
+      (account) => account.id === initialBeforeAccountId
+    )[0];
+
+    const initialAfterAccount: accountData = accounts.filter(
+      (account) => account.id === initialAfterAccountId
+    )[0];
+
+    const editBeforeAccount: accountData = accounts.filter(
+      (account) => account.id === editBeforeAccountId
+    )[0];
+
+    const editAfterAccount: accountData = accounts.filter(
+      (account) => account.id === editAfterAccountId
+    )[0];
+
+    const initialRepetitionDelete = async () =>
+      await Promise.all(
+        repetitionMoneies
+          .filter((repetitionMoney) => repetitionMoney.transfer_id === id)
+          .map((repetitionMoney) => {
+            repetitionMoneyDelete(repetitionMoney.id);
+          })
+      );
+
+    let repetitionMoneyDate: repetitionMoneyData[] = [];
+
+    const editRepetitionAdd = async () => {
+      const schedules = calculateNextSchedules();
+      await Promise.all(
+        schedules.map(async (schedule) => {
+          const stringDate = new Date(schedule)
+            .toLocaleDateString()
+            .split("T")[0];
+          const repetitionMoney = await repetitionMoneyNew(
+            "transfer",
+            "",
+            "",
+            id,
+            editAmount,
+            stringDate
+          );
+          repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
+        })
+      );
+    };
+
+    const now = new Date();
+    const endOfCurrentDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      0,
+      0
+    );
+
+    const initialRepetitionMoney = async () => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "transfer" &&
+          repetitionMoney.transfer_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const editRepetitionMoney = async () => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneyDate.filter(
+        (repetitionMoney) =>
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+          endOfCurrentDay.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const initialMoney =
+      new Date(initialSchedule).getTime() <= endOfCurrentDay.getTime()
+        ? parseFloat(String(initialAmount))
+        : 0;
+
+    const editMoney =
+      new Date(editSchedule).getTime() <= endOfCurrentDay.getTime()
+        ? parseFloat(String(editAmount))
+        : 0;
+
     try {
       await transferEdit(
         id,
@@ -146,186 +238,212 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         editBody
       );
 
-      const initialBeforeAccount: accountData = accounts.filter(
-        (account) => account.id === initialBeforeAccountId
-      )[0];
-      const initialAfterAccount: accountData = accounts.filter(
-        (account) => account.id === initialAfterAccountId
-      )[0];
-      const editBeforeAccount: accountData = accounts.filter(
-        (account) => account.id === editBeforeAccountId
-      )[0];
-      const editAfterAccount: accountData = accounts.filter(
-        (account) => account.id === editAfterAccountId
-      )[0];
+      if (initialBeforeAccountId === editBeforeAccountId) {
+        let money = parseFloat(String(initialBeforeAccount.amount));
+        if (editRepetition === true) {
+          if (initialRepetition === true) {
+            await initialRepetitionDelete();
+            await editRepetitionAdd();
 
-      const changeAmount =
-        parseFloat(String(initialAmount)) + parseFloat(String(editAmount));
+            money =
+              money +
+              (await initialRepetitionMoney()) -
+              (await editRepetitionMoney());
 
-      if (
-        editBeforeAccountId === initialBeforeAccountId &&
-        editAfterAccountId === initialAfterAccountId
-      ) {
-        const beforeAccountEditedAmount =
-          parseFloat(String(editBeforeAccountAmount)) + changeAmount;
-        const afterAccountEditedAmount =
-          parseFloat(String(editAfterAccountAmount)) - changeAmount;
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, money),
+              initialBeforeAccount.body
+            );
+          } else {
+            editRepetitionAdd();
 
-        await accountEdit(
-          editBeforeAccount.id,
-          editBeforeAccount.name,
-          beforeAccountEditedAmount,
-          editBeforeAccount.body
-        );
-        await accountEdit(
-          editAfterAccount.id,
-          editAfterAccount.name,
-          afterAccountEditedAmount,
-          editAfterAccount.body
-        );
-      } else if (
-        editBeforeAccountId !== initialBeforeAccountId &&
-        editAfterAccountId === initialAfterAccountId
-      ) {
-        const initialBeforeAccountEditedAmount =
-          parseFloat(String(initialBeforeAccountAmount)) +
-          parseFloat(String(initialAmount));
-        const beforeAccountEditedAmount =
-          parseFloat(String(editBeforeAccountAmount)) -
-          parseFloat(String(editAmount));
-        const afterAccountEditedAmount =
-          parseFloat(String(editAfterAccountAmount)) -
-          parseFloat(String(initialAmount)) +
-          parseFloat(String(editAmount));
+            money = money + initialMoney - (await editRepetitionMoney());
 
-        await transferEdit(
-          id,
-          editBeforeAccountId,
-          editAfterAccountId,
-          editAmount,
-          editSchedule,
-          editEndDate,
-          editRepetition,
-          editRepetitionType,
-          editRepetitionSettings,
-          editBody
-        );
-        await accountEdit(
-          initialBeforeAccountId,
-          initialBeforeAccountName,
-          initialBeforeAccountEditedAmount,
-          initialBeforeAccountBody
-        );
-        await accountEdit(
-          editBeforeAccountId,
-          editBeforeAccountName,
-          beforeAccountEditedAmount,
-          editBeforeAccountBody
-        );
-        await accountEdit(
-          editAfterAccountId,
-          editAfterAccountName,
-          afterAccountEditedAmount,
-          editAfterAccountBody
-        );
-      } else if (
-        editBeforeAccountId === initialBeforeAccountId &&
-        editAfterAccountId !== initialAfterAccountId
-      ) {
-        const initialAfterAccountEditedAmount =
-          parseFloat(String(initialAfterAccountAmount)) -
-          parseFloat(String(initialAmount));
-        const beforeAccountEditedAmount =
-          parseFloat(String(editBeforeAccountAmount)) +
-          parseFloat(String(initialAmount)) -
-          parseFloat(String(editAmount));
-        const afterAccountEditedAmount =
-          parseFloat(String(editAfterAccountAmount)) +
-          parseFloat(String(editAmount));
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, money),
+              initialBeforeAccount.body
+            );
+          }
+        } else {
+          if (initialRepetition === true) {
+            initialRepetitionDelete();
 
-        await transferEdit(
-          id,
-          editBeforeAccountId,
-          editAfterAccountId,
-          editAmount,
-          editSchedule,
-          editEndDate,
-          editRepetition,
-          editRepetitionType,
-          editRepetitionSettings,
-          editBody
-        );
-        await accountEdit(
-          initialAfterAccountId,
-          initialAfterAccountName,
-          initialAfterAccountEditedAmount,
-          initialAfterAccountBody
-        );
-        await accountEdit(
-          editBeforeAccountId,
-          editBeforeAccountName,
-          beforeAccountEditedAmount,
-          editBeforeAccountBody
-        );
-        await accountEdit(
-          editAfterAccountId,
-          editAfterAccountName,
-          afterAccountEditedAmount,
-          editAfterAccountBody
-        );
-      } else if (
-        editBeforeAccountId !== initialBeforeAccountId &&
-        editAfterAccountId !== initialAfterAccountId
-      ) {
-        const initialBeforeAccountEditedAmount =
-          parseFloat(String(initialBeforeAccountAmount)) +
-          parseFloat(String(initialAmount));
-        const initialAfterAccountEditedAmount =
-          parseFloat(String(initialAfterAccountAmount)) -
-          parseFloat(String(initialAmount));
-        const beforeAccountEditedAmount =
-          parseFloat(String(editBeforeAccountAmount)) -
-          parseFloat(String(editAmount));
-        const afterAccountEditedAmount =
-          parseFloat(String(editAfterAccountAmount)) +
-          parseFloat(String(editAmount));
+            money = money + (await initialRepetitionMoney()) - editMoney;
 
-        await transferEdit(
-          id,
-          editBeforeAccountId,
-          editAfterAccountId,
-          editAmount,
-          editSchedule,
-          editEndDate,
-          editRepetition,
-          editRepetitionType,
-          editRepetitionSettings,
-          editBody
+            money = money + parseFloat(String(editAmount));
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, money),
+              initialBeforeAccount.body
+            );
+          } else {
+            money = money + initialMoney - editMoney;
+
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, money),
+              initialBeforeAccount.body
+            );
+          }
+        }
+      } else {
+        let initialBeforeMoney = parseFloat(
+          String(initialBeforeAccount.amount)
         );
-        await accountEdit(
-          initialBeforeAccountId,
-          initialBeforeAccountName,
-          initialBeforeAccountEditedAmount,
-          initialBeforeAccountBody
-        );
-        await accountEdit(
-          initialAfterAccountId,
-          initialAfterAccountName,
-          initialAfterAccountEditedAmount,
-          initialAfterAccountBody
-        );
-        await accountEdit(
-          editBeforeAccountId,
-          editBeforeAccountName,
-          beforeAccountEditedAmount,
-          editBeforeAccountBody
-        );
-        await accountEdit(
-          editAfterAccountId,
-          editAfterAccountName,
-          afterAccountEditedAmount,
-          editAfterAccountBody
-        );
+        if (initialRepetition === true) {
+          initialRepetitionDelete();
+
+          initialBeforeMoney =
+            initialBeforeMoney + (await initialRepetitionMoney());
+
+          await accountEdit(
+            initialBeforeAccount.id,
+            initialBeforeAccount.name,
+            Math.max(0, initialBeforeMoney),
+            initialBeforeAccount.body
+          );
+        } else {
+          initialBeforeMoney = initialBeforeMoney + initialMoney;
+
+          await accountEdit(
+            initialBeforeAccount.id,
+            initialBeforeAccount.name,
+            Math.max(0, initialBeforeMoney),
+            initialBeforeAccount.body
+          );
+        }
+
+        let editBeforeMoney = parseFloat(String(editBeforeAccount.amount));
+        if (editRepetition === true) {
+          editRepetitionAdd();
+
+          editBeforeMoney = editBeforeMoney + (await editRepetitionMoney());
+
+          await accountEdit(
+            editBeforeAccount.id,
+            editBeforeAccount.name,
+            Math.max(0, editBeforeMoney),
+            editBeforeAccount.body
+          );
+        } else {
+          editBeforeMoney = editBeforeMoney + editMoney;
+
+          await accountEdit(
+            editBeforeAccount.id,
+            editBeforeAccount.name,
+            Math.max(0, editBeforeMoney),
+            editBeforeAccount.body
+          );
+        }
+      }
+
+      if (initialAfterAccountId === editAfterAccountId) {
+        let money = parseFloat(String(initialAfterAccount.amount));
+        if (editRepetition === true) {
+          if (initialRepetition === true) {
+            await initialRepetitionDelete();
+            await editRepetitionAdd();
+
+            money =
+              money -
+              (await initialRepetitionMoney()) +
+              (await editRepetitionMoney());
+
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, money),
+              initialAfterAccount.body
+            );
+          } else {
+            editRepetitionAdd();
+
+            money = money - initialMoney + (await editRepetitionMoney());
+
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, money),
+              initialAfterAccount.body
+            );
+          }
+        } else {
+          if (initialRepetition === true) {
+            initialRepetitionDelete();
+
+            money = money - (await initialRepetitionMoney()) + editMoney;
+
+            money = money + parseFloat(String(editAmount));
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, money),
+              initialAfterAccount.body
+            );
+          } else {
+            money = money - initialMoney + editMoney;
+
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, money),
+              initialAfterAccount.body
+            );
+          }
+        }
+      } else {
+        let initialAfterMoney = parseFloat(String(initialAfterAccount.amount));
+        if (initialRepetition === true) {
+          initialRepetitionDelete();
+
+          initialAfterMoney =
+            initialAfterMoney - (await initialRepetitionMoney());
+
+          await accountEdit(
+            initialAfterAccount.id,
+            initialAfterAccount.name,
+            Math.max(0, initialAfterMoney),
+            initialAfterAccount.body
+          );
+        } else {
+          initialAfterMoney = initialAfterMoney - initialMoney;
+
+          await accountEdit(
+            initialAfterAccount.id,
+            initialAfterAccount.name,
+            Math.max(0, initialAfterMoney),
+            initialAfterAccount.body
+          );
+        }
+
+        let editAfterMoney = parseFloat(String(editAfterAccount.amount));
+        if (editRepetition === true) {
+          editRepetitionAdd();
+
+          editAfterMoney = editAfterMoney + (await editRepetitionMoney());
+
+          await accountEdit(
+            editAfterAccount.id,
+            editAfterAccount.name,
+            Math.max(0, editAfterMoney),
+            editAfterAccount.body
+          );
+        } else {
+          editAfterMoney = editAfterMoney + editMoney;
+
+          await accountEdit(
+            editAfterAccount.id,
+            editAfterAccount.name,
+            Math.max(0, editAfterMoney),
+            editAfterAccount.body
+          );
+        }
       }
       setIsEditing(true);
     } catch (error) {
@@ -333,30 +451,101 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
-  useEffect(() => {
-    if (editAmount > 0) {
-      setEditAmountError(false);
-    } else {
-      setEditAmountError(true);
-    }
+  const handleTransferDelete = async (id: string) => {
+    const initialBeforeAccount: accountData = accounts.filter(
+      (account) => account.id === initialBeforeAccountId
+    )[0];
 
-    if (
-      parseFloat(String(editBeforeAccountAmount)) >=
-      parseFloat(String(editAmount))
-    ) {
-      console.log(123456789);
-      console.log(typeof editBeforeAccountAmount);
-      console.log(typeof editAmount);
-      setEditAmountOverError(false);
-    } else {
-      console.log(987654321);
-      console.log(typeof editBeforeAccountAmount);
-      console.log(typeof editAmount);
-      setEditAmountOverError(true);
-    }
-  }, [editBeforeAccountAmount, editAmount]);
+    const initialAfterAccount: accountData = accounts.filter(
+      (account) => account.id === initialAfterAccountId
+    )[0];
 
-  // フォームの変更を処理するハンドラー
+    const now = new Date();
+    const endOfCurrentDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      0,
+      0
+    );
+
+    const initialRepetitionMoney = async () => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "transfer" &&
+          repetitionMoney.transfer_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const initialMoney =
+      new Date(initialSchedule).getTime() <= endOfCurrentDay.getTime()
+        ? parseFloat(String(initialAmount))
+        : 0;
+
+    try {
+      if (initialRepetition === true) {
+        let initialBeforeMoney = parseFloat(
+          String(initialBeforeAccount.amount)
+        );
+        let initialAfterMoney = parseFloat(String(initialAfterAccount.amount));
+
+        initialBeforeMoney =
+          initialBeforeMoney + (await initialRepetitionMoney());
+        initialAfterMoney =
+          initialAfterMoney - (await initialRepetitionMoney());
+
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialBeforeMoney),
+          initialBeforeAccount.body
+        );
+
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialAfterMoney),
+          initialBeforeAccount.body
+        );
+      } else {
+        let initialBeforeMoney = parseFloat(
+          String(initialBeforeAccount.amount)
+        );
+        let initialAfterMoney = parseFloat(String(initialAfterAccount.amount));
+
+        initialBeforeMoney = initialBeforeMoney + initialMoney;
+        initialAfterMoney = initialAfterMoney - initialMoney;
+
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialBeforeMoney),
+          initialBeforeAccount.body
+        );
+
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialAfterMoney),
+          initialBeforeAccount.body
+        );
+      }
+      transferDelete(id);
+      setIsEditing(true);
+      onClose();
+    } catch (error) {
+      console.error("Failed to edit transfer:", error);
+    }
+  };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     switch (name) {
@@ -383,37 +572,22 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
-  const handleBeforeAccountChange = (
-    event: ChangeEvent<{ value: unknown }>
-  ) => {
+  const handleBeforeAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditBeforeAccountId(value);
-    console.log(editBeforeAccountAmount);
+    setIsBeforeTitleFormValid(false);
     const selectedAccount = accounts.find((account) => account.id === value);
     if (selectedAccount) {
-      setEditBeforeAccountName(selectedAccount.name);
       setEditBeforeAccountAmount(selectedAccount.amount);
-      setEditBeforeAccountBody(selectedAccount.body);
     } else {
-      setEditBeforeAccountName("");
       setEditBeforeAccountAmount(0);
-      setEditBeforeAccountBody("");
     }
   };
 
-  const handleAfterAccountChange = (event: ChangeEvent<{ value: unknown }>) => {
+  const handleAfterAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditAfterAccountId(value);
-    const selectedAccount = accounts.find((account) => account.id === value);
-    if (selectedAccount) {
-      setEditAfterAccountName(selectedAccount.name);
-      setEditAfterAccountAmount(selectedAccount.amount);
-      setEditAfterAccountBody(selectedAccount.body);
-    } else {
-      setEditAfterAccountName("");
-      setEditAfterAccountAmount(0);
-      setEditAfterAccountBody("");
-    }
+    setIsAfterTitleFormValid(false);
   };
 
   const formatAmountCommas = (number: number) => {
@@ -426,18 +600,15 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     );
   };
 
-  // 「繰り返し」を押されたとき
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
-    setPeriod("daily");
   };
 
-  // 繰り返しダイアログの枠外をクリックされたとき
   const handleRepetitionDialogCancel = () => {
     setRepetitionDialogOpen(false);
     setFrequency(
-      editRepetitionSettings && editRepetitionSettings[0]
-        ? editRepetitionSettings[0]
+      editRepetitionSettings && Number(editRepetitionSettings[0])
+        ? Number(editRepetitionSettings[0])
         : 1
     );
     setSelectedDays(
@@ -445,34 +616,51 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         ? editRepetitionSettings.slice(1)
         : []
     );
-    setPeriod(editRepetitionType ? editRepetitionType : "");
+    setPeriod(editRepetitionType ? editRepetitionType : "daily");
   };
 
-  // 繰り返しダイアログの削除ボタン押されたとき
-  const handleRepetitionDialogDelete = () => {
+  const handleRepetitionDialogDelete = async () => {
     setRepetitionDialogOpen(false);
     setEditRepetition(false);
     setEditRepetitionType("");
     setEditRepetitionSettings([]);
     setFrequency(1);
     setSelectedDays([]);
-    setPeriod("");
+    setPeriod("daily");
+    setEditEndDate(endDateObject);
+    try {
+      await Promise.all(
+        repetitionMoneies
+          .filter((repetitionMoney) => repetitionMoney.transfer_id === id)
+          .map((repetitionMoney) => repetitionMoneyDelete(repetitionMoney.id))
+      );
+    } catch (error) {
+      console.error("Failed to delete repetitionMoney:", error);
+    }
   };
 
-  // 繰り返しダイアログの設定ボタン押されたとき
   const handleRepetitionSave = () => {
     setRepetitionDialogOpen(false);
     setEditRepetition(true);
     setEditRepetitionType(period);
-    setEditRepetitionSettings([frequency, ...selectedDays]);
+    setEditRepetitionSettings([frequency.toString(), ...selectedDays]);
   };
 
-  // 日付が変更されたとき
   const handleSchedulChange = (date: Date) => {
-    setEditSchedule(date);
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setEditSchedule(stringDate);
   };
 
-  // 保存ボタン押したとき
+  const handleEndDateChange = (date: Date) => {
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      stringDate = endDateObject;
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+    setEditEndDate(stringDate);
+  };
+
   const handleSave = () => {
     if (editAmount > 0) {
       editTransfer(id);
@@ -482,11 +670,14 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
-  const handleFrequencyChange = (delta) => {
+  const handleFrequencyChange = (delta: number) => {
     setFrequency((prev) => Math.max(1, prev + delta));
   };
 
-  const handlePeriodChange = (event, newPeriod: string | null) => {
+  const handlePeriodChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newPeriod: string | null
+  ) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
       if (newPeriod !== "weekly") {
@@ -495,7 +686,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
         ? prev.filter((d) => d !== day)
@@ -506,11 +697,8 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     );
   };
 
-  const calculateNextSchedule = () => {
-    if (!editRepetition) return ""; // 繰り返し設定がオフの場合は空文字を返す
-
-    // 曜日名を整数にマッピングする関数
-    const mapDayOfWeekToInt = (dayOfWeek) => {
+  const calculateNextSchedules = () => {
+    const mapDayOfWeekToInt = (dayOfWeek: string) => {
       switch (dayOfWeek) {
         case "月":
           return 1;
@@ -527,98 +715,133 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         case "日":
           return 0;
         default:
-          return NaN; // 不正な曜日名の場合はNaNを返す
+          return NaN;
       }
     };
 
-    const date = new Date(editSchedule);
-    const currentDate = date.getTime(); // 予定の日時をミリ秒で取得
-    const currentMonth = date.getMonth(); // 予定の日付の月を取得
-    const currentYear = date.getFullYear(); // 予定の日付の年を取得
-    let nextSchedule = currentDate; // 次の予定日の初期値を現在の日時とする
+    const startDate = new Date(editSchedule);
+    const endDate = new Date(editEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    let schedules = [];
+    let currentDate = startDate;
+    const repetitionWeek = editRepetitionSettings.slice(1).length;
+    let times = 1;
 
-    switch (editRepetitionType) {
-      case "daily":
-        nextSchedule += editRepetitionSettings[0] * 24 * 60 * 60 * 1000; // 日単位で1日後に設定
-        break;
+    while (currentDate <= endDate) {
+      schedules.push(new Date(currentDate).toLocaleDateString().split("T")[0]);
 
-      case "weekly":
-        if (editRepetitionSettings.length > 1) {
+      switch (editRepetitionType) {
+        case "daily":
+          currentDate.setDate(
+            currentDate.getDate() + Number(editRepetitionSettings[0])
+          );
+          break;
+
+        case "weekly":
           const targetDaysOfWeek = editRepetitionSettings
             .slice(1)
             .map(mapDayOfWeekToInt);
-          const currentDayOfWeek = date.getDay(); // 現在の曜日を取得（0: 日曜日, 1: 月曜日, ..., 6: 土曜日）
-          let daysUntilNextSchedule = 1;
+          let currentDayOfWeek = currentDate.getDay();
+          let nextDayOfWeek = currentDayOfWeek;
 
-          // 現在の曜日が次の予定日の曜日リストに含まれていない場合、次の予定日を計算
-          for (let i = 1; i <= 7; i++) {
-            const nextDayOfWeek = (currentDayOfWeek + i) % 7; // 翌日の曜日を計算
-            if (targetDaysOfWeek.includes(nextDayOfWeek)) {
-              daysUntilNextSchedule = i;
-              break;
+          const repetitionTimes = 7 * (Number(editRepetitionSettings[0]) - 1);
+          if (repetitionWeek === 1 || times === 1) {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(
+                  currentDate.getDate() + i + repetitionTimes
+                );
+                times += 1;
+                break;
+              }
+            }
+          } else {
+            for (let i = 1; i <= 7; i++) {
+              nextDayOfWeek = (currentDayOfWeek + i) % 7;
+              if (targetDaysOfWeek.includes(nextDayOfWeek)) {
+                currentDate.setDate(currentDate.getDate() + i);
+                if (times === repetitionWeek) {
+                  times = 1;
+                } else if (times < repetitionWeek) {
+                  times += 1;
+                }
+                break;
+              }
             }
           }
+          break;
 
-          // 現在の曜日と次の予定日の曜日が同じ場合、次の予定日を1日進めてから計算
-          if (daysUntilNextSchedule === 0) {
-            date.setDate(date.getDate() + 1);
-            daysUntilNextSchedule = 7;
+        case "monthly":
+          let nextMonth =
+            currentDate.getMonth() + Number(editRepetitionSettings[0]);
+          let nextYear = currentDate.getFullYear();
+          if (nextMonth > 11) {
+            nextYear += Math.floor(nextMonth / 12);
+            nextMonth = nextMonth % 12;
           }
+          const daysInNextMonth = new Date(
+            nextYear,
+            nextMonth + 1,
+            0
+          ).getDate();
+          currentDate = new Date(
+            nextYear,
+            nextMonth,
+            Math.min(currentDate.getDate(), daysInNextMonth)
+          );
+          break;
 
-          nextSchedule +=
-            (daysUntilNextSchedule + (editRepetitionSettings[0] - 1) * 7) *
-            24 *
-            60 *
-            60 *
-            1000;
-        }
-        break;
-
-      case "monthly":
-        // 次の予定日の年と月を計算
-        let nextYear = currentYear;
-        let nextMonth = currentMonth + editRepetitionSettings[0];
-        if (nextMonth === 12) {
-          nextYear++;
-          nextMonth = 0; // 0 は 1 月を表す
-        }
-
-        // 次の予定日を計算
-        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const nextDayOfMonth = Math.min(date.getDate(), daysInNextMonth);
-        const nextDate = new Date(nextYear, nextMonth, nextDayOfMonth);
-        nextSchedule = nextDate.getTime();
-        break;
-
-      default:
-        break;
+        default:
+          return schedules;
+      }
     }
 
-    // 次の予定日を Date オブジェクトに変換して返す
-    return new Date(nextSchedule);
+    return schedules;
   };
-
-  const nextSchedule = calculateNextSchedule();
-
-  const formatDate = (date: Date | undefined): string => {
-    if (!date) return ""; // 日付が未定義の場合は空文字を返す
-
-    return moment(date).format("MM/DD/YY");
-  };
-
   const isDialogFormValid =
     period === "daily" ||
     period === "monthly" ||
     (period === "weekly" && selectedDays.length > 0);
 
+  const sortedRows = repetitionMoneies
+    .filter((repetitionMoney) => repetitionMoney.transfer_id === id)
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.repetition_schedule).getTime();
+      const dateB = new Date(b.repetition_schedule).getTime();
+      return dateA - dateB;
+    });
+
   return (
-    <Box width={560} height={770}>
+    <Box
+      sx={{
+        width:
+          editRepetition === true &&
+          repetitionMoneies.filter(
+            (repetitionMoney) => repetitionMoney.transfer_id === id
+          ).length > 0
+            ? 1000
+            : 560,
+        height: 800,
+      }}
+    >
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
         fullWidth
-        maxWidth="xs"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "350px",
+          },
+        }}
       >
+        <button
+          onClick={handleRepetitionDialogCancel}
+          className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+        >
+          <CloseIcon />
+        </button>
         <DialogTitle sx={{ textAlign: "center" }}>繰り返しの設定</DialogTitle>
         <DialogContent>
           <Box
@@ -649,7 +872,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
             </Box>
             {period === "weekly" && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                {["月", "火", "水", "木", "金", "土", "日"].map(
+                {["日", "月", "火", "水", "木", "金", "土"].map(
                   (day, index) => (
                     <ToggleButton
                       key={day}
@@ -686,173 +909,258 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         </DialogActions>
       </Dialog>
 
-      <ul className="w-full">
-        <li className="pt-10">
-          <Typography variant="subtitle1">送金元口座</Typography>
-          <Select
-            fullWidth
-            value={editBeforeAccountId}
-            onChange={handleBeforeAccountChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
+      <Stack direction="row" spacing={5}>
+        <ul className="w-full">
+          <li className="pt-10">
+            <Typography variant="subtitle1">送金元口座</Typography>
+            <Select
+              fullWidth
+              value={editBeforeAccountId}
+              onChange={handleBeforeAccountChange}
+              displayEmpty
+              inputProps={{ "aria-label": "Without label" }}
+            >
+              {accounts
+                .filter((account) => account.id !== editAfterAccountId)
+                .map((account) => (
+                  <MenuItem key={account.id} value={account.id}>
+                    {account.name}
+                  </MenuItem>
+                ))}
+            </Select>
             {accounts
-              .filter((account) => account.id !== editAfterAccountId)
+              .filter((account) => account.id === editBeforeAccountId)
               .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
-          </Select>
-          {accounts
-            .filter((account) => account.id === editBeforeAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
+                <Typography key={account.id} align="left" variant="subtitle1">
+                  口座金額：{formatAmountCommas(account.amount)}
+                </Typography>
+              ))}{" "}
+            {isBeforeTitleFormValid && (
+              <Typography align="left" variant="subtitle1">
+                送金元口座を選択してください
               </Typography>
-            ))}
-        </li>
-        <li className="pt-5">
-          <Typography variant="subtitle1">送金先口座</Typography>
-          <Select
-            fullWidth
-            value={editAfterAccountId}
-            onChange={handleAfterAccountChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
+            )}
+          </li>
+          <li className="pt-5">
+            <Typography variant="subtitle1">送金先口座</Typography>
+            <Select
+              fullWidth
+              value={editAfterAccountId}
+              onChange={handleAfterAccountChange}
+              displayEmpty
+              inputProps={{ "aria-label": "Without label" }}
+            >
+              {accounts
+                .filter((account) => account.id !== editBeforeAccountId)
+                .map((account) => (
+                  <MenuItem key={account.id} value={account.id}>
+                    {account.name}
+                  </MenuItem>
+                ))}
+            </Select>
             {accounts
-              .filter((account) => account.id !== editBeforeAccountId)
+              .filter((account) => account.id === editAfterAccountId)
               .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
-          </Select>
-          {accounts
-            .filter((account) => account.id === editAfterAccountId)
-            .map((account) => (
-              <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
+                <Typography key={account.id} align="left" variant="subtitle1">
+                  口座金額：{formatAmountCommas(account.amount)}
+                </Typography>
+              ))}{" "}
+            {isAfterTitleFormValid && (
+              <Typography align="left" variant="subtitle1">
+                送金先口座を選択してください
               </Typography>
-            ))}
-        </li>
-        <li className="pt-5">
-          <Typography variant="subtitle1">金額</Typography>
-          <div className="flex items-center">
-            <TextField
-              variant="outlined"
-              name="amount"
-              value={editAmountString}
-              onChange={handleChange}
-              inputProps={{
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-              }}
-            />
+            )}
+          </li>
+          <li className="pt-5">
+            <Typography variant="subtitle1">金額</Typography>
+            <div className="flex items-center">
+              <TextField
+                variant="outlined"
+                name="amount"
+                value={editAmountString}
+                onChange={handleChange}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
 
-            <span>円</span>
-          </div>
-        </li>
-        <li>
-          <Typography align="left" variant="subtitle1">
-            {editAmountError && (
-              <Typography align="left" variant="subtitle1">
-                金額を0より上にしてください
-              </Typography>
+              <span>円</span>
+            </div>
+          </li>
+          <li>
+            <Typography align="left" variant="subtitle1">
+              {editAmountError && (
+                <Typography align="left" variant="subtitle1">
+                  金額を0より上にしてください
+                </Typography>
+              )}
+              {editAmountOverError && (
+                <Typography align="left" variant="subtitle1">
+                  送金元口座に入っているお金以下にして下さい
+                </Typography>
+              )}
+            </Typography>
+          </li>
+          <li className="pt-5">
+            <Stack direction="row" spacing={1}>
+              <button
+                style={{
+                  color: "blue",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                onClick={handleRepetitionDialogOpen}
+              >
+                繰り返し
+              </button>
+              {editRepetition === true ? (
+                <Typography align="left" variant="subtitle1">
+                  ON
+                </Typography>
+              ) : (
+                <Typography align="left" variant="subtitle1">
+                  OFF
+                </Typography>
+              )}
+            </Stack>
+            <Typography>
+              {editRepetitionSettings && (
+                <>
+                  {editRepetitionType === "daily" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎日`}
+                  {editRepetitionType === "weekly" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
+                  {editRepetitionType === "monthly" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎月`}
+                  {Number(editRepetitionSettings[0]) > 1 &&
+                    editRepetitionSettings &&
+                    `毎${editRepetitionSettings[0]}${
+                      editRepetitionType === "daily"
+                        ? "日"
+                        : editRepetitionType === "weekly"
+                        ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
+                        : "月"
+                    }`}
+                </>
+              )}
+            </Typography>
+          </li>
+          <li className="pt-5">
+            {editRepetition === true ? (
+              <Typography variant="subtitle1">繰り返し開始日</Typography>
+            ) : (
+              <Typography variant="subtitle1">予定</Typography>
             )}
-            {editAmountOverError && (
-              <Typography align="left" variant="subtitle1">
-                送金元口座に入っているお金以下にして下さい
-              </Typography>
-            )}
-          </Typography>
-        </li>
-        <li className="pt-5">
-          <button
-            style={{
-              color: "blue",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-            onClick={handleRepetitionDialogOpen}
-          >
-            繰り返し
-          </button>
-          <Typography>
-            {editRepetitionSettings && (
-              <>
-                {editRepetitionType === "daily" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎日`}
-                {editRepetitionType === "weekly" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
-                {editRepetitionType === "monthly" &&
-                  editRepetitionSettings[0] === 1 &&
-                  `毎月`}
-                {editRepetitionSettings[0] > 1 &&
-                  editRepetitionSettings &&
-                  `毎${editRepetitionSettings[0]}${
-                    editRepetitionType === "daily"
-                      ? "日"
-                      : editRepetitionType === "weekly"
-                      ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
-                      : "月"
-                  }`}
-              </>
-            )}
-          </Typography>
-          {/* <Typography>
-            {editRepetition === true && (
-              <>次回の予定：{formatDate(nextSchedule)}</>
-            )}
-          </Typography> */}
-        </li>
-        <li className="pt-5">
-          {editRepetition === true ? (
-            <Typography variant="subtitle1">繰り返し開始日</Typography>
-          ) : (
-            <Typography variant="subtitle1">予定</Typography>
+            <Box
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={editSchedule}
+                onChange={handleSchedulChange}
+              />
+            </Box>
+          </li>
+          {editRepetition === true && (
+            <li className="pt-5">
+              <Typography variant="subtitle1">繰り返し終了日</Typography>
+              <Box
+                sx={{
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  borderWidth: "px",
+                }}
+              >
+                <InputDateTime
+                  selectedDate={editEndDate}
+                  onChange={handleEndDateChange}
+                />
+              </Box>
+              <Typography>※設定できるのは最大で今日から5年後です</Typography>
+            </li>
           )}
-          <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
-          >
-            <InputDateTime
-              selectedDate={editSchedule}
-              onChange={handleSchedulChange}
+          <li className="pt-5">
+            <Typography variant="subtitle1">備考</Typography>
+            <TextField
+              fullWidth
+              multiline
+              variant="outlined"
+              name="body"
+              value={editBody}
+              onChange={handleChange}
             />
-          </Box>
-        </li>
-        <li className="pt-5">
-          <Typography variant="subtitle1">備考</Typography>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            name="body"
-            value={editBody}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-10">
-          <Stack direction="row" justifyContent="center">
-            <Button variant="contained" onClick={handleSave} color="primary">
-              保存
-            </Button>
-          </Stack>
-          <IconButton
-            onClick={() => onDelete(id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </li>
-      </ul>
+          </li>
+          <li className="pt-10">
+            <Stack direction="row" justifyContent="center">
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                disabled={
+                  isBeforeTitleFormValid ||
+                  isAfterTitleFormValid ||
+                  editAmountError ||
+                  editAmountOverError
+                }
+                color="primary"
+                className={
+                  editRepetition === true &&
+                  repetitionMoneies.filter(
+                    (repetitionMoney) => repetitionMoney.transfer_id === id
+                  ).length > 0
+                    ? "ml-48"
+                    : "ml-60"
+                }
+              >
+                保存
+              </Button>
+              <IconButton
+                onClick={() => handleTransferDelete(id)}
+                className="ml-auto"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Stack>
+          </li>
+        </ul>
+        {editRepetition === true &&
+          repetitionMoneies.filter(
+            (repetitionMoney) => repetitionMoney.transfer_id === id
+          ).length > 0 && (
+            <div className="w-full pt-10">
+              <Typography variant="subtitle1">繰り返し一覧</Typography>
+              <TableContainer component={Paper} sx={{ maxHeight: 635 }}>
+                <Table stickyHeader size="small" aria-label="sticky table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>日付</TableCell>
+                      <TableCell>金額</TableCell>
+                      <TableCell />
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortedRows.map((repetitionMoney) => (
+                      <RepetitionMoneyRow
+                        key={repetitionMoney.id}
+                        id={repetitionMoney.id}
+                        amount={repetitionMoney.amount}
+                        repetition_schedule={
+                          repetitionMoney.repetition_schedule
+                        }
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </div>
+          )}
+      </Stack>
     </Box>
   );
 };

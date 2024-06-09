@@ -5,6 +5,13 @@ export type accountData = {
   body: string;
 };
 
+export type accountOrderByType =
+  | "id"
+  | "account_name"
+  | "account_amount"
+  | "account_body";
+
+
 export type displayAccountData = {
   id: string;
   account_name: string;

@@ -199,6 +199,18 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const sortedHistoryRows = row.history.slice().sort((a, b) => {
+    if (a.transfer_repetition && !b.transfer_repetition) {
+      return -1;
+    } else if (!a.transfer_repetition && b.transfer_repetition) {
+      return 1;
+    }
+    
+    const dateA = new Date(a.transfer_schedule).getTime();
+    const dateB = new Date(b.transfer_schedule).getTime();
+    return dateA - dateB;
+  });
+
   return (
     <React.Fragment>
       {isEditAccountModalOpen && (
@@ -234,25 +246,22 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
               <CloseIcon />
             </button>
             <TransferShow
-              id={row.history[isHistory].transfer_id}
+              id={sortedHistoryRows[isHistory].transfer_id}
               before_account_id={
-                row.history[isHistory].transfer_before_account_id
-              }
-              after_account_name={
-                row.history[isHistory].transfer_after_account_name
+                sortedHistoryRows[isHistory].transfer_before_account_id
               }
               after_account_id={
-                row.history[isHistory].transfer_after_account_id
+                sortedHistoryRows[isHistory].transfer_after_account_id
               }
-              amount={row.history[isHistory].transfer_amount}
-              schedule={row.history[isHistory].transfer_schedule}
-              end_date={row.history[isHistory].transfer_end_date}
-              repetition={row.history[isHistory].transfer_repetition}
-              repetition_type={row.history[isHistory].transfer_repetition_type}
+              amount={sortedHistoryRows[isHistory].transfer_amount}
+              schedule={sortedHistoryRows[isHistory].transfer_schedule}
+              end_date={sortedHistoryRows[isHistory].transfer_end_date}
+              repetition={sortedHistoryRows[isHistory].transfer_repetition}
+              repetition_type={sortedHistoryRows[isHistory].transfer_repetition_type}
               repetition_settings={
-                row.history[isHistory].transfer_repetition_settings
+                sortedHistoryRows[isHistory].transfer_repetition_settings
               }
-              body={row.history[isHistory].transfer_body}
+              body={sortedHistoryRows[isHistory].transfer_body}
               onClose={handleCloseEditTransferModal}
             />
           </div>
@@ -310,14 +319,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
         </TableCell>
       </TableRow>
       {row.history.length > 0 && (
-        <TableRow
-          sx={{
-            "& > *": {
-              borderBottom: "unset",
-              backgroundColor: isHistoryOpen ? "#f5f5f5" : "transparent",
-            },
-          }}
-        >
+        <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={isHistoryOpen} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
@@ -334,10 +336,35 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {row.history.map((historyRow, historyIndex) => (
-                      <TableRow key={historyRow.transfer_id}>
+                    {sortedHistoryRows.map((historyRow, historyIndex) => (
+                      <TableRow
+                        key={historyRow.transfer_id}
+                        sx={{
+                          "& > *": {
+                            borderBottom: "unset",
+                            backgroundColor: isHistoryOpen
+                              ? new Date(
+                                  historyRow.transfer_schedule
+                                ).getTime() <=
+                                new Date(
+                                  new Date().getFullYear(),
+                                  new Date().getMonth(),
+                                  new Date().getDate(),
+                                  23,
+                                  59,
+                                  0,
+                                  0
+                                ).getTime()
+                                ? "#f5f5f5"
+                                : "#bfbfbf"
+                              : "transparent",
+                          },
+                        }}
+                      >
                         <TableCell component="th" scope="row">
-                          {formatDate(historyRow.transfer_schedule)}
+                          {historyRow.transfer_repetition === false
+                            ? formatDate(historyRow.transfer_schedule)
+                            : ""}
                         </TableCell>
                         <TableCell>
                           <button
