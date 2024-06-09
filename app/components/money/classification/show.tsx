@@ -40,7 +40,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
 
   const [editAccountId, setEditAccountId] = useState(account_id);
   const [editName, setEditName] = useState(name);
-  const [editDate, setEditDate] = useState(classificationMonthlyAmount.date);
+  // const [editDate, setEditDate] = useState(classificationMonthlyAmount.date);
   const [editDateNumber, setEditDateNumber] = useState<number>(
     classificationMonthlyAmount.date === "即日"
       ? 0
@@ -56,9 +56,9 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     )
   );
   const [isFormValid, setIsFormValid] = useState(true);
-  const [completed, setCompleted] = useState<boolean>(
-    classificationMonthlyAmount.date === "即日" ? true : false
-  );
+  // const [completed, setCompleted] = useState<boolean>(
+  //   classificationMonthlyAmount.date === "即日" ? true : false
+  // );
 
   useEffect(() => {
     if (editAccountId === null) {
@@ -70,39 +70,45 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         setEditDateNumber(1);
       }
     }
-  }, [editDate, editDateNumber]);
+  }, [editDateNumber]);
+
+  // useEffect(() => {
+  //   if (editDate === "即日") {
+  //     setEditDateNumber(0);
+  //   }
+  // }, [editDate]);
 
   const editClassification = async (id: string) => {
     try {
-      if (completed === true) {
-        await classificationEdit(
-          id,
-          editAccountId,
-          editName,
-          classification_type
-        );
-        await classificationMonthlyAmountEdit(
-          classificationMonthlyAmount.id,
-          classificationMonthlyAmount.classification_id,
-          classificationMonthlyAmount.month,
-          editDate,
-          editAmount
-        );
-      } else {
-        await classificationEdit(
-          id,
-          editAccountId,
-          editName,
-          classification_type
-        );
-        await classificationMonthlyAmountEdit(
-          classificationMonthlyAmount.id,
-          classificationMonthlyAmount.classification_id,
-          classificationMonthlyAmount.month,
-          String(editDateNumber),
-          editAmount
-        );
-      }
+      // if (completed === true) {
+      //   await classificationEdit(
+      //     id,
+      //     editAccountId,
+      //     editName,
+      //     classification_type
+      //   );
+      //   await classificationMonthlyAmountEdit(
+      //     classificationMonthlyAmount.id,
+      //     classificationMonthlyAmount.classification_id,
+      //     classificationMonthlyAmount.month,
+      //     editDate,
+      //     editAmount
+      //   );
+      // } else {
+      await classificationEdit(
+        id,
+        editAccountId,
+        editName,
+        classification_type
+      );
+      await classificationMonthlyAmountEdit(
+        classificationMonthlyAmount.id,
+        classificationMonthlyAmount.classification_id,
+        classificationMonthlyAmount.month,
+        String(editDateNumber),
+        editAmount
+      );
+      // }
 
       setIsEditing(true);
     } catch (error) {
@@ -118,12 +124,16 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     }
   };
 
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCompleted(!completed);
-    if (completed === false) {
-      setEditDate("即日");
-    }
-  };
+  // const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   setCompleted(!completed);
+  //   if (completed === false) {
+  //     setEditDate("即日");
+  //     setEditDateNumber(0);
+  //   } else {
+  //     setEditDate("");
+  //     setEditDateNumber(1);
+  //   }
+  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -223,7 +233,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
                 name="date"
                 value={editDateNumber}
                 onChange={handleChange}
-                disabled={completed}
+                // disabled={completed}
                 inputProps={{
                   inputMode: "numeric",
                   pattern: "[0-9]*",
@@ -231,14 +241,14 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
               />
               <span>日</span>
             </div>
-            <Stack direction="row" alignItems="center">
+            {/* <Stack direction="row" alignItems="center">
               <Checkbox
                 checked={completed}
                 onChange={handleCheckboxChange}
                 color="primary"
               />
               <Typography>即日反映</Typography>
-            </Stack>
+            </Stack> */}
           </li>
         )}
         <li className="pt-10">
@@ -251,13 +261,13 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             >
               保存
             </Button>
+            <IconButton
+              onClick={() => onDelete(id)}
+              className="absolute right-0 bottom-0 m-8"
+            >
+              <DeleteIcon />
+            </IconButton>{" "}
           </Stack>
-          <IconButton
-            onClick={() => onDelete(id)}
-            className="absolute right-0 bottom-0 m-8"
-          >
-            <DeleteIcon />
-          </IconButton>
         </li>
       </ul>
     </Box>

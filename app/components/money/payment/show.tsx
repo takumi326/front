@@ -230,7 +230,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              console.log(classificationMonthlyAmount);
               let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
@@ -296,23 +295,13 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "payment" &&
-                  repetitionMoney.payment_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
 
               if (
                 classificationMonthlyAmount.id ===
@@ -337,27 +326,11 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               }
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.filter(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              )[0];
-
-            const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.filter(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    editClassificationId &&
-                  classificationMonthlyAmount.month === editMonth
-              )[0];
-
             if (
               initialClassificationMonthlyAmount.month ===
               editClassificationMonthlyAmount.month
             ) {
-              const initialMoney =
+              const editMoney =
                 parseFloat(String(initialClassificationMonthlyAmount.amount)) -
                 parseFloat(String(initialAmount)) +
                 parseFloat(String(editAmount));
@@ -367,7 +340,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 initialClassificationMonthlyAmount.classification_id,
                 initialClassificationMonthlyAmount.month,
                 initialClassificationMonthlyAmount.date,
-                Math.max(0, initialMoney)
+                Math.max(0, editMoney)
               );
             } else {
               const initialMoney =
@@ -407,23 +380,13 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 classificationMonthlyAmount.classification_id ===
                 initialClassificationId
             )) {
-              let money = parseFloat(
-                String(classificationMonthlyAmount.amount)
-              );
+              let money = 0;
               const start = startDate(classificationMonthlyAmount.month);
               const end = endDate(classificationMonthlyAmount.month);
 
-              for (const repetitionMoney of repetitionMoneies.filter(
-                (repetitionMoney) =>
-                  repetitionMoney.transaction_type === "payment" &&
-                  repetitionMoney.payment_id === id &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() >=
-                    start.getTime() &&
-                  new Date(repetitionMoney.repetition_schedule).getTime() <=
-                    end.getTime()
-              )) {
-                money -= parseFloat(String(repetitionMoney.amount));
-              }
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
 
               await classificationMonthlyAmountEdit(
                 classificationMonthlyAmount.id,
@@ -434,14 +397,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               );
             }
           } else {
-            const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
-              classificationMonthlyAmounts.find(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    initialClassificationId &&
-                  classificationMonthlyAmount.month === currentMonth
-              );
-
             const initialClassificationAmount =
               parseFloat(String(initialClassificationMonthlyAmount.amount)) -
               parseFloat(String(initialAmount));
@@ -464,19 +419,13 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               classificationMonthlyAmount.classification_id ===
               editClassificationId
           )) {
-            let money = parseFloat(String(classificationMonthlyAmount.amount));
+            let money = 0;
             const start = startDate(classificationMonthlyAmount.month);
             const end = endDate(classificationMonthlyAmount.month);
 
-            for (const repetitionMoney of repetitionMoneyDate.filter(
-              (repetitionMoney) =>
-                new Date(repetitionMoney.repetition_schedule).getTime() >=
-                  start.getTime() &&
-                new Date(repetitionMoney.repetition_schedule).getTime() <=
-                  end.getTime()
-            )) {
-              money += parseFloat(String(repetitionMoney.amount));
-            }
+            money =
+              parseFloat(String(classificationMonthlyAmount.amount)) +
+              (await editRepetitionMoneyIncrease(start, end));
 
             await classificationMonthlyAmountEdit(
               classificationMonthlyAmount.id,
@@ -487,14 +436,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             );
           }
         } else {
-          const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                  editClassificationId &&
-                classificationMonthlyAmount.month === editMonth
-            );
-
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) +
@@ -510,7 +451,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           }
         }
       }
-
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit payment:", error);

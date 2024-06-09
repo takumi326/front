@@ -16,7 +16,6 @@ export interface transferShowProps {
   id: string;
   before_account_id: string;
   after_account_id: string;
-  after_account_name: string;
   amount: number;
   schedule: string;
   end_date: string;

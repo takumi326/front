@@ -94,7 +94,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
         let money = 0;
         if (!shouldCreateNewAmount) {
-          row.history.map((historyRow) => {
+          sortedHistoryRows.map((historyRow) => {
             if (historyRow.payment_repetition === true) {
               repetitionMoneies
                 .filter(
@@ -152,7 +152,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       if (row.classification_name === "分類なし") {
         paymentDelete(id);
       } else {
-        if (row.history[index].payment_repetition === true) {
+        if (sortedHistoryRows[index].payment_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id === row.id
@@ -202,7 +202,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(row.history[index].payment_amount));
+              parseFloat(String(sortedHistoryRows[index].payment_amount));
 
             await classificationMonthlyAmountEdit(
               editClassificationMonthlyAmount.id,
@@ -260,7 +260,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
   const renderRepetition = (index: number) => {
     const { payment_repetition_type, payment_repetition_settings } =
-      row.history[index];
+      sortedHistoryRows[index];
     if (!payment_repetition_type || !payment_repetition_settings) return "";
 
     if (
@@ -296,6 +296,18 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     return moment(date).format("MM/DD/YY");
   };
 
+  const sortedHistoryRows = row.history.slice().sort((a, b) => {
+    if (a.payment_repetition && !b.payment_repetition) {
+      return -1;
+    } else if (!a.payment_repetition && b.payment_repetition) {
+      return 1;
+    }
+
+    const dateA = new Date(a.payment_schedule).getTime();
+    const dateB = new Date(b.payment_schedule).getTime();
+    return dateA > dateB ? 1 : -1;
+  });
+
   return (
     <React.Fragment>
       {isEditClassificationModalOpen && (
@@ -311,7 +323,6 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
             <ClassificationShow
               id={row.id}
               account_id={row.classification_account_id}
-              account_name={row.classification_account_name}
               name={row.classification_name}
               classification_type={"payment"}
               onClose={handleCloseEditClassificationModal}
@@ -332,20 +343,20 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               <CloseIcon />
             </button>
             <PaymentShow
-              id={row.history[isHistory].payment_id}
-              category_id={row.history[isHistory].payment_category_id}
+              id={sortedHistoryRows[isHistory].payment_id}
+              category_id={sortedHistoryRows[isHistory].payment_category_id}
               classification_id={
-                row.history[isHistory].payment_classification_id
+                sortedHistoryRows[isHistory].payment_classification_id
               }
-              amount={row.history[isHistory].payment_amount}
-              schedule={row.history[isHistory].payment_schedule}
-              end_date={row.history[isHistory].payment_end_date}
-              repetition={row.history[isHistory].payment_repetition}
-              repetition_type={row.history[isHistory].payment_repetition_type}
+              amount={sortedHistoryRows[isHistory].payment_amount}
+              schedule={sortedHistoryRows[isHistory].payment_schedule}
+              end_date={sortedHistoryRows[isHistory].payment_end_date}
+              repetition={sortedHistoryRows[isHistory].payment_repetition}
+              repetition_type={sortedHistoryRows[isHistory].payment_repetition_type}
               repetition_settings={
-                row.history[isHistory].payment_repetition_settings
+                sortedHistoryRows[isHistory].payment_repetition_settings
               }
-              body={row.history[isHistory].payment_body}
+              body={sortedHistoryRows[isHistory].payment_body}
               onClose={handleCloseEditPaymentModal}
             />
           </div>
@@ -403,44 +414,20 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                   className="pl-12"
                 >
                   {row.classification_name !== "分類なし"
-                    ? formatAmountCommas(
-                        classificationMonthlyAmounts
-                          .filter(
-                            (classificationMonthlyAmount) =>
-                              classificationMonthlyAmount.month ===
-                                currentMonth &&
-                              classificationMonthlyAmount.classification_id ===
-                                row.id
-                          )
-                          .map(
-                            (classificationMonthlyAmount) =>
-                              classificationMonthlyAmount.amount
-                          )[0]
-                      )
+                    ? formatAmountCommas(row.classification_amount)
                     : ""}
                 </TableCell>
               ) : key === "classification_account_name" ? (
                 <TableCell key={key} component="th" scope="row">
                   {row.classification_account_name === null
                     ? ""
-                    : String(row[key as keyof displayPaymentData])}
+                    : row.classification_account_name}
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
                   {row.classification_account_name === null
                     ? ""
-                    : classificationMonthlyAmounts
-                        .filter(
-                          (classificationMonthlyAmount) =>
-                            classificationMonthlyAmount.month ===
-                              currentMonth &&
-                            classificationMonthlyAmount.classification_id ===
-                              row.id
-                        )
-                        .map(
-                          (classificationMonthlyAmount) =>
-                            classificationMonthlyAmount.date
-                        )[0]}
+                    : row.classification_date}
                 </TableCell>
               )}
             </>
@@ -454,15 +441,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           )}
         </TableCell>
       </TableRow>
-      {row.history.length > 0 && (
-        <TableRow
-          sx={{
-            "& > *": {
-              borderBottom: "unset",
-              backgroundColor: isHistoryOpen ? "#f5f5f5" : "transparent",
-            },
-          }}
-        >
+      {sortedHistoryRows.length > 0 && (
+        <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={isHistoryOpen} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
@@ -479,8 +459,18 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {row.history.map((historyRow, historyIndex) => (
-                      <TableRow key={historyRow.payment_id}>
+                    {sortedHistoryRows.map((historyRow, historyIndex) => (
+                      <TableRow
+                        key={historyRow.payment_id}
+                        sx={{
+                          "& > *": {
+                            borderBottom: "unset",
+                            backgroundColor: isHistoryOpen
+                              ? "#f5f5f5"
+                              : "transparent",
+                          },
+                        }}
+                      >
                         <TableCell component="th" scope="row">
                           {historyRow.payment_repetition === false
                             ? formatDate(historyRow.payment_schedule)
@@ -513,10 +503,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         <TableCell align="right">
                           <IconButton
                             onClick={() =>
-                              deletePayment(
-                                historyRow.payment_id,
-                                isHistory
-                              )
+                              deletePayment(historyRow.payment_id, isHistory)
                             }
                           >
                             <DeleteIcon />

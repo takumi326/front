@@ -30,9 +30,11 @@ export type classificationNilIncomeData = {
 
 export type displayIncomeData = {
   id: string;
+  classification_name: string;
+  classification_amount: number;
   classification_account_id: string;
   classification_account_name: string;
-  classification_name: string;
+  classification_date: string;
   classification_classification_type: string;
   history: {
     income_id: string;
@@ -54,6 +56,7 @@ export type selectIncomeData = {
   classification_name: string;
   classification_amount: number;
   classification_account_name: string;
+  classification_date: string;
 };
 
 export const columnIncomeNames = {

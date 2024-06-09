@@ -30,7 +30,6 @@ export interface classificationRowProps {
 export interface classificationShowProps {
   id: string;
   account_id: string;
-  account_name: string;
   name: string;
   classification_type: string;
   onClose: () => void;

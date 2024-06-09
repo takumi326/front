@@ -13,6 +13,13 @@ export type paymentData = {
   body: string;
 };
 
+export type paymentOrderByType =
+  | "id"
+  | "classification_name"
+  | "classification_account_name"
+  | "classification_amount"
+  | "classification_date";
+
 export type classificationNilPaymentData = {
   payment_id: string;
   payment_category_id: string;
@@ -30,9 +37,11 @@ export type classificationNilPaymentData = {
 
 export type displayPaymentData = {
   id: string;
+  classification_name: string;
+  classification_amount: number;
   classification_account_id: string;
   classification_account_name: string;
-  classification_name: string;
+  classification_date: string;
   classification_classification_type: string;
   history: {
     payment_id: string;
@@ -54,6 +63,7 @@ export type selectPaymentData = {
   classification_name: string;
   classification_amount: number;
   classification_account_name: string;
+  classification_date: string;
 };
 
 export const columnPaymentNames = {

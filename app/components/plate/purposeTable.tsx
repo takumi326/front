@@ -61,7 +61,7 @@ export const PurposeTable: React.FC = () => {
   }>({
     title: "default",
     result: "default",
-    deadline: "asc",
+    deadline: "default",
   });
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -157,7 +157,7 @@ export const PurposeTable: React.FC = () => {
       } else if (order[key] === "desc") {
         return a[key] < b[key] ? 1 : -1;
       }
-      return 0;
+      return a.id > b.id ? 1 : -1;
     };
     return compare(orderBy);
   });
