@@ -82,19 +82,19 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
 
   const newIncome = async () => {
     try {
-      const response = await incomeNew(
-        newCategoryId,
-        newClassificationId,
-        newAmount,
-        newSchedule,
-        newEndDate,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-
       if (newRepetition === false) {
+        await incomeNew(
+          newCategoryId,
+          newClassificationId,
+          newAmount,
+          newSchedule,
+          newEndDate,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
+
         const selectedClassificationMonthlyAmount: classificationMonthlyAmountData =
           classificationMonthlyAmounts.find(
             (classificationMonthlyAmount) =>
@@ -117,6 +117,17 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
           );
         }
       } else {
+        const response = await incomeNew(
+          newCategoryId,
+          newClassificationId,
+          0,
+          newSchedule,
+          newEndDate,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
         let repetitionMoneyDate: repetitionMoneyData[] = [];
         const schedules = calculateNextSchedules();
 
@@ -251,6 +262,8 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("daily");
+    setNewSchedule(initialDateObject);
+    setNewEndDate(endDateObject);
   };
 
   const handleRepetitionSave = () => {
@@ -417,6 +430,30 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     period === "monthly" ||
     (period === "weekly" && selectedDays.length > 0);
 
+  const sortedClassifications = classifications
+    .filter((classification) => classification.classification_type === "income")
+    .slice()
+    .sort((a, b) => {
+      if (a.id === newClassificationId) {
+        return -1;
+      } else if (b.id === newClassificationId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
+  const sortedCategories = categories
+    .filter((category) => category.category_type === "income")
+    .slice()
+    .sort((a, b) => {
+      if (a.id === newCategoryId) {
+        return -1;
+      } else if (b.id === newCategoryId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
   return (
     <Box width={560} height={810}>
       <Dialog
@@ -502,16 +539,11 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {classifications
-              .filter(
-                (classification) =>
-                  classification.classification_type === "income"
-              )
-              .map((classification) => (
-                <MenuItem key={classification.id} value={classification.id}>
-                  {classification.name}
-                </MenuItem>
-              ))}
+            {sortedClassifications.map((classification) => (
+              <MenuItem key={classification.id} value={classification.id}>
+                {classification.name}
+              </MenuItem>
+            ))}
           </Select>
           {isClassificationFormValid && (
             <Typography align="left" variant="subtitle1">
@@ -528,13 +560,11 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {categories
-              .filter((category) => category.category_type === "income")
-              .map((category) => (
-                <MenuItem key={category.id} value={category.id}>
-                  {category.name}
-                </MenuItem>
-              ))}
+            {sortedCategories.map((category) => (
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
+              </MenuItem>
+            ))}
           </Select>
           {isCategoryFormValid && (
             <Typography align="left" variant="subtitle1">

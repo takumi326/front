@@ -352,7 +352,9 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               schedule={sortedHistoryRows[isHistory].payment_schedule}
               end_date={sortedHistoryRows[isHistory].payment_end_date}
               repetition={sortedHistoryRows[isHistory].payment_repetition}
-              repetition_type={sortedHistoryRows[isHistory].payment_repetition_type}
+              repetition_type={
+                sortedHistoryRows[isHistory].payment_repetition_type
+              }
               repetition_settings={
                 sortedHistoryRows[isHistory].payment_repetition_settings
               }

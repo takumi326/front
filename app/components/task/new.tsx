@@ -298,6 +298,15 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
     period === "monthly" ||
     (period === "weekly" && selectedDays.length > 0);
 
+  const sortedPurposes = purposes.slice().sort((a, b) => {
+    if (a.id === newPurposeId) {
+      return -1;
+    } else if (b.id === newPurposeId) {
+      return 1;
+    }
+    return a.id > b.id ? 1 : -1;
+  });
+
   return (
     <Box width={560} height={650}>
       <Dialog
@@ -394,7 +403,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
             <MenuItem value="">
               <em>None</em>
             </MenuItem>
-            {purposes.map((purpose) => (
+            {sortedPurposes.map((purpose) => (
               <MenuItem key={purpose.id} value={purpose.id}>
                 {purpose.title}
               </MenuItem>
