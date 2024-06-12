@@ -34,6 +34,7 @@ import { moneyContext } from "@/context/money-context";
 
 import {
   repetitionMoneyNew,
+  repetitionMoneyEdit,
   repetitionMoneyDelete,
 } from "@/lib/api/repetitionMoney-api";
 import { transferEdit, transferDelete } from "@/lib/api/transfer-api";
@@ -61,11 +62,23 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     body,
     onClose,
   } = props;
+
   const { accounts, repetitionMoneies, setIsEditing } =
     useContext(moneyContext);
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
+  const now = new Date();
+  const endOfCurrentDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    0,
+    0
+  );
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] =
     useState<boolean>(false);
@@ -81,11 +94,31 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
+  const [changeRepetitionMoneyData, setChangeRepetitionMoneyData] = useState<
+    string[]
+  >([]);
+
   const initialAmount = amount;
   const initialBeforeAccountId = before_account_id;
+  const initialBeforeAccountAmount = accounts.filter(
+    (account) => account.id === before_account_id
+  )[0].amount;
   const initialAfterAccountId = after_account_id;
   const initialSchedule = schedule;
+  const initialEndDate = end_date;
   const initialRepetition = repetition;
+  const intialRepetitionType = repetition_type;
+  const intialRepetitionSettings = repetition_settings;
+  const [initialRepetitionAllMoney, setInitialRepetitionAllMoney] =
+    useState<number>(0);
+
+  const initialBeforeAccount: accountData = accounts.filter(
+    (account) => account.id === initialBeforeAccountId
+  )[0];
+
+  const initialAfterAccount: accountData = accounts.filter(
+    (account) => account.id === initialAfterAccountId
+  )[0];
 
   const [editBeforeAccountId, setEditBeforeAccountId] =
     useState(before_account_id);
@@ -109,43 +142,108 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   const [editRepetitionSettings, setEditRepetitionSettings] =
     useState<string[]>(repetition_settings);
   const [editBody, setEditBody] = useState(body);
+  const [editBeforeAccount, setEditBeforeAccount] =
+    useState<accountData>(initialBeforeAccount);
+  const [editAfterAccount, setEditAfterAccount] =
+    useState<accountData>(initialAfterAccount);
+
   const [isBeforeTitleFormValid, setIsBeforeTitleFormValid] =
     useState<boolean>(false);
   const [isAfterTitleFormValid, setIsAfterTitleFormValid] =
     useState<boolean>(false);
 
   useEffect(() => {
-    console.log(editRepetition);
+    setEditBeforeAccount(
+      accounts.filter((account) => account.id === editBeforeAccountId)[0]
+    );
+    setEditAfterAccount(
+      accounts.filter((account) => account.id === editAfterAccountId)[0]
+    );
+  }, [accounts, editBeforeAccountId, editAfterAccountId]);
+
+  useEffect(() => {
+    const initialRepetitionMoney = async () => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "transfer" &&
+          repetitionMoney.transfer_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+      )) {
+        money += parseFloat(String(repetitionMoney.amount));
+      }
+      return money;
+    };
+
+    const fetchInitialRepetitionAllMoney = async () => {
+      const money = await initialRepetitionMoney();
+      setInitialRepetitionAllMoney(money);
+    };
+
+    fetchInitialRepetitionAllMoney();
+  }, [repetitionMoneies]);
+
+  useEffect(() => {
     if (editAmount > 0) {
       setEditAmountError(false);
     } else {
       setEditAmountError(true);
     }
-
-    if (editBeforeAccountAmount >= editAmount) {
-      setEditAmountOverError(false);
+    if (
+      !(
+        intialRepetitionType === editRepetitionType &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
+        initialSchedule === editSchedule &&
+        initialEndDate === editEndDate
+      )
+    ) {
+      if (initialBeforeAccountId === editBeforeAccountId) {
+        if (
+          parseFloat(String(initialBeforeAccount.amount)) +
+            parseFloat(String(initialRepetitionAllMoney)) >=
+          parseFloat(String(editAmount))
+        ) {
+          setEditAmountOverError(false);
+        } else {
+          setEditAmountOverError(true);
+        }
+      } else {
+        if (
+          parseFloat(String(editBeforeAccountAmount)) >=
+          parseFloat(String(editAmount))
+        ) {
+          setEditAmountOverError(false);
+        } else {
+          setEditAmountOverError(true);
+        }
+      }
     } else {
-      setEditAmountOverError(true);
+      if (initialBeforeAccountId === editBeforeAccountId) {
+        if (
+          parseFloat(String(editBeforeAccountAmount)) +
+            parseFloat(String(initialAmount)) >=
+          parseFloat(String(editAmount))
+        ) {
+          setEditAmountOverError(false);
+        } else {
+          setEditAmountOverError(true);
+        }
+      } else {
+        if (
+          parseFloat(String(editBeforeAccountAmount)) >=
+          parseFloat(String(editAmount))
+        ) {
+          setEditAmountOverError(false);
+        } else {
+          setEditAmountOverError(true);
+        }
+      }
     }
-  }, [editAmount, editBeforeAccountAmount]);
+  }, [editAmount, editBeforeAccountAmount, initialBeforeAccountAmount]);
 
   const editTransfer = async (id: string) => {
-    const initialBeforeAccount: accountData = accounts.filter(
-      (account) => account.id === initialBeforeAccountId
-    )[0];
-
-    const initialAfterAccount: accountData = accounts.filter(
-      (account) => account.id === initialAfterAccountId
-    )[0];
-
-    const editBeforeAccount: accountData = accounts.filter(
-      (account) => account.id === editBeforeAccountId
-    )[0];
-
-    const editAfterAccount: accountData = accounts.filter(
-      (account) => account.id === editAfterAccountId
-    )[0];
-
     const initialRepetitionDelete = async () =>
       await Promise.all(
         repetitionMoneies
@@ -175,31 +273,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
           repetitionMoneyDate = [...repetitionMoneyDate, repetitionMoney];
         })
       );
-    };
-
-    const now = new Date();
-    const endOfCurrentDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      23,
-      59,
-      0,
-      0
-    );
-
-    const initialRepetitionMoney = async () => {
-      let money = 0;
-      for (const repetitionMoney of repetitionMoneies.filter(
-        (repetitionMoney) =>
-          repetitionMoney.transaction_type === "transfer" &&
-          repetitionMoney.transfer_id === id &&
-          new Date(repetitionMoney.repetition_schedule).getTime() <=
-            endOfCurrentDay.getTime()
-      )) {
-        money += parseFloat(String(repetitionMoney.amount));
-      }
-      return money;
     };
 
     const editRepetitionMoney = async () => {
@@ -237,70 +310,90 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         editRepetitionSettings,
         editBody
       );
+      if (
+        initialRepetition === editRepetition &&
+        intialRepetitionType === editRepetitionType &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
+        initialSchedule === editSchedule &&
+        initialEndDate === editEndDate
+      ) {
+        let changeMoney = 0;
+        for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+          const selectedRepetitionMoney = repetitionMoneies.filter(
+            (repetitionMoney) =>
+              repetitionMoney.id === changeRepetitionMoneyData[i]
+          )[0];
+          await repetitionMoneyEdit(
+            changeRepetitionMoneyData[i],
+            selectedRepetitionMoney.transaction_type,
+            selectedRepetitionMoney.payment_id,
+            selectedRepetitionMoney.income_id,
+            selectedRepetitionMoney.transfer_id,
+            Number(changeRepetitionMoneyData[i + 1]) != 0
+              ? Number(changeRepetitionMoneyData[i + 1])
+              : selectedRepetitionMoney.amount,
+            changeRepetitionMoneyData[i + 2] != ""
+              ? changeRepetitionMoneyData[i + 2]
+              : selectedRepetitionMoney.repetition_schedule
+          );
 
-      if (initialBeforeAccountId === editBeforeAccountId) {
-        let money = parseFloat(String(initialBeforeAccount.amount));
-        if (editRepetition === true) {
-          if (initialRepetition === true) {
-            await initialRepetitionDelete();
-            await editRepetitionAdd();
-
-            money =
-              money +
-              (await initialRepetitionMoney()) -
-              (await editRepetitionMoney());
-
-            await accountEdit(
-              initialBeforeAccount.id,
-              initialBeforeAccount.name,
-              Math.max(0, money),
-              initialBeforeAccount.body
-            );
+          if (
+            new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+          ) {
+            if (
+              new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+                endOfCurrentDay.getTime() ||
+              changeRepetitionMoneyData[i + 2] === ""
+            ) {
+              changeMoney =
+                changeMoney + Number(changeRepetitionMoneyData[i + 1]) != 0
+                  ? parseFloat(String(changeRepetitionMoneyData[i + 1])) -
+                    parseFloat(String(selectedRepetitionMoney.amount))
+                  : 0;
+            } else if (
+              new Date(changeRepetitionMoneyData[i + 2]).getTime() >
+              endOfCurrentDay.getTime()
+            ) {
+              changeMoney =
+                changeMoney -
+                parseFloat(String(selectedRepetitionMoney.amount));
+            }
           } else {
-            editRepetitionAdd();
-
-            money = money + initialMoney - (await editRepetitionMoney());
-
-            await accountEdit(
-              initialBeforeAccount.id,
-              initialBeforeAccount.name,
-              Math.max(0, money),
-              initialBeforeAccount.body
-            );
-          }
-        } else {
-          if (initialRepetition === true) {
-            initialRepetitionDelete();
-
-            money = money + (await initialRepetitionMoney()) - editMoney;
-
-            money = money + parseFloat(String(editAmount));
-            await accountEdit(
-              initialBeforeAccount.id,
-              initialBeforeAccount.name,
-              Math.max(0, money),
-              initialBeforeAccount.body
-            );
-          } else {
-            money = money + initialMoney - editMoney;
-
-            await accountEdit(
-              initialBeforeAccount.id,
-              initialBeforeAccount.name,
-              Math.max(0, money),
-              initialBeforeAccount.body
-            );
+            if (
+              new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+              endOfCurrentDay.getTime()
+            ) {
+              if (Number(changeRepetitionMoneyData[i + 1]) != 0) {
+                changeMoney =
+                  changeMoney +
+                  parseFloat(String(changeRepetitionMoneyData[i + 1]));
+              } else {
+                changeMoney =
+                  changeMoney +
+                  parseFloat(String(selectedRepetitionMoney.amount));
+              }
+            }
           }
         }
-      } else {
-        let initialBeforeMoney = parseFloat(
-          String(initialBeforeAccount.amount)
-        );
-        if (initialRepetition === true) {
-          initialRepetitionDelete();
+        if (initialBeforeAccountId === editBeforeAccountId) {
+          const money =
+            parseFloat(String(initialBeforeAccount.amount)) - changeMoney;
 
-          initialBeforeMoney =
-            initialBeforeMoney + (await initialRepetitionMoney());
+          await accountEdit(
+            initialBeforeAccount.id,
+            initialBeforeAccount.name,
+            Math.max(0, money),
+            initialBeforeAccount.body
+          );
+        } else {
+          const initialBeforeMoney =
+            parseFloat(String(initialBeforeAccount.amount)) +
+            parseFloat(String(initialRepetitionAllMoney));
+          const editBeforeMoney =
+            parseFloat(String(editBeforeAccount.amount)) -
+            (changeMoney + parseFloat(String(initialRepetitionAllMoney)));
 
           await accountEdit(
             initialBeforeAccount.id,
@@ -308,31 +401,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
             Math.max(0, initialBeforeMoney),
             initialBeforeAccount.body
           );
-        } else {
-          initialBeforeMoney = initialBeforeMoney + initialMoney;
-
-          await accountEdit(
-            initialBeforeAccount.id,
-            initialBeforeAccount.name,
-            Math.max(0, initialBeforeMoney),
-            initialBeforeAccount.body
-          );
-        }
-
-        let editBeforeMoney = parseFloat(String(editBeforeAccount.amount));
-        if (editRepetition === true) {
-          editRepetitionAdd();
-
-          editBeforeMoney = editBeforeMoney + (await editRepetitionMoney());
-
-          await accountEdit(
-            editBeforeAccount.id,
-            editBeforeAccount.name,
-            Math.max(0, editBeforeMoney),
-            editBeforeAccount.body
-          );
-        } else {
-          editBeforeMoney = editBeforeMoney + editMoney;
 
           await accountEdit(
             editBeforeAccount.id,
@@ -341,108 +409,243 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
             editBeforeAccount.body
           );
         }
-      }
 
-      if (initialAfterAccountId === editAfterAccountId) {
-        let money = parseFloat(String(initialAfterAccount.amount));
-        if (editRepetition === true) {
-          if (initialRepetition === true) {
-            await initialRepetitionDelete();
-            await editRepetitionAdd();
+        if (initialAfterAccountId === editAfterAccountId) {
+          const money =
+            parseFloat(String(initialAfterAccount.amount)) + changeMoney;
 
-            money =
-              money -
-              (await initialRepetitionMoney()) +
-              (await editRepetitionMoney());
-
-            await accountEdit(
-              initialAfterAccount.id,
-              initialAfterAccount.name,
-              Math.max(0, money),
-              initialAfterAccount.body
-            );
-          } else {
-            editRepetitionAdd();
-
-            money = money - initialMoney + (await editRepetitionMoney());
-
-            await accountEdit(
-              initialAfterAccount.id,
-              initialAfterAccount.name,
-              Math.max(0, money),
-              initialAfterAccount.body
-            );
-          }
+          await accountEdit(
+            initialAfterAccount.id,
+            initialAfterAccount.name,
+            Math.max(0, money),
+            initialAfterAccount.body
+          );
         } else {
-          if (initialRepetition === true) {
-            initialRepetitionDelete();
+          const initialAfterMoney =
+            parseFloat(String(initialAfterAccount.amount)) -
+            parseFloat(String(initialRepetitionAllMoney));
+          const editAfterMoney =
+            parseFloat(String(editAfterAccount.amount)) +
+            changeMoney +
+            parseFloat(String(initialRepetitionAllMoney));
 
-            money = money - (await initialRepetitionMoney()) + editMoney;
+          await accountEdit(
+            initialAfterAccount.id,
+            initialAfterAccount.name,
+            Math.max(0, initialAfterMoney),
+            initialAfterAccount.body
+          );
 
-            money = money + parseFloat(String(editAmount));
-            await accountEdit(
-              initialAfterAccount.id,
-              initialAfterAccount.name,
-              Math.max(0, money),
-              initialAfterAccount.body
-            );
-          } else {
-            money = money - initialMoney + editMoney;
-
-            await accountEdit(
-              initialAfterAccount.id,
-              initialAfterAccount.name,
-              Math.max(0, money),
-              initialAfterAccount.body
-            );
-          }
+          await accountEdit(
+            editAfterAccount.id,
+            editAfterAccount.name,
+            Math.max(0, editAfterMoney),
+            editAfterAccount.body
+          );
         }
       } else {
-        let initialAfterMoney = parseFloat(String(initialAfterAccount.amount));
-        if (initialRepetition === true) {
-          initialRepetitionDelete();
+        if (initialBeforeAccountId === editBeforeAccountId) {
+          let money = parseFloat(String(initialBeforeAccount.amount));
+          if (editRepetition === true) {
+            if (initialRepetition === true) {
+              await initialRepetitionDelete();
+              await editRepetitionAdd();
 
-          initialAfterMoney =
-            initialAfterMoney - (await initialRepetitionMoney());
+              money =
+                money +
+                parseFloat(String(initialRepetitionAllMoney)) -
+                (await editRepetitionMoney());
 
-          await accountEdit(
-            initialAfterAccount.id,
-            initialAfterAccount.name,
-            Math.max(0, initialAfterMoney),
-            initialAfterAccount.body
-          );
+              await accountEdit(
+                initialBeforeAccount.id,
+                initialBeforeAccount.name,
+                Math.max(0, money),
+                initialBeforeAccount.body
+              );
+            } else {
+              await editRepetitionAdd();
+
+              money = money + initialMoney - (await editRepetitionMoney());
+
+              await accountEdit(
+                initialBeforeAccount.id,
+                initialBeforeAccount.name,
+                Math.max(0, money),
+                initialBeforeAccount.body
+              );
+            }
+          } else {
+            if (initialRepetition === true) {
+              await initialRepetitionDelete();
+
+              money =
+                money +
+                parseFloat(String(initialRepetitionAllMoney)) -
+                editMoney;
+
+              await accountEdit(
+                initialBeforeAccount.id,
+                initialBeforeAccount.name,
+                Math.max(0, money),
+                initialBeforeAccount.body
+              );
+            } else {
+              money = money + initialMoney - editMoney;
+
+              await accountEdit(
+                initialBeforeAccount.id,
+                initialBeforeAccount.name,
+                Math.max(0, money),
+                initialBeforeAccount.body
+              );
+            }
+          }
         } else {
-          initialAfterMoney = initialAfterMoney - initialMoney;
-
-          await accountEdit(
-            initialAfterAccount.id,
-            initialAfterAccount.name,
-            Math.max(0, initialAfterMoney),
-            initialAfterAccount.body
+          let initialBeforeMoney = parseFloat(
+            String(initialBeforeAccount.amount)
           );
+          if (initialRepetition === true) {
+            await initialRepetitionDelete();
+
+            initialBeforeMoney =
+              initialBeforeMoney +
+              parseFloat(String(initialRepetitionAllMoney));
+
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, initialBeforeMoney),
+              initialBeforeAccount.body
+            );
+          } else {
+            initialBeforeMoney = initialBeforeMoney + initialMoney;
+
+            await accountEdit(
+              initialBeforeAccount.id,
+              initialBeforeAccount.name,
+              Math.max(0, initialBeforeMoney),
+              initialBeforeAccount.body
+            );
+          }
+
+          let editBeforeMoney = parseFloat(String(editBeforeAccount.amount));
+          if (editRepetition === true) {
+            await editRepetitionAdd();
+
+            editBeforeMoney = editBeforeMoney - (await editRepetitionMoney());
+
+            await accountEdit(
+              editBeforeAccount.id,
+              editBeforeAccount.name,
+              Math.max(0, editBeforeMoney),
+              editBeforeAccount.body
+            );
+          } else {
+            editBeforeMoney = editBeforeMoney - editMoney;
+
+            await accountEdit(
+              editBeforeAccount.id,
+              editBeforeAccount.name,
+              Math.max(0, editBeforeMoney),
+              editBeforeAccount.body
+            );
+          }
         }
 
-        let editAfterMoney = parseFloat(String(editAfterAccount.amount));
-        if (editRepetition === true) {
-          editRepetitionAdd();
+        if (initialAfterAccountId === editAfterAccountId) {
+          let money = parseFloat(String(initialAfterAccount.amount));
+          if (editRepetition === true) {
+            if (initialRepetition === true) {
+              money =
+                money -
+                parseFloat(String(initialRepetitionAllMoney)) +
+                (await editRepetitionMoney());
 
-          editAfterMoney = editAfterMoney + (await editRepetitionMoney());
+              await accountEdit(
+                initialAfterAccount.id,
+                initialAfterAccount.name,
+                Math.max(0, money),
+                initialAfterAccount.body
+              );
+            } else {
+              money = money - initialMoney + (await editRepetitionMoney());
 
-          await accountEdit(
-            editAfterAccount.id,
-            editAfterAccount.name,
-            Math.max(0, editAfterMoney),
-            editAfterAccount.body
-          );
+              await accountEdit(
+                initialAfterAccount.id,
+                initialAfterAccount.name,
+                Math.max(0, money),
+                initialAfterAccount.body
+              );
+            }
+          } else {
+            if (initialRepetition === true) {
+              money =
+                money -
+                parseFloat(String(initialRepetitionAllMoney)) +
+                editMoney;
+
+              await accountEdit(
+                initialAfterAccount.id,
+                initialAfterAccount.name,
+                Math.max(0, money),
+                initialAfterAccount.body
+              );
+            } else {
+              money = money - initialMoney + editMoney;
+
+              await accountEdit(
+                initialAfterAccount.id,
+                initialAfterAccount.name,
+                Math.max(0, money),
+                initialAfterAccount.body
+              );
+            }
+          }
         } else {
-          editAfterMoney = editAfterMoney + editMoney;
-
-          await accountEdit(
-            editAfterAccount.id,
-            editAfterAccount.name,
-            Math.max(0, editAfterMoney),
-            editAfterAccount.body
+          let initialAfterMoney = parseFloat(
+            String(initialAfterAccount.amount)
           );
+          if (initialRepetition === true) {
+            initialAfterMoney =
+              initialAfterMoney - parseFloat(String(initialRepetitionAllMoney));
+
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, initialAfterMoney),
+              initialAfterAccount.body
+            );
+          } else {
+            initialAfterMoney = initialAfterMoney - initialMoney;
+
+            await accountEdit(
+              initialAfterAccount.id,
+              initialAfterAccount.name,
+              Math.max(0, initialAfterMoney),
+              initialAfterAccount.body
+            );
+          }
+
+          let editAfterMoney = parseFloat(String(editAfterAccount.amount));
+          if (editRepetition === true) {
+            editAfterMoney = editAfterMoney + (await editRepetitionMoney());
+
+            await accountEdit(
+              editAfterAccount.id,
+              editAfterAccount.name,
+              Math.max(0, editAfterMoney),
+              editAfterAccount.body
+            );
+          } else {
+            editAfterMoney = editAfterMoney + editMoney;
+
+            await accountEdit(
+              editAfterAccount.id,
+              editAfterAccount.name,
+              Math.max(0, editAfterMoney),
+              editAfterAccount.body
+            );
+          }
         }
       }
       setIsEditing(true);
@@ -471,20 +674,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       0
     );
 
-    const initialRepetitionMoney = async () => {
-      let money = 0;
-      for (const repetitionMoney of repetitionMoneies.filter(
-        (repetitionMoney) =>
-          repetitionMoney.transaction_type === "transfer" &&
-          repetitionMoney.transfer_id === id &&
-          new Date(repetitionMoney.repetition_schedule).getTime() <=
-            endOfCurrentDay.getTime()
-      )) {
-        money += parseFloat(String(repetitionMoney.amount));
-      }
-      return money;
-    };
-
     const initialMoney =
       new Date(initialSchedule).getTime() <= endOfCurrentDay.getTime()
         ? parseFloat(String(initialAmount))
@@ -498,9 +687,9 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         let initialAfterMoney = parseFloat(String(initialAfterAccount.amount));
 
         initialBeforeMoney =
-          initialBeforeMoney + (await initialRepetitionMoney());
+          initialBeforeMoney + parseFloat(String(initialRepetitionAllMoney));
         initialAfterMoney =
-          initialAfterMoney - (await initialRepetitionMoney());
+          initialAfterMoney - parseFloat(String(initialRepetitionAllMoney));
 
         await accountEdit(
           initialBeforeAccount.id,
@@ -572,6 +761,53 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     }
   };
 
+  const deleteRepetition = async (id: string) => {
+    const initialBeforeAccount: accountData = accounts.filter(
+      (account) => account.id === initialBeforeAccountId
+    )[0];
+
+    const initialAfterAccount: accountData = accounts.filter(
+      (account) => account.id === initialAfterAccountId
+    )[0];
+    const selectedRepetitionMoney = repetitionMoneies.filter(
+      (repetitionMoney) => repetitionMoney.id === id
+    )[0];
+
+    try {
+      const initialBeforeMoney =
+        parseFloat(String(initialBeforeAccount.amount)) +
+        parseFloat(String(selectedRepetitionMoney.amount));
+      const initialAfterMoney =
+        parseFloat(String(initialAfterAccount.amount)) -
+        parseFloat(String(selectedRepetitionMoney.amount));
+
+      if (
+        new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
+        endOfCurrentDay.getTime()
+      ) {
+        console;
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialBeforeMoney),
+          initialBeforeAccount.body
+        );
+
+        await accountEdit(
+          initialAfterAccount.id,
+          initialAfterAccount.name,
+          Math.max(0, initialAfterMoney),
+          initialAfterAccount.body
+        );
+      }
+
+      repetitionMoneyDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete repetitionPayment:", error);
+    }
+  };
+
   const handleBeforeAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditBeforeAccountId(value);
@@ -598,6 +834,33 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       decimalPart +
       "円"
     );
+  };
+
+  const handleRepetitionMoneyChange = async (
+    id: string,
+    amount: number,
+    date: string
+  ) => {
+    let idFound = false;
+    setChangeRepetitionMoneyData((prevData) => {
+      const newData = [...prevData];
+      for (let i = 0; i < newData.length; i += 3) {
+        if (newData[i] === id) {
+          if (amount !== 0) {
+            newData[i + 1] = String(amount);
+          }
+          if (date !== "") {
+            newData[i + 2] = date;
+          }
+          idFound = true;
+          break;
+        }
+      }
+      if (!idFound) {
+        newData.push(id, String(amount), date);
+      }
+      return newData;
+    });
   };
 
   const handleRepetitionDialogOpen = () => {
@@ -627,16 +890,8 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("daily");
+    setEditSchedule(initialDateObject);
     setEditEndDate(endDateObject);
-    try {
-      await Promise.all(
-        repetitionMoneies
-          .filter((repetitionMoney) => repetitionMoney.transfer_id === id)
-          .map((repetitionMoney) => repetitionMoneyDelete(repetitionMoney.id))
-      );
-    } catch (error) {
-      console.error("Failed to delete repetitionMoney:", error);
-    }
   };
 
   const handleRepetitionSave = () => {
@@ -647,7 +902,17 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() <= endOfCurrentDay.getTime()) {
+      stringDate = endOfCurrentDay.toLocaleDateString().split("T")[0];
+    } else if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
+
     setEditSchedule(stringDate);
   };
 
@@ -655,14 +920,27 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     let stringDate: string;
     if (date.getTime() >= new Date(endDateObject).getTime()) {
       stringDate = endDateObject;
+    } else if (date.getTime() <= new Date(editSchedule).getTime()) {
+      let nextDate = new Date(editSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
+
     setEditEndDate(stringDate);
   };
 
   const handleSave = () => {
-    if (editAmount > 0) {
+    if (
+      editAmount > 0 ||
+      (editRepetition === true &&
+        intialRepetitionType === editRepetitionType &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
+        initialSchedule === editSchedule &&
+        initialEndDate === editEndDate)
+    ) {
       editTransfer(id);
       onClose();
     } else {
@@ -813,17 +1091,46 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       return dateA - dateB;
     });
 
+  const sortedBeforeAccounts = accounts
+    .filter((account) => account.id !== editAfterAccountId)
+    .slice()
+    .sort((a, b) => {
+      if (a.id === editBeforeAccountId) {
+        return -1;
+      } else if (b.id === editBeforeAccountId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
+  const sortedAfterAccounts = accounts
+    .filter((account) => account.id !== editBeforeAccountId)
+    .slice()
+    .sort((a, b) => {
+      if (a.id === editAfterAccountId) {
+        return -1;
+      } else if (b.id === editAfterAccountId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
   return (
     <Box
       sx={{
         width:
           editRepetition === true &&
+          intialRepetitionType === editRepetitionType &&
+          JSON.stringify(intialRepetitionSettings) ===
+            JSON.stringify(editRepetitionSettings) &&
+          initialSchedule === editSchedule &&
+          initialEndDate === editEndDate &&
           repetitionMoneies.filter(
             (repetitionMoney) => repetitionMoney.transfer_id === id
           ).length > 0
             ? 1000
             : 560,
-        height: 800,
+        height: 815,
       }}
     >
       <Dialog
@@ -920,26 +1227,71 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
               displayEmpty
               inputProps={{ "aria-label": "Without label" }}
             >
-              {accounts
-                .filter((account) => account.id !== editAfterAccountId)
-                .map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.name}
-                  </MenuItem>
-                ))}
+              {sortedBeforeAccounts.map((account) => (
+                <MenuItem key={account.id} value={account.id}>
+                  {account.name}
+                </MenuItem>
+              ))}
             </Select>
-            {accounts
-              .filter((account) => account.id === editBeforeAccountId)
-              .map((account) => (
-                <Typography key={account.id} align="left" variant="subtitle1">
-                  口座金額：{formatAmountCommas(account.amount)}
-                </Typography>
-              ))}{" "}
+            {initialBeforeAccountId === editBeforeAccountId &&
+            !(
+              intialRepetitionType === editRepetitionType &&
+              JSON.stringify(intialRepetitionSettings) ===
+                JSON.stringify(editRepetitionSettings) &&
+              initialSchedule === editSchedule &&
+              initialEndDate === editEndDate
+            )
+              ? accounts
+                  .filter((account) => account.id === editBeforeAccountId)
+                  .map((account) => (
+                    <Typography
+                      key={account.id}
+                      align="left"
+                      variant="subtitle1"
+                    >
+                      口座金額：
+                      {formatAmountCommas(
+                        parseFloat(String(initialBeforeAccount.amount)) +
+                          parseFloat(String(initialRepetitionAllMoney))
+                      )}
+                    </Typography>
+                  ))
+              : accounts
+                  .filter((account) => account.id === editBeforeAccountId)
+                  .map((account) => (
+                    <Typography
+                      key={account.id}
+                      align="left"
+                      variant="subtitle1"
+                    >
+                      口座金額：{formatAmountCommas(account.amount)}
+                    </Typography>
+                  ))}
             {isBeforeTitleFormValid && (
               <Typography align="left" variant="subtitle1">
                 送金元口座を選択してください
               </Typography>
             )}
+            {editRepetition === true &&
+            intialRepetitionType === editRepetitionType &&
+            JSON.stringify(intialRepetitionSettings) ===
+              JSON.stringify(editRepetitionSettings) &&
+            initialSchedule === editSchedule &&
+            initialEndDate === editEndDate &&
+            initialBeforeAccountId != editBeforeAccountId
+              ? initialRepetitionAllMoney >
+                  accounts.filter(
+                    (account) => account.id === editBeforeAccountId
+                  )[0].amount && (
+                  <Typography
+                    align="left"
+                    variant="subtitle1"
+                    style={{ color: "red" }}
+                  >
+                    送金口座の金額がマイナスになってしまいます
+                  </Typography>
+                )
+              : false}
           </li>
           <li className="pt-5">
             <Typography variant="subtitle1">送金先口座</Typography>
@@ -950,13 +1302,11 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
               displayEmpty
               inputProps={{ "aria-label": "Without label" }}
             >
-              {accounts
-                .filter((account) => account.id !== editBeforeAccountId)
-                .map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.name}
-                  </MenuItem>
-                ))}
+              {sortedAfterAccounts.map((account) => (
+                <MenuItem key={account.id} value={account.id}>
+                  {account.name}
+                </MenuItem>
+              ))}
             </Select>
             {accounts
               .filter((account) => account.id === editAfterAccountId)
@@ -964,44 +1314,62 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                 <Typography key={account.id} align="left" variant="subtitle1">
                   口座金額：{formatAmountCommas(account.amount)}
                 </Typography>
-              ))}{" "}
+              ))}
             {isAfterTitleFormValid && (
               <Typography align="left" variant="subtitle1">
                 送金先口座を選択してください
               </Typography>
             )}
           </li>
-          <li className="pt-5">
-            <Typography variant="subtitle1">金額</Typography>
-            <div className="flex items-center">
-              <TextField
-                variant="outlined"
-                name="amount"
-                value={editAmountString}
-                onChange={handleChange}
-                inputProps={{
-                  inputMode: "numeric",
-                  pattern: "[0-9]*",
-                }}
-              />
+          {(initialRepetition === false ||
+            editRepetition === false ||
+            intialRepetitionType !== editRepetitionType ||
+            JSON.stringify(intialRepetitionSettings) !==
+              JSON.stringify(editRepetitionSettings) ||
+            initialSchedule !== editSchedule ||
+            initialEndDate !== editEndDate) && (
+            <>
+              <li className="pt-5">
+                <Typography variant="subtitle1">金額</Typography>
+                <div className="flex items-center">
+                  <TextField
+                    variant="outlined"
+                    name="amount"
+                    value={editAmountString}
+                    onChange={handleChange}
+                    inputProps={{
+                      inputMode: "numeric",
+                      pattern: "[0-9]*",
+                    }}
+                  />
 
-              <span>円</span>
-            </div>
-          </li>
-          <li>
-            <Typography align="left" variant="subtitle1">
-              {editAmountError && (
+                  <span>円</span>
+                </div>
+              </li>
+              <li>
                 <Typography align="left" variant="subtitle1">
-                  金額を0より上にしてください
+                  {editAmountError && (
+                    <Typography
+                      align="left"
+                      variant="subtitle1"
+                      style={{ color: "red" }}
+                    >
+                      金額を0より上にしてください
+                    </Typography>
+                  )}
+                  {editAmountOverError && (
+                    <Typography
+                      align="left"
+                      variant="subtitle1"
+                      style={{ color: "red" }}
+                    >
+                      送金元口座に入っているお金以下にして下さい
+                    </Typography>
+                  )}
                 </Typography>
-              )}
-              {editAmountOverError && (
-                <Typography align="left" variant="subtitle1">
-                  送金元口座に入っているお金以下にして下さい
-                </Typography>
-              )}
-            </Typography>
-          </li>
+              </li>
+            </>
+          )}
           <li className="pt-5">
             <Stack direction="row" spacing={1}>
               <button
@@ -1105,12 +1473,36 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                 disabled={
                   isBeforeTitleFormValid ||
                   isAfterTitleFormValid ||
-                  editAmountError ||
-                  editAmountOverError
+                  ((editAmountError || editAmountOverError) &&
+                    !(
+                      editRepetition === true &&
+                      intialRepetitionType === editRepetitionType &&
+                      JSON.stringify(intialRepetitionSettings) ===
+                        JSON.stringify(editRepetitionSettings) &&
+                      initialSchedule === editSchedule &&
+                      initialEndDate === editEndDate
+                    )) ||
+                  (editRepetition === true &&
+                    intialRepetitionType === editRepetitionType &&
+                    JSON.stringify(intialRepetitionSettings) ===
+                      JSON.stringify(editRepetitionSettings) &&
+                    initialSchedule === editSchedule &&
+                    initialEndDate === editEndDate &&
+                    initialBeforeAccountId != editBeforeAccountId)
+                    ? initialRepetitionAllMoney >
+                      accounts.filter(
+                        (account) => account.id === editBeforeAccountId
+                      )[0].amount
+                    : false
                 }
                 color="primary"
                 className={
                   editRepetition === true &&
+                  intialRepetitionType === editRepetitionType &&
+                  JSON.stringify(intialRepetitionSettings) ===
+                    JSON.stringify(editRepetitionSettings) &&
+                  initialSchedule === editSchedule &&
+                  initialEndDate === editEndDate &&
                   repetitionMoneies.filter(
                     (repetitionMoney) => repetitionMoney.transfer_id === id
                   ).length > 0
@@ -1130,6 +1522,11 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
           </li>
         </ul>
         {editRepetition === true &&
+          intialRepetitionType === editRepetitionType &&
+          JSON.stringify(intialRepetitionSettings) ===
+            JSON.stringify(editRepetitionSettings) &&
+          initialSchedule === editSchedule &&
+          initialEndDate === editEndDate &&
           repetitionMoneies.filter(
             (repetitionMoney) => repetitionMoney.transfer_id === id
           ).length > 0 && (
@@ -1153,6 +1550,14 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                         repetition_schedule={
                           repetitionMoney.repetition_schedule
                         }
+                        limitAmount={
+                          initialBeforeAccountId === editBeforeAccountId
+                            ? parseFloat(String(initialBeforeAccount.amount)) +
+                              parseFloat(String(repetitionMoney.amount))
+                            : parseFloat(String(editBeforeAccount.amount))
+                        }
+                        onChange={handleRepetitionMoneyChange}
+                        onDelete={deleteRepetition}
                       />
                     ))}
                   </TableBody>

@@ -36,6 +36,16 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
   const { row, visibleColumns } = props;
   const { accounts, repetitionMoneies, setIsEditing } =
     useContext(moneyContext);
+  const now = new Date();
+  const endOfCurrentDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    0,
+    0
+  );
 
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
   const [isEditTransferModalOpen, setIsEditTransferModalOpen] = useState(false);
@@ -151,6 +161,22 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     }
   };
 
+  const repetitionAllMoney = (id: string) => {
+    let money = 0;
+    repetitionMoneies
+      .filter(
+        (repetitionMoney) =>
+          repetitionMoney.transfer_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            endOfCurrentDay.getTime()
+      )
+      .map(
+        (repetitionMoney) =>
+          (money += parseFloat(String(repetitionMoney.amount)))
+      );
+    return Number(money);
+  };
+
   const formatAmountCommas = (number: number) => {
     const integerPart = Math.floor(number);
     const decimalPart = (number - integerPart).toFixed(0).slice(1);
@@ -205,7 +231,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
     } else if (!a.transfer_repetition && b.transfer_repetition) {
       return 1;
     }
-    
+
     const dateA = new Date(a.transfer_schedule).getTime();
     const dateB = new Date(b.transfer_schedule).getTime();
     return dateA - dateB;
@@ -257,7 +283,9 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
               schedule={sortedHistoryRows[isHistory].transfer_schedule}
               end_date={sortedHistoryRows[isHistory].transfer_end_date}
               repetition={sortedHistoryRows[isHistory].transfer_repetition}
-              repetition_type={sortedHistoryRows[isHistory].transfer_repetition_type}
+              repetition_type={
+                sortedHistoryRows[isHistory].transfer_repetition_type
+              }
               repetition_settings={
                 sortedHistoryRows[isHistory].transfer_repetition_settings
               }
@@ -381,7 +409,11 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
                           </button>
                         </TableCell>
                         <TableCell>
-                          {formatAmountCommas(historyRow.transfer_amount)}
+                          {historyRow.transfer_repetition === false
+                            ? formatAmountCommas(historyRow.transfer_amount)
+                            : formatAmountCommas(
+                                repetitionAllMoney(historyRow.transfer_id)
+                              )}
                         </TableCell>
                         <TableCell>{renderRepetition(historyIndex)}</TableCell>
                         <TableCell align="right">

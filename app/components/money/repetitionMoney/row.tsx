@@ -20,10 +20,6 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { moneyContext } from "@/context/money-context";
 
-import {
-  repetitionMoneyEdit,
-  repetitionMoneyDelete,
-} from "@/lib/api/repetitionMoney-api";
 import { repetitionMoneyRowProps } from "@/interface/repetitionMoney-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
@@ -31,12 +27,12 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
   props
 ) => {
-  const { id, amount, repetition_schedule } = props;
-  const {
-    repetitionMoneies,
-    setIsEditing,
-  } = useContext(moneyContext);
+  const { id, amount, repetition_schedule, limitAmount, onChange, onDelete } =
+    props;
+  const { repetitionMoneies } = useContext(moneyContext);
 
+  const [editRepetitionSchedule, setEditRepetitionSchedule] =
+    useState(repetition_schedule);
   const [editRepetitionAmount, setEditRepetitionAmount] =
     useState<number>(amount);
   const [editRepetitionAmountString, setEditRepetitionAmountString] =
@@ -44,6 +40,8 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
       String(Math.floor(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
     );
   const [editRepetitionAmountError, setEditRepetitionAmountError] =
+    useState<boolean>(false);
+  const [editRepetitionAmountOverError, setEditRepetitionAmountOverError] =
     useState<boolean>(false);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] =
@@ -55,36 +53,42 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
     } else {
       setEditRepetitionAmountError(true);
     }
+
+    if (limitAmount != -1 && limitAmount >= editRepetitionAmount) {
+      setEditRepetitionAmountOverError(false);
+    } else {
+      setEditRepetitionAmountOverError(true);
+    }
   }, [editRepetitionAmount]);
 
-  const editRepetition = async () => {
-    const selectedRepetitionMoney = repetitionMoneies.filter(
-      (repetitionMoney) => repetitionMoney.id === id
-    )[0];
-    try {
-      await repetitionMoneyEdit(
-        id,
-        selectedRepetitionMoney.transaction_type,
-        selectedRepetitionMoney.payment_id,
-        selectedRepetitionMoney.income_id,
-        selectedRepetitionMoney.transfer_id,
-        editRepetitionAmount,
-        selectedRepetitionMoney.repetition_schedule
-      );
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete repetitionMoney:", error);
-    }
-  };
+  // const editRepetition = async () => {
+  //   const selectedRepetitionMoney = repetitionMoneies.filter(
+  //     (repetitionMoney) => repetitionMoney.id === id
+  //   )[0];
+  //   try {
+  //     await repetitionMoneyEdit(
+  //       id,
+  //       selectedRepetitionMoney.transaction_type,
+  //       selectedRepetitionMoney.payment_id,
+  //       selectedRepetitionMoney.income_id,
+  //       selectedRepetitionMoney.transfer_id,
+  //       editRepetitionAmount,
+  //       selectedRepetitionMoney.repetition_schedule
+  //     );
+  //     setIsEditing(true);
+  //   } catch (error) {
+  //     console.error("Failed to delete repetitionMoney:", error);
+  //   }
+  // };
 
-  const deleteRepetition = async () => {
-    try {
-      await repetitionMoneyDelete(id);
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete repetitionPayment:", error);
-    }
-  };
+  // const deleteRepetition = async () => {
+  //   try {
+  //     await repetitionMoneyDelete(id);
+  //     setIsEditing(true);
+  //   } catch (error) {
+  //     console.error("Failed to delete repetitionPayment:", error);
+  //   }
+  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -110,24 +114,9 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
   };
 
   const handleSchedulChange = async (date: Date) => {
-    const selectedRepetitionMoney = repetitionMoneies.filter(
-      (repetitionMoney) => repetitionMoney.id === id
-    )[0];
     const stringDate = date.toLocaleDateString().split("T")[0];
-    try {
-      await repetitionMoneyEdit(
-        id,
-        selectedRepetitionMoney.transaction_type,
-        selectedRepetitionMoney.payment_id,
-        selectedRepetitionMoney.income_id,
-        selectedRepetitionMoney.transfer_id,
-        selectedRepetitionMoney.amount,
-        stringDate
-      );
-      setIsEditing(true);
-    } catch (error) {
-      console.error("Failed to delete repetitionMoney:", error);
-    }
+    setEditRepetitionSchedule(stringDate);
+    onChange(id, 0, stringDate);
   };
 
   const formatAmountCommas = (number: number) => {
@@ -154,7 +143,7 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
 
   const handleRepetitionMoneySave = () => {
     setRepetitionDialogOpen(false);
-    editRepetition();
+    onChange(id, editRepetitionAmount, "");
   };
 
   return (
@@ -199,23 +188,54 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
                 金額を0以上にして下さい
               </Typography>
             )}
+            {editRepetitionAmountOverError && (
+              <Typography align="left" variant="subtitle1">
+                送金元口座に入っているお金以下にして下さい
+              </Typography>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center" }}>
           <Button
-            onClick={() => handleRepetitionMoneySave}
+            onClick={handleRepetitionMoneySave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
-            disabled={editRepetitionAmountError}
+            disabled={
+              editRepetitionAmountError || editRepetitionAmountOverError
+            }
           >
             設定
           </Button>
         </DialogActions>
       </Dialog>
 
-      <TableRow key={id}>
+      <TableRow
+        key={id}
+        sx={{
+          "& > *": {
+            borderBottom: "unset",
+            backgroundColor:
+              repetitionMoneies.filter(
+                (repetitionMoney) => repetitionMoney.id === id
+              )[0].transfer_id === null
+                ? "#f5f5f5"
+                : new Date(repetition_schedule).getTime() >
+                  new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth(),
+                    new Date().getDate(),
+                    23,
+                    59,
+                    0,
+                    0
+                  ).getTime()
+                ? "#bfbfbf"
+                : "#f5f5f5",
+          },
+        }}
+      >
         <TableCell component="th" scope="row">
           <InputDateTime
-            selectedDate={repetition_schedule}
+            selectedDate={editRepetitionSchedule}
             onChange={handleSchedulChange}
           />
         </TableCell>
@@ -228,11 +248,11 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
             }}
             onClick={handleRepetitionMoneyDialogOpen}
           >
-            {formatAmountCommas(amount)}
+            {formatAmountCommas(editRepetitionAmount)}
           </button>
         </TableCell>
         <TableCell align="right">
-          <IconButton onClick={deleteRepetition}>
+          <IconButton onClick={() => onDelete(id)}>
             <DeleteIcon />
           </IconButton>
         </TableCell>

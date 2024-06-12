@@ -94,18 +94,6 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     );
 
     try {
-      const response = await transferNew(
-        newBeforeAccountId,
-        newAfterAccountId,
-        newAmount,
-        newSchedule,
-        newEndDate,
-        newRepetition,
-        newRepetitionType,
-        newRepetitionSettings,
-        newBody
-      );
-
       const selectedBeforeAccount: accountData = accounts.filter(
         (account) => account.id === newBeforeAccountId
       )[0];
@@ -114,6 +102,18 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       )[0];
 
       if (newRepetition === true) {
+        const response = await transferNew(
+          newBeforeAccountId,
+          newAfterAccountId,
+          0,
+          newSchedule,
+          newEndDate,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
+
         let repetitionMoneyDate: repetitionMoneyData[] = [];
         const schedules = calculateNextSchedules();
 
@@ -138,7 +138,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           String(selectedBeforeAccount.amount)
         );
         let afterAccountEditedAmount = parseFloat(
-          String(selectedBeforeAccount.amount)
+          String(selectedAfterAccount.amount)
         );
 
         for (const repetitionMoney of repetitionMoneyDate.filter(
@@ -167,11 +167,23 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           selectedAfterAccount.body
         );
       } else {
+        await transferNew(
+          newBeforeAccountId,
+          newAfterAccountId,
+          newAmount,
+          newSchedule,
+          newEndDate,
+          newRepetition,
+          newRepetitionType,
+          newRepetitionSettings,
+          newBody
+        );
+
         const beforeAccountEditedAmount =
           parseFloat(String(selectedBeforeAccount.amount)) -
           parseFloat(String(newAmount));
         const afterAccountEditedAmount =
-          parseFloat(String(selectedBeforeAccount.amount)) +
+          parseFloat(String(selectedAfterAccount.amount)) +
           parseFloat(String(newAmount));
 
         if (new Date(newSchedule).getTime() <= endOfCurrentDay.getTime()) {
@@ -276,6 +288,8 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("daily");
+    setNewSchedule(initialDateObject);
+    setNewEndDate(endDateObject);
   };
 
   const handleRepetitionSave = () => {
@@ -440,8 +454,32 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     period === "monthly" ||
     (period === "weekly" && selectedDays.length > 0);
 
+  const sortedBeforeAccounts = accounts
+    .filter((account) => account.id !== newAfterAccountId)
+    .slice()
+    .sort((a, b) => {
+      if (a.id === newBeforeAccountId) {
+        return -1;
+      } else if (b.id === newBeforeAccountId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
+  const sortedAfterAccounts = accounts
+    .filter((account) => account.id !== newBeforeAccountId)
+    .slice()
+    .sort((a, b) => {
+      if (a.id === newAfterAccountId) {
+        return -1;
+      } else if (b.id === newAfterAccountId) {
+        return 1;
+      }
+      return a.id > b.id ? 1 : -1;
+    });
+
   return (
-    <Box width={560} height={810}>
+    <Box width={560} height={815}>
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -535,13 +573,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== newAfterAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
+            {sortedBeforeAccounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
+              </MenuItem>
+            ))}
           </Select>
           {accounts
             .filter((account) => account.id === newBeforeAccountId)
@@ -565,13 +601,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             displayEmpty
             inputProps={{ "aria-label": "Without label" }}
           >
-            {accounts
-              .filter((account) => account.id !== newBeforeAccountId)
-              .map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.name}
-                </MenuItem>
-              ))}
+            {sortedAfterAccounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.name}
+              </MenuItem>
+            ))}
           </Select>
           {accounts
             .filter((account) => account.id === newAfterAccountId)
