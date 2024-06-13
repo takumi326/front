@@ -27,10 +27,7 @@ import {
   classificationMonthlyAmountEdit,
 } from "@/lib/api/classificationMonthlyAmount-api";
 
-import {
-  incomeRowProps,
-  displayIncomeData,
-} from "@/interface/Income-interface";
+import { incomeRowProps } from "@/interface/Income-interface";
 import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
 
 import { IncomeShow } from "@/components/money/income/show";
@@ -43,6 +40,8 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
+    loading,
+    setLoading,
   } = useContext(moneyContext);
 
   const [isEditIncomeModalOpen, setIsEditIncomeModalOpen] = useState(false);
@@ -50,11 +49,10 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
     useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHistory, setIsHistory] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const handleClassificationMonthlyAmount = async () => {
-      setIsProcessing(true);
+      setLoading(true);
       try {
         const shouldCreateNewAmount: classificationMonthlyAmountData =
           classificationMonthlyAmounts.some(
@@ -122,10 +120,10 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
       } catch (error) {
         console.error("Failed to new classificationMonthlyAmount:", error);
       } finally {
-        setIsProcessing(false);
+        setLoading(false);
       }
     };
-    if (!isProcessing) {
+    if (!loading) {
       handleClassificationMonthlyAmount();
     }
   }, [row]);
@@ -148,6 +146,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
   };
 
   const deleteIncome = async (id: string, index: number) => {
+    setLoading(true);
     try {
       if (row.classification_name === "分類なし") {
         incomeDelete(id);
@@ -218,15 +217,20 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
       }
     } catch (error) {
       console.error("Failed to edit income:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteClassification = async (id: string) => {
+    setLoading(true);
     try {
       await classificationDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete classification:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -352,7 +356,9 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
               schedule={sortedHistoryRows[isHistory].income_schedule}
               end_date={sortedHistoryRows[isHistory].income_end_date}
               repetition={sortedHistoryRows[isHistory].income_repetition}
-              repetition_type={sortedHistoryRows[isHistory].income_repetition_type}
+              repetition_type={
+                sortedHistoryRows[isHistory].income_repetition_type
+              }
               repetition_settings={
                 sortedHistoryRows[isHistory].income_repetition_settings
               }

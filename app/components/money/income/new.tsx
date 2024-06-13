@@ -40,6 +40,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     categories,
     classificationMonthlyAmounts,
     setIsEditing,
+    setLoading,
   } = useContext(moneyContext);
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
@@ -81,6 +82,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
   }, [newAmount]);
 
   const newIncome = async () => {
+    setLoading(true);
     try {
       if (newRepetition === false) {
         await incomeNew(
@@ -189,6 +191,8 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create income:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -274,7 +278,14 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
     const StringMonth = `${date.getFullYear()}${date.getMonth() + 1}`;
     setNewSchedule(stringDate);
     setNewMonth(StringMonth);
@@ -284,6 +295,10 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
     let stringDate: string;
     if (date.getTime() >= new Date(endDateObject).getTime()) {
       stringDate = endDateObject;
+    } else if (date.getTime() <= new Date(newSchedule).getTime()) {
+      let nextDate = new Date(newSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
@@ -650,6 +665,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
           )}
           <Box
             sx={{
+              width: 98,
               border: "1px solid #ccc",
               borderRadius: "4px",
               borderWidth: "px",
@@ -666,6 +682,7 @@ export const IncomeNew: React.FC<incomeNewProps> = (props) => {
             <Typography variant="subtitle1">繰り返し終了日</Typography>
             <Box
               sx={{
+                width: 98,
                 border: "1px solid #ccc",
                 borderRadius: "4px",
                 borderWidth: "px",

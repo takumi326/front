@@ -10,17 +10,20 @@ import { categoryNewProps } from "@/interface/category-interface";
 
 export const CategoryNew: React.FC<categoryNewProps> = (props) => {
   const { category_type, onClose } = props;
-  const { setIsEditing } = useContext(moneyContext);
+  const { setIsEditing, setLoading } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
   const newCategory = async () => {
+    setLoading(true);
     try {
       await categoryNew(newName, category_type);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create category:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

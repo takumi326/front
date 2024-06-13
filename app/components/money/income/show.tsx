@@ -23,6 +23,7 @@ import {
   TableHead,
   TableBody,
   Paper,
+  Checkbox,
 } from "@mui/material";
 import { SelectChangeEvent } from "@mui/material/Select";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -68,11 +69,41 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
+    loading,
+    setLoading,
   } = useContext(moneyContext);
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
+  const startCurrentMonth = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)) - 1,
+    1
+  );
+  const endCurrentMonth = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)),
+    0,
+    23,
+    59
+  );
+
+  const [repetitionNewDialogOpen, setRepetitionNewDialogOpen] =
+    useState<boolean>(false);
+  const [editRepetitionAmount, setEditRepetitionAmount] = useState<number>(0);
+  const [editRepetitionAmountString, setEditRepetitionAmountString] = useState(
+    String(Math.floor(editRepetitionAmount)).replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ","
+    )
+  );
+  const [editRepetitionAmountError, setEditRepetitionAmountError] =
+    useState<boolean>(false);
+  const [editRepetitionAmountOverError, setEditRepetitionAmountOverError] =
+    useState<boolean>(false);
+  const [editRepetitionSchedule, setEditRepetitionSchedule] =
+    useState(initialDateObject);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] =
     useState<boolean>(false);
@@ -126,6 +157,8 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   const [isCategoryFormValid, setIsCategoryFormValid] = useState(
     editCategoryId ? false : true
   );
+  const [sortRepetitionMoney, setSortRepetitionMoney] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (editAmount > 0) {
@@ -135,7 +168,45 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     }
   }, [editAmount]);
 
+  useEffect(() => {
+    if (editRepetitionAmount > 0) {
+      setEditRepetitionAmountError(false);
+    } else {
+      setEditRepetitionAmountError(true);
+    }
+
+    if (
+      new Date(editRepetitionSchedule).getTime() <= endOfCurrentDay.getTime()
+    ) {
+      if (initialBeforeAccountId === editBeforeAccountId) {
+        if (
+          parseFloat(String(editBeforeAccountAmount)) >=
+          parseFloat(String(editRepetitionAmount))
+        ) {
+          setEditRepetitionAmountOverError(false);
+        } else {
+          setEditRepetitionAmountOverError(true);
+        }
+      } else {
+        if (
+          parseFloat(String(editBeforeAccountAmount)) >=
+          parseFloat(String(initialRepetitionAllMoney)) +
+            parseFloat(String(editRepetitionAmount))
+        ) {
+          setEditRepetitionAmountOverError(false);
+        } else {
+          setEditRepetitionAmountOverError(true);
+        }
+      }
+    }
+  }, [
+    editRepetitionAmount,
+    editBeforeAccountAmount,
+    initialBeforeAccountAmount,
+  ]);
+
   const editIncome = async (id: string) => {
+    setLoading(true);
     const initialClassificationMonthlyAmount: classificationMonthlyAmountData =
       classificationMonthlyAmounts.filter(
         (classificationMonthlyAmount) =>
@@ -218,6 +289,73 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
       return money;
     };
 
+    const editChangeRepetitionMoneyIncrease = async (
+      start: Date,
+      end: Date
+    ) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "income" &&
+          repetitionMoney.income_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        let changeFound = false;
+        for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+          if (repetitionMoney.id === changeRepetitionMoneyData[i]) {
+            if (
+              (new Date(changeRepetitionMoneyData[i + 2]).getTime() >=
+                start.getTime() &&
+                new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+                  end.getTime()) ||
+              changeRepetitionMoneyData[i + 2] === ""
+            ) {
+              money +=
+                Number(changeRepetitionMoneyData[i + 1]) != 0
+                  ? parseFloat(String(changeRepetitionMoneyData[i + 1]))
+                  : parseFloat(String(repetitionMoney.amount));
+            }
+            changeFound = true;
+            break;
+          }
+        }
+        if (changeFound === false) {
+          money += parseFloat(String(repetitionMoney.amount));
+        }
+      }
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "income" &&
+          repetitionMoney.income_id === id &&
+          (new Date(repetitionMoney.repetition_schedule).getTime() <
+            start.getTime() ||
+            new Date(repetitionMoney.repetition_schedule).getTime() >
+              end.getTime())
+      )) {
+        for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+          if (repetitionMoney.id === changeRepetitionMoneyData[i]) {
+            if (
+              (new Date(changeRepetitionMoneyData[i + 2]).getTime() >=
+                start.getTime() &&
+                new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+                  end.getTime()) ||
+              changeRepetitionMoneyData[i + 2] === ""
+            ) {
+              money +=
+                Number(changeRepetitionMoneyData[i + 1]) != 0
+                  ? parseFloat(String(changeRepetitionMoneyData[i + 1]))
+                  : parseFloat(String(repetitionMoney.amount));
+            }
+            break;
+          }
+        }
+      }
+      return money;
+    };
+
     try {
       await incomeEdit(
         id,
@@ -231,13 +369,13 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
         editRepetitionSettings,
         editBody
       );
-      console.log(changeRepetitionMoneyData);
+
       for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
         const selectedRepetitionMoney = repetitionMoneies.filter(
           (repetitionMoney) =>
             repetitionMoney.id === changeRepetitionMoneyData[i]
         )[0];
-        console.log(selectedRepetitionMoney);
+
         await repetitionMoneyEdit(
           changeRepetitionMoneyData[i],
           selectedRepetitionMoney.transaction_type,
@@ -252,269 +390,63 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
             : selectedRepetitionMoney.repetition_schedule
         );
       }
-      // if (
-      //   initialRepetition === editRepetition &&
-      //   intialRepetitionType === editRepetitionType &&
-      //   JSON.stringify(intialRepetitionSettings) ===
-      //     JSON.stringify(editRepetitionSettings) &&
-      //   initialSchedule === editSchedule &&
-      //   initialEndDate === editEndDate
-      // ) {
-      //   let changeMoney = 0;
-      //   for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
-      //     const selectedRepetitionMoney = repetitionMoneies.filter(
-      //       (repetitionMoney) =>
-      //         repetitionMoney.id === changeRepetitionMoneyData[i]
-      //     )[0];
-      //     await repetitionMoneyEdit(
-      //       changeRepetitionMoneyData[i],
-      //       selectedRepetitionMoney.transaction_type,
-      //       selectedRepetitionMoney.payment_id,
-      //       selectedRepetitionMoney.income_id,
-      //       selectedRepetitionMoney.transfer_id,
-      //       Number(changeRepetitionMoneyData[i + 1]) != 0
-      //         ? Number(changeRepetitionMoneyData[i + 1])
-      //         : selectedRepetitionMoney.amount,
-      //       changeRepetitionMoneyData[i + 2] != ""
-      //         ? changeRepetitionMoneyData[i + 2]
-      //         : selectedRepetitionMoney.repetition_schedule
-      //     );
 
-      //     if (
-      //       new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
-      //       endOfCurrentDay.getTime()
-      //     ) {
-      //       if (
-      //         new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
-      //           endOfCurrentDay.getTime() ||
-      //         changeRepetitionMoneyData[i + 2] === ""
-      //       ) {
-      //         changeMoney =
-      //           changeMoney + Number(changeRepetitionMoneyData[i + 1]) != 0
-      //             ? parseFloat(String(changeRepetitionMoneyData[i + 1])) -
-      //               parseFloat(String(selectedRepetitionMoney.amount))
-      //             : 0;
-      //       } else if (
-      //         new Date(changeRepetitionMoneyData[i + 2]).getTime() >
-      //         endOfCurrentDay.getTime()
-      //       ) {
-      //         changeMoney =
-      //           changeMoney -
-      //           parseFloat(String(selectedRepetitionMoney.amount));
-      //       }
-      //     } else {
-      //       if (
-      //         new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
-      //         endOfCurrentDay.getTime()
-      //       ) {
-      //         if (Number(changeRepetitionMoneyData[i + 1]) != 0) {
-      //           changeMoney =
-      //             changeMoney +
-      //             parseFloat(String(changeRepetitionMoneyData[i + 1]));
-      //         } else {
-      //           changeMoney =
-      //             changeMoney +
-      //             parseFloat(String(selectedRepetitionMoney.amount));
-      //         }
-      //       }
-      //     }
-      //   }
-      // } else {
-      if (initialClassificationId === editClassificationId) {
-        if (editRepetition === true) {
-          if (initialRepetition === true) {
-            await initialRepetitionDelete();
-            await editRepetitionAdd();
+      if (
+        editRepetition === true &&
+        initialRepetition === editRepetition &&
+        intialRepetitionType === editRepetitionType &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
+        initialSchedule === editSchedule &&
+        initialEndDate === editEndDate
+      ) {
+        if (initialClassificationId === editClassificationId) {
+          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+              initialClassificationId
+          )) {
+            let money = 0;
+            const start = startDate(classificationMonthlyAmount.month);
+            const end = endDate(classificationMonthlyAmount.month);
 
-            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                initialClassificationId
-            )) {
-              let money = 0;
-              const start = startDate(classificationMonthlyAmount.month);
-              const end = endDate(classificationMonthlyAmount.month);
-
-              money =
-                parseFloat(String(classificationMonthlyAmount.amount)) -
-                (await initialRepetitionMoneyReduce(start, end)) +
-                (await editRepetitionMoneyIncrease(start, end));
-
-              await classificationMonthlyAmountEdit(
-                classificationMonthlyAmount.id,
-                classificationMonthlyAmount.classification_id,
-                classificationMonthlyAmount.month,
-                classificationMonthlyAmount.date,
-                Math.max(0, money)
-              );
-            }
-          } else {
-            await editRepetitionAdd();
-
-            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                initialClassificationId
-            )) {
-              let money = 0;
-              const start = startDate(classificationMonthlyAmount.month);
-              const end = endDate(classificationMonthlyAmount.month);
-
-              money =
-                parseFloat(String(classificationMonthlyAmount.amount)) +
-                (await editRepetitionMoneyIncrease(start, end));
-
-              if (
-                classificationMonthlyAmount.id ===
-                initialClassificationMonthlyAmount.id
-              ) {
-                money = money - parseFloat(String(initialAmount));
-                await classificationMonthlyAmountEdit(
-                  classificationMonthlyAmount.id,
-                  classificationMonthlyAmount.classification_id,
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date,
-                  Math.max(0, money)
-                );
-              } else {
-                await classificationMonthlyAmountEdit(
-                  classificationMonthlyAmount.id,
-                  classificationMonthlyAmount.classification_id,
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date,
-                  Math.max(0, money)
-                );
-              }
-            }
-          }
-        } else {
-          if (initialRepetition === true) {
-            await initialRepetitionDelete();
-
-            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                initialClassificationId
-            )) {
-              let money = 0;
-              const start = startDate(classificationMonthlyAmount.month);
-              const end = endDate(classificationMonthlyAmount.month);
-
-              money =
-                parseFloat(String(classificationMonthlyAmount.amount)) -
-                (await initialRepetitionMoneyReduce(start, end));
-
-              if (
-                classificationMonthlyAmount.id ===
-                editClassificationMonthlyAmount.id
-              ) {
-                money = money + parseFloat(String(editAmount));
-                await classificationMonthlyAmountEdit(
-                  classificationMonthlyAmount.id,
-                  classificationMonthlyAmount.classification_id,
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date,
-                  Math.max(0, money)
-                );
-              } else {
-                await classificationMonthlyAmountEdit(
-                  classificationMonthlyAmount.id,
-                  classificationMonthlyAmount.classification_id,
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date,
-                  Math.max(0, money)
-                );
-              }
-            }
-          } else {
-            if (
-              initialClassificationMonthlyAmount.month ===
-              editClassificationMonthlyAmount.month
-            ) {
-              const editMoney =
-                parseFloat(String(initialClassificationMonthlyAmount.amount)) -
-                parseFloat(String(initialAmount)) +
-                parseFloat(String(editAmount));
-
-              await classificationMonthlyAmountEdit(
-                initialClassificationMonthlyAmount.id,
-                initialClassificationMonthlyAmount.classification_id,
-                initialClassificationMonthlyAmount.month,
-                initialClassificationMonthlyAmount.date,
-                Math.max(0, editMoney)
-              );
-            } else {
-              const initialMoney =
-                parseFloat(String(initialClassificationMonthlyAmount.amount)) -
-                parseFloat(String(initialAmount));
-
-              await classificationMonthlyAmountEdit(
-                initialClassificationMonthlyAmount.id,
-                initialClassificationMonthlyAmount.classification_id,
-                initialClassificationMonthlyAmount.month,
-                initialClassificationMonthlyAmount.date,
-                Math.max(0, initialMoney)
-              );
-              if (editClassificationMonthlyAmount) {
-                const editMoney =
-                  parseFloat(String(editClassificationMonthlyAmount.amount)) +
-                  parseFloat(String(editAmount));
-
-                await classificationMonthlyAmountEdit(
-                  editClassificationMonthlyAmount.id,
-                  editClassificationMonthlyAmount.classification_id,
-                  editClassificationMonthlyAmount.month,
-                  editClassificationMonthlyAmount.date,
-                  Math.max(0, editMoney)
-                );
-              }
-            }
-          }
-        }
-      } else {
-        if (initialClassificationId !== null) {
-          if (initialRepetition === true) {
-            await initialRepetitionDelete();
-
-            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
-              (classificationMonthlyAmount) =>
-                classificationMonthlyAmount.classification_id ===
-                initialClassificationId
-            )) {
-              let money = 0;
-              const start = startDate(classificationMonthlyAmount.month);
-              const end = endDate(classificationMonthlyAmount.month);
-
-              money =
-                parseFloat(String(classificationMonthlyAmount.amount)) -
-                (await initialRepetitionMoneyReduce(start, end));
-
-              await classificationMonthlyAmountEdit(
-                classificationMonthlyAmount.id,
-                classificationMonthlyAmount.classification_id,
-                classificationMonthlyAmount.month,
-                classificationMonthlyAmount.date,
-                Math.max(0, money)
-              );
-            }
-          } else {
-            const initialClassificationAmount =
-              parseFloat(String(initialClassificationMonthlyAmount.amount)) -
-              parseFloat(String(initialAmount));
+            money =
+              parseFloat(String(classificationMonthlyAmount.amount)) -
+              (await initialRepetitionMoneyReduce(start, end)) +
+              (await editChangeRepetitionMoneyIncrease(start, end));
 
             await classificationMonthlyAmountEdit(
-              initialClassificationMonthlyAmount.id,
-              initialClassificationMonthlyAmount.classification_id,
-              initialClassificationMonthlyAmount.month,
-              initialClassificationMonthlyAmount.date,
-              Math.max(0, initialClassificationAmount)
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
+              Math.max(0, money)
             );
           }
-        }
+        } else {
+          if (initialClassificationId !== null) {
+            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id ===
+                initialClassificationId
+            )) {
+              let money = 0;
+              const start = startDate(classificationMonthlyAmount.month);
+              const end = endDate(classificationMonthlyAmount.month);
 
-        if (editRepetition === true) {
-          await editRepetitionAdd();
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
 
+              await classificationMonthlyAmountEdit(
+                classificationMonthlyAmount.id,
+                classificationMonthlyAmount.classification_id,
+                classificationMonthlyAmount.month,
+                classificationMonthlyAmount.date,
+                Math.max(0, money)
+              );
+            }
+          }
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id ===
@@ -526,7 +458,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
 
             money =
               parseFloat(String(classificationMonthlyAmount.amount)) +
-              (await editRepetitionMoneyIncrease(start, end));
+              (await editChangeRepetitionMoneyIncrease(start, end));
 
             await classificationMonthlyAmountEdit(
               classificationMonthlyAmount.id,
@@ -536,30 +468,254 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               Math.max(0, money)
             );
           }
-        } else {
-          if (editClassificationMonthlyAmount) {
-            const editClassificationAmount =
-              parseFloat(String(editClassificationMonthlyAmount.amount)) +
-              parseFloat(String(editAmount));
+        }
+      } else {
+        if (initialClassificationId === editClassificationId) {
+          if (editRepetition === true) {
+            if (initialRepetition === true) {
+              await initialRepetitionDelete();
+              await editRepetitionAdd();
 
-            await classificationMonthlyAmountEdit(
-              editClassificationMonthlyAmount.id,
-              editClassificationMonthlyAmount.classification_id,
-              editClassificationMonthlyAmount.month,
-              editClassificationMonthlyAmount.date,
-              Math.max(0, editClassificationAmount)
-            );
+              for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                  initialClassificationId
+              )) {
+                let money = 0;
+                const start = startDate(classificationMonthlyAmount.month);
+                const end = endDate(classificationMonthlyAmount.month);
+
+                money =
+                  parseFloat(String(classificationMonthlyAmount.amount)) -
+                  (await initialRepetitionMoneyReduce(start, end)) +
+                  (await editRepetitionMoneyIncrease(start, end));
+
+                await classificationMonthlyAmountEdit(
+                  classificationMonthlyAmount.id,
+                  classificationMonthlyAmount.classification_id,
+                  classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
+                  Math.max(0, money)
+                );
+              }
+            } else {
+              await editRepetitionAdd();
+
+              for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                  initialClassificationId
+              )) {
+                let money = 0;
+                const start = startDate(classificationMonthlyAmount.month);
+                const end = endDate(classificationMonthlyAmount.month);
+
+                money =
+                  parseFloat(String(classificationMonthlyAmount.amount)) +
+                  (await editRepetitionMoneyIncrease(start, end));
+
+                if (
+                  classificationMonthlyAmount.id ===
+                  initialClassificationMonthlyAmount.id
+                ) {
+                  money = money - parseFloat(String(initialAmount));
+                  await classificationMonthlyAmountEdit(
+                    classificationMonthlyAmount.id,
+                    classificationMonthlyAmount.classification_id,
+                    classificationMonthlyAmount.month,
+                    classificationMonthlyAmount.date,
+                    Math.max(0, money)
+                  );
+                } else {
+                  await classificationMonthlyAmountEdit(
+                    classificationMonthlyAmount.id,
+                    classificationMonthlyAmount.classification_id,
+                    classificationMonthlyAmount.month,
+                    classificationMonthlyAmount.date,
+                    Math.max(0, money)
+                  );
+                }
+              }
+            }
+          } else {
+            if (initialRepetition === true) {
+              await initialRepetitionDelete();
+
+              for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                  initialClassificationId
+              )) {
+                let money = 0;
+                const start = startDate(classificationMonthlyAmount.month);
+                const end = endDate(classificationMonthlyAmount.month);
+
+                money =
+                  parseFloat(String(classificationMonthlyAmount.amount)) -
+                  (await initialRepetitionMoneyReduce(start, end));
+
+                if (
+                  classificationMonthlyAmount.id ===
+                  editClassificationMonthlyAmount.id
+                ) {
+                  money = money + parseFloat(String(editAmount));
+                  await classificationMonthlyAmountEdit(
+                    classificationMonthlyAmount.id,
+                    classificationMonthlyAmount.classification_id,
+                    classificationMonthlyAmount.month,
+                    classificationMonthlyAmount.date,
+                    Math.max(0, money)
+                  );
+                } else {
+                  await classificationMonthlyAmountEdit(
+                    classificationMonthlyAmount.id,
+                    classificationMonthlyAmount.classification_id,
+                    classificationMonthlyAmount.month,
+                    classificationMonthlyAmount.date,
+                    Math.max(0, money)
+                  );
+                }
+              }
+            } else {
+              if (
+                initialClassificationMonthlyAmount.month ===
+                editClassificationMonthlyAmount.month
+              ) {
+                const editMoney =
+                  parseFloat(
+                    String(initialClassificationMonthlyAmount.amount)
+                  ) -
+                  parseFloat(String(initialAmount)) +
+                  parseFloat(String(editAmount));
+
+                await classificationMonthlyAmountEdit(
+                  initialClassificationMonthlyAmount.id,
+                  initialClassificationMonthlyAmount.classification_id,
+                  initialClassificationMonthlyAmount.month,
+                  initialClassificationMonthlyAmount.date,
+                  Math.max(0, editMoney)
+                );
+              } else {
+                const initialMoney =
+                  parseFloat(
+                    String(initialClassificationMonthlyAmount.amount)
+                  ) - parseFloat(String(initialAmount));
+
+                await classificationMonthlyAmountEdit(
+                  initialClassificationMonthlyAmount.id,
+                  initialClassificationMonthlyAmount.classification_id,
+                  initialClassificationMonthlyAmount.month,
+                  initialClassificationMonthlyAmount.date,
+                  Math.max(0, initialMoney)
+                );
+                if (editClassificationMonthlyAmount) {
+                  const editMoney =
+                    parseFloat(String(editClassificationMonthlyAmount.amount)) +
+                    parseFloat(String(editAmount));
+
+                  await classificationMonthlyAmountEdit(
+                    editClassificationMonthlyAmount.id,
+                    editClassificationMonthlyAmount.classification_id,
+                    editClassificationMonthlyAmount.month,
+                    editClassificationMonthlyAmount.date,
+                    Math.max(0, editMoney)
+                  );
+                }
+              }
+            }
+          }
+        } else {
+          if (initialClassificationId !== null) {
+            if (initialRepetition === true) {
+              await initialRepetitionDelete();
+
+              for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                  initialClassificationId
+              )) {
+                let money = 0;
+                const start = startDate(classificationMonthlyAmount.month);
+                const end = endDate(classificationMonthlyAmount.month);
+
+                money =
+                  parseFloat(String(classificationMonthlyAmount.amount)) -
+                  (await initialRepetitionMoneyReduce(start, end));
+
+                await classificationMonthlyAmountEdit(
+                  classificationMonthlyAmount.id,
+                  classificationMonthlyAmount.classification_id,
+                  classificationMonthlyAmount.month,
+                  classificationMonthlyAmount.date,
+                  Math.max(0, money)
+                );
+              }
+            } else {
+              const initialClassificationAmount =
+                parseFloat(String(initialClassificationMonthlyAmount.amount)) -
+                parseFloat(String(initialAmount));
+
+              await classificationMonthlyAmountEdit(
+                initialClassificationMonthlyAmount.id,
+                initialClassificationMonthlyAmount.classification_id,
+                initialClassificationMonthlyAmount.month,
+                initialClassificationMonthlyAmount.date,
+                Math.max(0, initialClassificationAmount)
+              );
+            }
+          }
+
+          if (editRepetition === true) {
+            await editRepetitionAdd();
+
+            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id ===
+                editClassificationId
+            )) {
+              let money = 0;
+              const start = startDate(classificationMonthlyAmount.month);
+              const end = endDate(classificationMonthlyAmount.month);
+
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) +
+                (await editRepetitionMoneyIncrease(start, end));
+
+              await classificationMonthlyAmountEdit(
+                classificationMonthlyAmount.id,
+                classificationMonthlyAmount.classification_id,
+                classificationMonthlyAmount.month,
+                classificationMonthlyAmount.date,
+                Math.max(0, money)
+              );
+            }
+          } else {
+            if (editClassificationMonthlyAmount) {
+              const editClassificationAmount =
+                parseFloat(String(editClassificationMonthlyAmount.amount)) +
+                parseFloat(String(editAmount));
+
+              await classificationMonthlyAmountEdit(
+                editClassificationMonthlyAmount.id,
+                editClassificationMonthlyAmount.classification_id,
+                editClassificationMonthlyAmount.month,
+                editClassificationMonthlyAmount.date,
+                Math.max(0, editClassificationAmount)
+              );
+            }
           }
         }
-        // }
       }
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit income:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleIncomeDelete = async (id: string) => {
+    setLoading(true);
     try {
       if (initialClassificationId === null) {
         incomeDelete(id);
@@ -633,6 +789,8 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
       }
     } catch (error) {
       console.error("Failed to edit income:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -662,50 +820,84 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     }
   };
 
-  const deleteRepetition = async (id: string) => {
-    const initialBeforeAccount: accountData = accounts.filter(
-      (account) => account.id === initialBeforeAccountId
-    )[0];
+  const handleRepetitionChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    switch (name) {
+      case "amount":
+        setEditRepetitionAmountString(
+          value.startsWith("0") && value.length > 1
+            ? value
+                .replace(/^0+/, "")
+                .replace(/,/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : value === ""
+            ? ""
+            : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        );
+        setEditRepetitionAmount(
+          value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
+        );
+        break;
+      default:
+        break;
+    }
+  };
 
-    const initialAfterAccount: accountData = accounts.filter(
-      (account) => account.id === initialAfterAccountId
-    )[0];
+  const handleRepetitionSchedulChange = (date: Date) => {
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setEditRepetitionSchedule(stringDate);
+  };
+
+  const deleteRepetition = async (id: string) => {
+    setLoading(true);
     const selectedRepetitionMoney = repetitionMoneies.filter(
       (repetitionMoney) => repetitionMoney.id === id
     )[0];
 
     try {
-      const initialBeforeMoney =
-        parseFloat(String(initialBeforeAccount.amount)) +
-        parseFloat(String(selectedRepetitionMoney.amount));
-      const initialAfterMoney =
-        parseFloat(String(initialAfterAccount.amount)) -
-        parseFloat(String(selectedRepetitionMoney.amount));
-
-      if (
-        new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
-        endOfCurrentDay.getTime()
-      ) {
-        console;
-        await accountEdit(
-          initialBeforeAccount.id,
-          initialBeforeAccount.name,
-          Math.max(0, initialBeforeMoney),
-          initialBeforeAccount.body
+      for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+          initialClassificationId
+      )) {
+        let money = parseFloat(String(classificationMonthlyAmount.amount));
+        const start = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)) - 1,
+          1
+        );
+        const end = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)),
+          0,
+          23,
+          59
         );
 
-        await accountEdit(
-          initialAfterAccount.id,
-          initialAfterAccount.name,
-          Math.max(0, initialAfterMoney),
-          initialAfterAccount.body
-        );
+        if (
+          new Date(selectedRepetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+        ) {
+          money = money - parseFloat(String(selectedRepetitionMoney.amount));
+
+          await classificationMonthlyAmountEdit(
+            classificationMonthlyAmount.id,
+            classificationMonthlyAmount.classification_id,
+            classificationMonthlyAmount.month,
+            classificationMonthlyAmount.date,
+            money
+          );
+        }
       }
 
       repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete repetitionPayment:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -753,6 +945,66 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     });
   };
 
+  const handleNewRepetitionMoneyDialogOpen = () => {
+    setRepetitionNewDialogOpen(true);
+    const value = 0;
+    setEditRepetitionAmountString(
+      String(Math.floor(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    );
+    setEditRepetitionAmount(value);
+    setEditRepetitionSchedule(initialDateObject);
+  };
+
+  const handleNewRepetitionMoneyDialogCancel = () => {
+    setRepetitionNewDialogOpen(false);
+  };
+
+  const handleNewRepetitionMoneySave = async () => {
+    setLoading(true);
+    setRepetitionNewDialogOpen(false);
+    try {
+      await repetitionMoneyNew(
+        "transfer",
+        "",
+        "",
+        id,
+        editRepetitionAmount,
+        editRepetitionSchedule
+      );
+      const initialBeforeMoney =
+        parseFloat(String(initialBeforeAccount.amount)) -
+        parseFloat(String(editRepetitionAmount));
+      const initialAfterMoney =
+        parseFloat(String(initialAfterAccount.amount)) +
+        parseFloat(String(editRepetitionAmount));
+
+      if (
+        new Date(editRepetitionSchedule).getTime() <= endOfCurrentDay.getTime()
+      ) {
+        await accountEdit(
+          initialBeforeAccount.id,
+          initialBeforeAccount.name,
+          Math.max(0, initialBeforeMoney),
+          initialBeforeAccount.body
+        );
+
+        await accountEdit(
+          initialAfterAccount.id,
+          initialAfterAccount.name,
+          Math.max(0, initialAfterMoney),
+          initialAfterAccount.body
+        );
+      }
+
+      repetitionMoneyDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete repetitionPayment:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRepetitionDialogOpen = () => {
     setRepetitionDialogOpen(true);
   };
@@ -792,7 +1044,14 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
     const StringMonth = `${date.getFullYear()}${date.getMonth() + 1}`;
     setEditSchedule(stringDate);
     setEditMonth(StringMonth);
@@ -800,8 +1059,10 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
 
   const handleEndDateChange = (date: Date) => {
     let stringDate: string;
-    if (date.getTime() >= new Date(endDateObject).getTime()) {
-      stringDate = endDateObject;
+    if (date.getTime() <= new Date(editSchedule).getTime()) {
+      let nextDate = new Date(editSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
@@ -955,6 +1216,10 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     return schedules;
   };
 
+  const handleSortRepetitionMoney = () => {
+    setSortRepetitionMoney(!sortRepetitionMoney);
+  };
+
   const isDialogFormValid =
     period === "daily" ||
     period === "monthly" ||
@@ -962,6 +1227,22 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
 
   const sortedRows = repetitionMoneies
     .filter((repetitionMoney) => repetitionMoney.income_id === id)
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.repetition_schedule).getTime();
+      const dateB = new Date(b.repetition_schedule).getTime();
+      return dateA - dateB;
+    });
+
+  const sortedCurrentMonthRows = repetitionMoneies
+    .filter(
+      (repetitionMoney) =>
+        repetitionMoney.income_id === id &&
+        new Date(repetitionMoney.repetition_schedule).getTime() >=
+          startCurrentMonth.getTime() &&
+        new Date(repetitionMoney.repetition_schedule).getTime() <=
+          endCurrentMonth.getTime()
+    )
     .slice()
     .sort((a, b) => {
       const dateA = new Date(a.repetition_schedule).getTime();
@@ -1090,6 +1371,87 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
             disabled={!isDialogFormValid}
           >
             設定
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={repetitionNewDialogOpen}
+        onClose={handleNewRepetitionMoneyDialogCancel}
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "400px",
+            height: "410px",
+          },
+        }}
+      >
+        <button
+          onClick={handleNewRepetitionMoneyDialogCancel}
+          className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+        >
+          <CloseIcon />
+        </button>
+        <DialogTitle sx={{ textAlign: "center" }}>新規作成</DialogTitle>
+        <DialogContent>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            width="100%"
+          >
+            <Typography variant="subtitle1">日付</Typography>
+            <Box
+              sx={{
+                width: 98,
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                borderWidth: "px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={editRepetitionSchedule}
+                onChange={handleRepetitionSchedulChange}
+              />
+            </Box>
+            <Typography variant="subtitle1" className="pt-5">
+              金額
+            </Typography>
+            <div className="flex items-center">
+              <TextField
+                variant="outlined"
+                name="amount"
+                value={editRepetitionAmountString}
+                onChange={handleRepetitionChange}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
+
+              <span>円</span>
+            </div>
+            {editRepetitionAmountError && (
+              <Typography align="left" variant="subtitle1">
+                金額を0以上にして下さい
+              </Typography>
+            )}
+            {editRepetitionAmountOverError && (
+              <Typography align="left" variant="subtitle1">
+                送金元口座に入っているお金以下にして下さい
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }} className="mb-16">
+          <Button
+            onClick={handleNewRepetitionMoneySave}
+            sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+            disabled={
+              editRepetitionAmountError || editRepetitionAmountOverError
+            }
+          >
+            追加
           </Button>
         </DialogActions>
       </Dialog>
@@ -1270,39 +1632,45 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           </li>
           <li className="pt-10">
             <Stack direction="row" justifyContent="center">
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                disabled={
-                  isClassificationFormValid ||
-                  isCategoryFormValid ||
-                  (editAmountError &&
-                    !(
-                      editRepetition === true &&
-                      intialRepetitionType === editRepetitionType &&
-                      JSON.stringify(intialRepetitionSettings) ===
-                        JSON.stringify(editRepetitionSettings) &&
-                      initialSchedule === editSchedule &&
-                      initialEndDate === editEndDate
-                    ))
-                }
-                color="primary"
-                className={
-                  editRepetition === true &&
-                  intialRepetitionType === editRepetitionType &&
-                  JSON.stringify(intialRepetitionSettings) ===
-                    JSON.stringify(editRepetitionSettings) &&
-                  initialSchedule === editSchedule &&
-                  initialEndDate === editEndDate &&
-                  repetitionMoneies.filter(
-                    (repetitionMoney) => repetitionMoney.income_id === id
-                  ).length > 0
-                    ? "ml-48"
-                    : "ml-60"
-                }
-              >
-                保存
-              </Button>
+              {loading === true ? (
+                <Typography variant="subtitle1" className="ml-48">
+                  Loading...
+                </Typography>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={
+                    isClassificationFormValid ||
+                    isCategoryFormValid ||
+                    (editAmountError &&
+                      !(
+                        editRepetition === true &&
+                        intialRepetitionType === editRepetitionType &&
+                        JSON.stringify(intialRepetitionSettings) ===
+                          JSON.stringify(editRepetitionSettings) &&
+                        initialSchedule === editSchedule &&
+                        initialEndDate === editEndDate
+                      ))
+                  }
+                  color="primary"
+                  className={
+                    editRepetition === true &&
+                    intialRepetitionType === editRepetitionType &&
+                    JSON.stringify(intialRepetitionSettings) ===
+                      JSON.stringify(editRepetitionSettings) &&
+                    initialSchedule === editSchedule &&
+                    initialEndDate === editEndDate &&
+                    repetitionMoneies.filter(
+                      (repetitionMoney) => repetitionMoney.income_id === id
+                    ).length > 0
+                      ? "ml-48"
+                      : "ml-60"
+                  }
+                >
+                  保存
+                </Button>
+              )}
               <IconButton
                 onClick={() => handleIncomeDelete(id)}
                 className="ml-auto"
@@ -1322,8 +1690,32 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
             (repetitionMoney) => repetitionMoney.income_id === id
           ).length > 0 && (
             <div className="w-full pt-10">
-              <Typography variant="subtitle1">繰り返し一覧</Typography>
-              <TableContainer component={Paper} sx={{ maxHeight: 635 }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <Box display="flex" alignItems="center">
+                  <Typography variant="subtitle1" mr={2}>
+                    繰り返し一覧
+                  </Typography>
+                  <Box display="flex" alignItems="center">
+                    <Checkbox
+                      checked={sortRepetitionMoney}
+                      onChange={handleSortRepetitionMoney}
+                    />
+                    <Typography>カレンダーの表示月のみ</Typography>
+                  </Box>
+                </Box>
+                <IconButton>
+                  <AddIcon />
+                </IconButton>
+              </Box>
+              <TableContainer
+                component={Paper}
+                sx={{ maxHeight: 635, border: "0.5px solid black" }}
+              >
                 <Table
                   stickyHeader
                   size="small"
@@ -1343,19 +1735,33 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedRows.map((repetitionMoney) => (
-                      <RepetitionMoneyRow
-                        key={repetitionMoney.id}
-                        id={repetitionMoney.id}
-                        amount={repetitionMoney.amount}
-                        repetition_schedule={
-                          repetitionMoney.repetition_schedule
-                        }
-                        limitAmount={-1}
-                        onChange={handleRepetitionMoneyChange}
-                        onDelete={deleteRepetition}
-                      />
-                    ))}
+                    {sortRepetitionMoney === true
+                      ? sortedCurrentMonthRows.map((repetitionMoney) => (
+                          <RepetitionMoneyRow
+                            key={repetitionMoney.id}
+                            id={repetitionMoney.id}
+                            amount={repetitionMoney.amount}
+                            repetition_schedule={
+                              repetitionMoney.repetition_schedule
+                            }
+                            limitAmount={-1}
+                            onChange={handleRepetitionMoneyChange}
+                            onDelete={deleteRepetition}
+                          />
+                        ))
+                      : sortedRows.map((repetitionMoney) => (
+                          <RepetitionMoneyRow
+                            key={repetitionMoney.id}
+                            id={repetitionMoney.id}
+                            amount={repetitionMoney.amount}
+                            repetition_schedule={
+                              repetitionMoney.repetition_schedule
+                            }
+                            limitAmount={-1}
+                            onChange={handleRepetitionMoneyChange}
+                            onDelete={deleteRepetition}
+                          />
+                        ))}
                   </TableBody>
                 </Table>
               </TableContainer>

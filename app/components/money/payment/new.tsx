@@ -40,6 +40,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     categories,
     classificationMonthlyAmounts,
     setIsEditing,
+    setLoading,
   } = useContext(moneyContext);
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
@@ -81,6 +82,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   }, [newAmount]);
 
   const newPayment = async () => {
+    setLoading(true);
     try {
       if (newRepetition === false) {
         await paymentNew(
@@ -128,7 +130,6 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           newRepetitionSettings,
           newBody
         );
-
         let repetitionMoneyDate: repetitionMoneyData[] = [];
         const schedules = calculateNextSchedules();
 
@@ -190,6 +191,8 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create payment:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -275,7 +278,14 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
     const StringMonth = `${date.getFullYear()}${date.getMonth() + 1}`;
     setNewSchedule(stringDate);
     setNewMonth(StringMonth);
@@ -285,6 +295,10 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     let stringDate: string;
     if (date.getTime() >= new Date(endDateObject).getTime()) {
       stringDate = endDateObject;
+    } else if (date.getTime() <= new Date(newSchedule).getTime()) {
+      let nextDate = new Date(newSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
@@ -653,6 +667,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           )}
           <Box
             sx={{
+              width: 98,
               border: "1px solid #ccc",
               borderRadius: "4px",
               borderWidth: "px",
@@ -669,6 +684,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             <Typography variant="subtitle1">繰り返し終了日</Typography>
             <Box
               sx={{
+                width: 98,
                 border: "1px solid #ccc",
                 borderRadius: "4px",
                 borderWidth: "px",

@@ -34,7 +34,7 @@ import { TransferShow } from "@/components/money/transfer/show";
 
 export const AccountRow: React.FC<accountRowProps> = (props) => {
   const { row, visibleColumns } = props;
-  const { accounts, repetitionMoneies, setIsEditing } =
+  const { accounts, repetitionMoneies, setIsEditing, setLoading } =
     useContext(moneyContext);
   const now = new Date();
   const endOfCurrentDay = new Date(
@@ -71,6 +71,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
   };
 
   const deleteTransfer = async (id: string, index: number) => {
+    setLoading(true);
     const selectedBeforeAccount: accountData = accounts.filter(
       (account) => account.id === row.history[index].transfer_before_account_id
     )[0];
@@ -149,15 +150,20 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit  transfer:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteAccount = async (id: string) => {
+    setLoading(true);
     try {
       await accountDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete account:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

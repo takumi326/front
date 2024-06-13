@@ -28,8 +28,13 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
 ) => {
   const { id, account_id, name, classification_type, onClose, onDelete } =
     props;
-  const { accounts, classificationMonthlyAmounts, currentMonth, setIsEditing } =
-    useContext(moneyContext);
+  const {
+    accounts,
+    classificationMonthlyAmounts,
+    currentMonth,
+    setIsEditing,
+    setLoading,
+  } = useContext(moneyContext);
 
   const classificationMonthlyAmount: classificationMonthlyAmountData =
     classificationMonthlyAmounts.filter(
@@ -79,6 +84,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   // }, [editDate]);
 
   const editClassification = async (id: string) => {
+    setLoading(true);
     try {
       // if (completed === true) {
       //   await classificationEdit(
@@ -113,6 +119,8 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit classification:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, ChangeEvent, useContext, useEffect } from "react";
-import moment from "moment";
 
 import {
   Box,
@@ -54,41 +53,12 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
       setEditRepetitionAmountError(true);
     }
 
-    if (limitAmount != -1 && limitAmount >= editRepetitionAmount) {
+    if (limitAmount === -1 || limitAmount >= editRepetitionAmount) {
       setEditRepetitionAmountOverError(false);
     } else {
       setEditRepetitionAmountOverError(true);
     }
   }, [editRepetitionAmount]);
-
-  // const editRepetition = async () => {
-  //   const selectedRepetitionMoney = repetitionMoneies.filter(
-  //     (repetitionMoney) => repetitionMoney.id === id
-  //   )[0];
-  //   try {
-  //     await repetitionMoneyEdit(
-  //       id,
-  //       selectedRepetitionMoney.transaction_type,
-  //       selectedRepetitionMoney.payment_id,
-  //       selectedRepetitionMoney.income_id,
-  //       selectedRepetitionMoney.transfer_id,
-  //       editRepetitionAmount,
-  //       selectedRepetitionMoney.repetition_schedule
-  //     );
-  //     setIsEditing(true);
-  //   } catch (error) {
-  //     console.error("Failed to delete repetitionMoney:", error);
-  //   }
-  // };
-
-  // const deleteRepetition = async () => {
-  //   try {
-  //     await repetitionMoneyDelete(id);
-  //     setIsEditing(true);
-  //   } catch (error) {
-  //     console.error("Failed to delete repetitionPayment:", error);
-  //   }
-  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

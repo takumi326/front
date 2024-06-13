@@ -104,6 +104,7 @@ export const MoneyTable: React.FC = () => {
     currentMonth,
     isEditing,
     setIsEditing,
+    setLoading,
   } = useContext(moneyContext);
 
   const [rows, setRows] = useState<
@@ -188,206 +189,213 @@ export const MoneyTable: React.FC = () => {
 
   useEffect(() => {
     const handleAllDataFetch = async () => {
-      await repetitionMoneyGetData().then(
-        (repetitionMoneies: repetitionMoneyData[]) => {
-          setRepetitionMoneies(repetitionMoneies);
-        }
-      );
-
-      await paymentGetData().then((paymentDatas: paymentData[]) => {
-        const allPayments: Array<paymentData> = [];
-        repetitionMoneyGetData().then(
+      setLoading(true);
+      try {
+        await repetitionMoneyGetData().then(
           (repetitionMoneies: repetitionMoneyData[]) => {
-            paymentDatas.forEach((paymentData: paymentData) => {
-              if (paymentData.repetition === true) {
-                repetitionMoneies
-                  .filter(
-                    (repetitionMoney: repetitionMoneyData) =>
-                      repetitionMoney.payment_id === paymentData.id
-                  )
-                  .forEach((repetitionMoney: repetitionMoneyData) => {
-                    const repetitionMoneyData = {
-                      id: paymentData.id,
-                      category_id: paymentData.category_id,
-                      category_name: paymentData.category_name,
-                      classification_id: paymentData.classification_id,
-                      classification_name: paymentData.classification_name,
-                      amount: paymentData.amount,
-                      schedule: repetitionMoney.repetition_schedule,
-                      end_date: paymentData.end_date,
-                      repetition: paymentData.repetition,
-                      repetition_type: paymentData.repetition_type,
-                      repetition_settings: paymentData.repetition_settings,
-                      body: paymentData.body,
-                    };
-                    allPayments.push(repetitionMoneyData);
-                  });
-              } else {
-                allPayments.push(paymentData);
-              }
-            });
-            setCalendarPayments(allPayments);
-            repetitionMoneies;
+            setRepetitionMoneies(repetitionMoneies);
           }
         );
-      });
 
-      paymentGetData().then((payments: paymentData[]) => {
-        if (start !== undefined && end !== undefined) {
-          const noRepetitonPayments = payments.filter(
-            (payment: paymentData) =>
-              payment.repetition === false &&
-              new Date(payment.schedule).getTime() >= start.getTime() &&
-              new Date(payment.schedule).getTime() <= end.getTime()
+        await paymentGetData().then((paymentDatas: paymentData[]) => {
+          const allPayments: Array<paymentData> = [];
+          repetitionMoneyGetData().then(
+            (repetitionMoneies: repetitionMoneyData[]) => {
+              paymentDatas.forEach((paymentData: paymentData) => {
+                if (paymentData.repetition === true) {
+                  repetitionMoneies
+                    .filter(
+                      (repetitionMoney: repetitionMoneyData) =>
+                        repetitionMoney.payment_id === paymentData.id
+                    )
+                    .forEach((repetitionMoney: repetitionMoneyData) => {
+                      const repetitionMoneyData = {
+                        id: paymentData.id,
+                        category_id: paymentData.category_id,
+                        category_name: paymentData.category_name,
+                        classification_id: paymentData.classification_id,
+                        classification_name: paymentData.classification_name,
+                        amount: paymentData.amount,
+                        schedule: repetitionMoney.repetition_schedule,
+                        end_date: paymentData.end_date,
+                        repetition: paymentData.repetition,
+                        repetition_type: paymentData.repetition_type,
+                        repetition_settings: paymentData.repetition_settings,
+                        body: paymentData.body,
+                      };
+                      allPayments.push(repetitionMoneyData);
+                    });
+                } else {
+                  allPayments.push(paymentData);
+                }
+              });
+              setCalendarPayments(allPayments);
+              repetitionMoneies;
+            }
           );
-          const repetitonPayments = payments.filter(
-            (payment: paymentData) =>
-              payment.repetition === true &&
-              !(
-                new Date(payment.end_date).getTime() <= start.getTime() ||
-                new Date(payment.schedule).getTime() >= end.getTime()
-              )
-          );
-          setPayments(() => [...noRepetitonPayments, ...repetitonPayments]);
-        } else {
-          setPayments(payments);
-        }
-      });
+        });
 
-      await incomeGetData().then((incomeDatas: incomeData[]) => {
-        const allIncomes: Array<incomeData> = [];
-        repetitionMoneyGetData().then(
-          (repetitionMoneies: repetitionMoneyData[]) => {
-            incomeDatas.forEach((incomeData: incomeData) => {
-              if (incomeData.repetition === true) {
-                repetitionMoneies
-                  .filter(
-                    (repetitionMoney: repetitionMoneyData) =>
-                      repetitionMoney.income_id === incomeData.id
-                  )
-                  .forEach((repetitionMoney: repetitionMoneyData) => {
-                    const repetitionMoneyData = {
-                      id: incomeData.id,
-                      category_id: incomeData.category_id,
-                      category_name: incomeData.category_name,
-                      classification_id: incomeData.classification_id,
-                      classification_name: incomeData.classification_name,
-                      amount: incomeData.amount,
-                      schedule: repetitionMoney.repetition_schedule,
-                      end_date: incomeData.end_date,
-                      repetition: incomeData.repetition,
-                      repetition_type: incomeData.repetition_type,
-                      repetition_settings: incomeData.repetition_settings,
-                      body: incomeData.body,
-                    };
-                    allIncomes.push(repetitionMoneyData);
-                  });
-              } else {
-                allIncomes.push(incomeData);
-              }
-            });
-            setCalendarIncomes(allIncomes);
-            repetitionMoneies;
+        paymentGetData().then((payments: paymentData[]) => {
+          if (start !== undefined && end !== undefined) {
+            const noRepetitonPayments = payments.filter(
+              (payment: paymentData) =>
+                payment.repetition === false &&
+                new Date(payment.schedule).getTime() >= start.getTime() &&
+                new Date(payment.schedule).getTime() <= end.getTime()
+            );
+            const repetitonPayments = payments.filter(
+              (payment: paymentData) =>
+                payment.repetition === true &&
+                !(
+                  new Date(payment.end_date).getTime() <= start.getTime() ||
+                  new Date(payment.schedule).getTime() >= end.getTime()
+                )
+            );
+            setPayments(() => [...noRepetitonPayments, ...repetitonPayments]);
+          } else {
+            setPayments(payments);
+          }
+        });
+
+        await incomeGetData().then((incomeDatas: incomeData[]) => {
+          const allIncomes: Array<incomeData> = [];
+          repetitionMoneyGetData().then(
+            (repetitionMoneies: repetitionMoneyData[]) => {
+              incomeDatas.forEach((incomeData: incomeData) => {
+                if (incomeData.repetition === true) {
+                  repetitionMoneies
+                    .filter(
+                      (repetitionMoney: repetitionMoneyData) =>
+                        repetitionMoney.income_id === incomeData.id
+                    )
+                    .forEach((repetitionMoney: repetitionMoneyData) => {
+                      const repetitionMoneyData = {
+                        id: incomeData.id,
+                        category_id: incomeData.category_id,
+                        category_name: incomeData.category_name,
+                        classification_id: incomeData.classification_id,
+                        classification_name: incomeData.classification_name,
+                        amount: incomeData.amount,
+                        schedule: repetitionMoney.repetition_schedule,
+                        end_date: incomeData.end_date,
+                        repetition: incomeData.repetition,
+                        repetition_type: incomeData.repetition_type,
+                        repetition_settings: incomeData.repetition_settings,
+                        body: incomeData.body,
+                      };
+                      allIncomes.push(repetitionMoneyData);
+                    });
+                } else {
+                  allIncomes.push(incomeData);
+                }
+              });
+              setCalendarIncomes(allIncomes);
+              repetitionMoneies;
+            }
+          );
+        });
+
+        await incomeGetData().then((incomes: incomeData[]) => {
+          if (start !== undefined && end !== undefined) {
+            const noRepetitonIncomes = incomes.filter(
+              (income: incomeData) =>
+                income.repetition === false &&
+                new Date(income.schedule).getTime() >= start.getTime() &&
+                new Date(income.schedule).getTime() <= end.getTime()
+            );
+            const repetitonIncomes = incomes.filter(
+              (income: incomeData) =>
+                income.repetition === true &&
+                (new Date(income.schedule).getTime() >= start.getTime() ||
+                  new Date(income.end_date).getTime() <= end.getTime())
+            );
+            setIncomes(() => [...noRepetitonIncomes, ...repetitonIncomes]);
+          } else {
+            setIncomes(incomes);
+          }
+        });
+
+        await categoryGetData().then((categories: categoryData[]) => {
+          setCategories(categories);
+        });
+
+        await classificationGetData().then(
+          (classifications: classificationData[]) => {
+            setClassifications(classifications);
           }
         );
-      });
 
-      await incomeGetData().then((incomes: incomeData[]) => {
-        if (start !== undefined && end !== undefined) {
-          const noRepetitonIncomes = incomes.filter(
-            (income: incomeData) =>
-              income.repetition === false &&
-              new Date(income.schedule).getTime() >= start.getTime() &&
-              new Date(income.schedule).getTime() <= end.getTime()
-          );
-          const repetitonIncomes = incomes.filter(
-            (income: incomeData) =>
-              income.repetition === true &&
-              (new Date(income.schedule).getTime() >= start.getTime() ||
-                new Date(income.end_date).getTime() <= end.getTime())
-          );
-          setIncomes(() => [...noRepetitonIncomes, ...repetitonIncomes]);
-        } else {
-          setIncomes(incomes);
-        }
-      });
-
-      await categoryGetData().then((categories: categoryData[]) => {
-        setCategories(categories);
-      });
-
-      await classificationGetData().then(
-        (classifications: classificationData[]) => {
-          setClassifications(classifications);
-        }
-      );
-
-      await classificationMonthlyAmountGetData().then(
-        (classificationMonthlyAmounts: classificationMonthlyAmountData[]) => {
-          setClassificationMonthlyAmounts(classificationMonthlyAmounts);
-        }
-      );
-
-      await accountGetData().then((accounts: accountData[]) => {
-        setAccounts(accounts);
-      });
-
-      await transferGetData().then((transferDatas: transferData[]) => {
-        const allTransfers: Array<transferData> = [];
-        repetitionMoneyGetData().then(
-          (repetitionMoneies: repetitionMoneyData[]) => {
-            transferDatas.forEach((transferData: transferData) => {
-              if (transferData.repetition === true) {
-                repetitionMoneies
-                  .filter(
-                    (repetitionMoney: repetitionMoneyData) =>
-                      repetitionMoney.transfer_id === transferData.id
-                  )
-                  .forEach((repetitionMoney: repetitionMoneyData) => {
-                    const repetitionMoneyData = {
-                      id: transferData.id,
-                      before_account_id: transferData.before_account_id,
-                      after_account_id: transferData.after_account_id,
-                      after_account_name: transferData.after_account_name,
-                      amount: transferData.amount,
-                      schedule: repetitionMoney.repetition_schedule,
-                      end_date: transferData.end_date,
-                      repetition: transferData.repetition,
-                      repetition_type: transferData.repetition_type,
-                      repetition_settings: transferData.repetition_settings,
-                      body: transferData.body,
-                    };
-                    allTransfers.push(repetitionMoneyData);
-                  });
-              } else {
-                allTransfers.push(transferData);
-              }
-            });
-            setCalendarTransfers(allTransfers);
-            repetitionMoneies;
+        await classificationMonthlyAmountGetData().then(
+          (classificationMonthlyAmounts: classificationMonthlyAmountData[]) => {
+            setClassificationMonthlyAmounts(classificationMonthlyAmounts);
           }
         );
-      });
 
-      await transferGetData().then((transfers: transferData[]) => {
-        if (start !== undefined && end !== undefined) {
-          const noRepetitonIncomes = transfers.filter(
-            (transfer: transferData) =>
-              transfer.repetition === false &&
-              new Date(transfer.schedule).getTime() >= start.getTime() &&
-              new Date(transfer.schedule).getTime() <= end.getTime()
+        await accountGetData().then((accounts: accountData[]) => {
+          setAccounts(accounts);
+        });
+
+        await transferGetData().then((transferDatas: transferData[]) => {
+          const allTransfers: Array<transferData> = [];
+          repetitionMoneyGetData().then(
+            (repetitionMoneies: repetitionMoneyData[]) => {
+              transferDatas.forEach((transferData: transferData) => {
+                if (transferData.repetition === true) {
+                  repetitionMoneies
+                    .filter(
+                      (repetitionMoney: repetitionMoneyData) =>
+                        repetitionMoney.transfer_id === transferData.id
+                    )
+                    .forEach((repetitionMoney: repetitionMoneyData) => {
+                      const repetitionMoneyData = {
+                        id: transferData.id,
+                        before_account_id: transferData.before_account_id,
+                        after_account_id: transferData.after_account_id,
+                        after_account_name: transferData.after_account_name,
+                        amount: transferData.amount,
+                        schedule: repetitionMoney.repetition_schedule,
+                        end_date: transferData.end_date,
+                        repetition: transferData.repetition,
+                        repetition_type: transferData.repetition_type,
+                        repetition_settings: transferData.repetition_settings,
+                        body: transferData.body,
+                      };
+                      allTransfers.push(repetitionMoneyData);
+                    });
+                } else {
+                  allTransfers.push(transferData);
+                }
+              });
+              setCalendarTransfers(allTransfers);
+              repetitionMoneies;
+            }
           );
-          const repetitonIncomes = transfers.filter(
-            (transfer: transferData) =>
-              transfer.repetition === true &&
-              (new Date(transfer.schedule).getTime() >= start.getTime() ||
-                new Date(transfer.end_date).getTime() <= end.getTime())
-          );
-          setTransfers(() => [...noRepetitonIncomes, ...repetitonIncomes]);
-        } else {
-          setTransfers(transfers);
-        }
-      });
+        });
+
+        await transferGetData().then((transfers: transferData[]) => {
+          if (start !== undefined && end !== undefined) {
+            const noRepetitonIncomes = transfers.filter(
+              (transfer: transferData) =>
+                transfer.repetition === false &&
+                new Date(transfer.schedule).getTime() >= start.getTime() &&
+                new Date(transfer.schedule).getTime() <= end.getTime()
+            );
+            const repetitonIncomes = transfers.filter(
+              (transfer: transferData) =>
+                transfer.repetition === true &&
+                (new Date(transfer.schedule).getTime() >= start.getTime() ||
+                  new Date(transfer.end_date).getTime() <= end.getTime())
+            );
+            setTransfers(() => [...noRepetitonIncomes, ...repetitonIncomes]);
+          } else {
+            setTransfers(transfers);
+          }
+        });
+      } catch (error) {
+        console.error("Failed to create income:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     handleAllDataFetch();
@@ -620,10 +628,12 @@ export const MoneyTable: React.FC = () => {
       }));
       updateOrder = { account_name: "default", account_amount: "default" };
     }
+    setLoading(true);
     setColumnSettings(initialColumnSettings);
     setRows(allRows);
     setOrder(updateOrder);
     setIsEditing(false);
+    setLoading(false);
   }, [
     filter,
     payments,
