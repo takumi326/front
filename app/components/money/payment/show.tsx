@@ -23,6 +23,7 @@ import {
   TableHead,
   TableBody,
   Paper,
+  Checkbox,
 } from "@mui/material";
 import { SelectChangeEvent } from "@mui/material/Select";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -34,6 +35,7 @@ import { moneyContext } from "@/context/money-context";
 
 import {
   repetitionMoneyNew,
+  repetitionMoneyEdit,
   repetitionMoneyDelete,
 } from "@/lib/api/repetitionMoney-api";
 import { paymentEdit, paymentDelete } from "@/lib/api/payment-api";
@@ -72,6 +74,18 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
   const endDateObject = currentDate.toLocaleDateString();
+  const startCurrentMonth = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)) - 1,
+    1
+  );
+  const endCurrentMonth = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)),
+    0,
+    23,
+    59
+  );
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] =
     useState<boolean>(false);
@@ -87,7 +101,9 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
 
-  let changeRepetitionMoneyData: string[] = [];
+  const [changeRepetitionMoneyData, setChangeRepetitionMoneyData] = useState<
+    string[]
+  >([]);
 
   const initialClassificationId = classification_id;
   const initialAmount = amount;
@@ -96,8 +112,8 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   const initialRepetition = repetition;
   const intialRepetitionType = repetition_type;
   const intialRepetitionSettings = repetition_settings;
-  const [initialRepetitionAllMoney, setInitialRepetitionAllMoney] =
-    useState<number>(0);
+  // const [initialRepetitionAllMoney, setInitialRepetitionAllMoney] =
+  //   useState<number>(0);
 
   const [editCategoryId, setEditCategoryId] = useState(category_id);
   const [editClassificationId, setEditClassificationId] =
@@ -123,6 +139,8 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   const [isCategoryFormValid, setIsCategoryFormValid] = useState(
     editCategoryId ? false : true
   );
+  const [sortRepetitionMoney, setSortRepetitionMoney] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (editAmount > 0) {
@@ -215,6 +233,73 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
       return money;
     };
 
+    const editChangeRepetitionMoneyIncrease = async (
+      start: Date,
+      end: Date
+    ) => {
+      let money = 0;
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "payment" &&
+          repetitionMoney.payment_id === id &&
+          new Date(repetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(repetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+      )) {
+        let changeFound = false;
+        for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+          if (repetitionMoney.id === changeRepetitionMoneyData[i]) {
+            if (
+              (new Date(changeRepetitionMoneyData[i + 2]).getTime() >=
+                start.getTime() &&
+                new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+                  end.getTime()) ||
+              changeRepetitionMoneyData[i + 2] === ""
+            ) {
+              money +=
+                Number(changeRepetitionMoneyData[i + 1]) != 0
+                  ? parseFloat(String(changeRepetitionMoneyData[i + 1]))
+                  : parseFloat(String(repetitionMoney.amount));
+            }
+            changeFound = true;
+            break;
+          }
+        }
+        if (changeFound === false) {
+          money += parseFloat(String(repetitionMoney.amount));
+        }
+      }
+      for (const repetitionMoney of repetitionMoneies.filter(
+        (repetitionMoney) =>
+          repetitionMoney.transaction_type === "payment" &&
+          repetitionMoney.payment_id === id &&
+          (new Date(repetitionMoney.repetition_schedule).getTime() <
+            start.getTime() ||
+            new Date(repetitionMoney.repetition_schedule).getTime() >
+              end.getTime())
+      )) {
+        for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+          if (repetitionMoney.id === changeRepetitionMoneyData[i]) {
+            if (
+              (new Date(changeRepetitionMoneyData[i + 2]).getTime() >=
+                start.getTime() &&
+                new Date(changeRepetitionMoneyData[i + 2]).getTime() <=
+                  end.getTime()) ||
+              changeRepetitionMoneyData[i + 2] === ""
+            ) {
+              money +=
+                Number(changeRepetitionMoneyData[i + 1]) != 0
+                  ? parseFloat(String(changeRepetitionMoneyData[i + 1]))
+                  : parseFloat(String(repetitionMoney.amount));
+            }
+            break;
+          }
+        }
+      }
+      return money;
+    };
+
     try {
       await paymentEdit(
         id,
@@ -228,13 +313,109 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         editRepetitionSettings,
         editBody
       );
+
+      for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
+        const selectedRepetitionMoney = repetitionMoneies.filter(
+          (repetitionMoney) =>
+            repetitionMoney.id === changeRepetitionMoneyData[i]
+        )[0];
+
+        await repetitionMoneyEdit(
+          changeRepetitionMoneyData[i],
+          selectedRepetitionMoney.transaction_type,
+          selectedRepetitionMoney.payment_id,
+          selectedRepetitionMoney.income_id,
+          selectedRepetitionMoney.transfer_id,
+          Number(changeRepetitionMoneyData[i + 1]) != 0
+            ? Number(changeRepetitionMoneyData[i + 1])
+            : selectedRepetitionMoney.amount,
+          changeRepetitionMoneyData[i + 2] != ""
+            ? changeRepetitionMoneyData[i + 2]
+            : selectedRepetitionMoney.repetition_schedule
+        );
+      }
+
       if (
+        editRepetition === true &&
         initialRepetition === editRepetition &&
         intialRepetitionType === editRepetitionType &&
-        intialRepetitionSettings === editRepetitionSettings &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
         initialSchedule === editSchedule &&
         initialEndDate === editEndDate
       ) {
+        if (initialClassificationId === editClassificationId) {
+          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+              initialClassificationId
+          )) {
+            let money = 0;
+            const start = startDate(classificationMonthlyAmount.month);
+            const end = endDate(classificationMonthlyAmount.month);
+            console.log(parseFloat(String(classificationMonthlyAmount.amount)));
+            console.log(await initialRepetitionMoneyReduce(start, end));
+            console.log(await editChangeRepetitionMoneyIncrease(start, end));
+
+            money =
+              parseFloat(String(classificationMonthlyAmount.amount)) -
+              (await initialRepetitionMoneyReduce(start, end)) +
+              (await editChangeRepetitionMoneyIncrease(start, end));
+
+            await classificationMonthlyAmountEdit(
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
+              Math.max(0, money)
+            );
+          }
+        } else {
+          if (initialClassificationId !== null) {
+            for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id ===
+                initialClassificationId
+            )) {
+              let money = 0;
+              const start = startDate(classificationMonthlyAmount.month);
+              const end = endDate(classificationMonthlyAmount.month);
+
+              money =
+                parseFloat(String(classificationMonthlyAmount.amount)) -
+                (await initialRepetitionMoneyReduce(start, end));
+
+              await classificationMonthlyAmountEdit(
+                classificationMonthlyAmount.id,
+                classificationMonthlyAmount.classification_id,
+                classificationMonthlyAmount.month,
+                classificationMonthlyAmount.date,
+                Math.max(0, money)
+              );
+            }
+          }
+          for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+            (classificationMonthlyAmount) =>
+              classificationMonthlyAmount.classification_id ===
+              editClassificationId
+          )) {
+            let money = 0;
+            const start = startDate(classificationMonthlyAmount.month);
+            const end = endDate(classificationMonthlyAmount.month);
+
+            money =
+              parseFloat(String(classificationMonthlyAmount.amount)) +
+              (await editChangeRepetitionMoneyIncrease(start, end));
+
+            await classificationMonthlyAmountEdit(
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              classificationMonthlyAmount.date,
+              Math.max(0, money)
+            );
+          }
+        }
       } else {
         if (initialClassificationId === editClassificationId) {
           if (editRepetition === true) {
@@ -265,7 +446,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 );
               }
             } else {
-              editRepetitionAdd();
+              await editRepetitionAdd();
 
               for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
                 (classificationMonthlyAmount) =>
@@ -305,7 +486,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             }
           } else {
             if (initialRepetition === true) {
-              initialRepetitionDelete();
+              await initialRepetitionDelete();
 
               for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
                 (classificationMonthlyAmount) =>
@@ -393,7 +574,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         } else {
           if (initialClassificationId !== null) {
             if (initialRepetition === true) {
-              initialRepetitionDelete();
+              await initialRepetitionDelete();
 
               for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
                 (classificationMonthlyAmount) =>
@@ -432,7 +613,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           }
 
           if (editRepetition === true) {
-            editRepetitionAdd();
+            await editRepetitionAdd();
 
             for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
@@ -581,6 +762,56 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     }
   };
 
+  const deleteRepetition = async (id: string) => {
+    const selectedRepetitionMoney = repetitionMoneies.filter(
+      (repetitionMoney) => repetitionMoney.id === id
+    )[0];
+
+    try {
+      for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+          initialClassificationId
+      )) {
+        let money = parseFloat(String(classificationMonthlyAmount.amount));
+        const start = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)) - 1,
+          1
+        );
+        const end = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)),
+          0,
+          23,
+          59
+        );
+
+        if (
+          new Date(selectedRepetitionMoney.repetition_schedule).getTime() >=
+            start.getTime() &&
+          new Date(selectedRepetitionMoney.repetition_schedule).getTime() <=
+            end.getTime()
+        ) {
+          money = money - parseFloat(String(selectedRepetitionMoney.amount));
+
+          await classificationMonthlyAmountEdit(
+            classificationMonthlyAmount.id,
+            classificationMonthlyAmount.classification_id,
+            classificationMonthlyAmount.month,
+            classificationMonthlyAmount.date,
+            money
+          );
+        }
+      }
+
+      repetitionMoneyDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete repetitionPayment:", error);
+    }
+  };
+
   const handleClassificationChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setEditClassificationId(value);
@@ -604,22 +835,25 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     date: string
   ) => {
     let idFound = false;
-    for (let i = 0; i < changeRepetitionMoneyData.length; i += 3) {
-      if (changeRepetitionMoneyData[i] === id) {
-        if (amount != 0) {
-          changeRepetitionMoneyData[i + 1] = String(amount);
+    setChangeRepetitionMoneyData((prevData) => {
+      const newData = [...prevData];
+      for (let i = 0; i < newData.length; i += 3) {
+        if (newData[i] === id) {
+          if (amount !== 0) {
+            newData[i + 1] = String(amount);
+          }
+          if (date !== "") {
+            newData[i + 2] = date;
+          }
+          idFound = true;
+          break;
         }
-        if (date != "") {
-          changeRepetitionMoneyData[i + 2] = date;
-        }
-        idFound = true;
-        break;
       }
-    }
-
-    if (!idFound) {
-      changeRepetitionMoneyData.push(id, String(amount), date);
-    }
+      if (!idFound) {
+        newData.push(id, String(amount), date);
+      }
+      return newData;
+    });
   };
 
   const handleRepetitionDialogOpen = () => {
@@ -649,8 +883,8 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     setFrequency(1);
     setSelectedDays([]);
     setPeriod("daily");
-    setEditEndDate(endDateObject);
     setEditSchedule(initialDateObject);
+    setEditEndDate(endDateObject);
   };
 
   const handleRepetitionSave = () => {
@@ -661,7 +895,14 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
     const StringMonth = `${date.getFullYear()}${date.getMonth() + 1}`;
     setEditSchedule(stringDate);
     setEditMonth(StringMonth);
@@ -671,6 +912,10 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     let stringDate: string;
     if (date.getTime() >= new Date(endDateObject).getTime()) {
       stringDate = endDateObject;
+    } else if (date.getTime() <= new Date(editSchedule).getTime()) {
+      let nextDate = new Date(editSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
@@ -824,6 +1069,10 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     return schedules;
   };
 
+  const handleSortRepetitionMoney = () => {
+    setSortRepetitionMoney(!sortRepetitionMoney);
+  };
+
   const isDialogFormValid =
     period === "daily" ||
     period === "monthly" ||
@@ -831,6 +1080,22 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
 
   const sortedRows = repetitionMoneies
     .filter((repetitionMoney) => repetitionMoney.payment_id === id)
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.repetition_schedule).getTime();
+      const dateB = new Date(b.repetition_schedule).getTime();
+      return dateA - dateB;
+    });
+
+  const sortedCurrentMonthRows = repetitionMoneies
+    .filter(
+      (repetitionMoney) =>
+        repetitionMoney.income_id === id &&
+        new Date(repetitionMoney.repetition_schedule).getTime() >=
+          startCurrentMonth.getTime() &&
+        new Date(repetitionMoney.repetition_schedule).getTime() <=
+          endCurrentMonth.getTime()
+    )
     .slice()
     .sort((a, b) => {
       const dateA = new Date(a.repetition_schedule).getTime();
@@ -1193,8 +1458,32 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             (repetitionMoney) => repetitionMoney.payment_id === id
           ).length > 0 && (
             <div className="w-full pt-10">
-              <Typography variant="subtitle1">繰り返し一覧</Typography>
-              <TableContainer component={Paper} sx={{ maxHeight: 635 }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <Box display="flex" alignItems="center">
+                  <Typography variant="subtitle1" mr={2}>
+                    繰り返し一覧
+                  </Typography>
+                  <Box display="flex" alignItems="center">
+                    <Checkbox
+                      checked={sortRepetitionMoney}
+                      onChange={handleSortRepetitionMoney}
+                    />
+                    <Typography>カレンダーの表示月のみ</Typography>
+                  </Box>
+                </Box>
+                <IconButton>
+                  <AddIcon />
+                </IconButton>
+              </Box>
+              <TableContainer
+                component={Paper}
+                sx={{ maxHeight: 635, border: "0.5px solid black" }}
+              >
                 <Table
                   stickyHeader
                   size="small"
@@ -1214,17 +1503,33 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedRows.map((repetitionMoney) => (
-                      <RepetitionMoneyRow
-                        key={repetitionMoney.id}
-                        id={repetitionMoney.id}
-                        amount={repetitionMoney.amount}
-                        repetition_schedule={
-                          repetitionMoney.repetition_schedule
-                        }
-                        onChange={handleRepetitionMoneyChange}
-                      />
-                    ))}
+                    {sortRepetitionMoney === true
+                      ? sortedCurrentMonthRows.map((repetitionMoney) => (
+                          <RepetitionMoneyRow
+                            key={repetitionMoney.id}
+                            id={repetitionMoney.id}
+                            amount={repetitionMoney.amount}
+                            repetition_schedule={
+                              repetitionMoney.repetition_schedule
+                            }
+                            limitAmount={-1}
+                            onChange={handleRepetitionMoneyChange}
+                            onDelete={deleteRepetition}
+                          />
+                        ))
+                      : sortedRows.map((repetitionMoney) => (
+                          <RepetitionMoneyRow
+                            key={repetitionMoney.id}
+                            id={repetitionMoney.id}
+                            amount={repetitionMoney.amount}
+                            repetition_schedule={
+                              repetitionMoney.repetition_schedule
+                            }
+                            limitAmount={-1}
+                            onChange={handleRepetitionMoneyChange}
+                            onDelete={deleteRepetition}
+                          />
+                        ))}
                   </TableBody>
                 </Table>
               </TableContainer>

@@ -18,17 +18,20 @@ import { categoryShowProps } from "@/interface/category-interface";
 
 export const CategoryShow: React.FC<categoryShowProps> = (props) => {
   const { id, name, category_type, onClose, onDelete } = props;
-  const { setIsEditing } = useContext(moneyContext);
+  const { setIsEditing, setLoading } = useContext(moneyContext);
 
   const [editName, setEditName] = useState<string>(name);
   const [isFormValid, setIsFormValid] = useState(true);
 
   const editCategory = async (id: string) => {
+    setLoading(true);
     try {
       await categoryEdit(id, editName, category_type);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit category:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

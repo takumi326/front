@@ -8,21 +8,24 @@ import CloseIcon from "@mui/icons-material/Close";
 import { moneyContext } from "@/context/money-context";
 
 import { categoryRowProps } from "@/interface/category-interface";
-import {categoryDelete } from "@/lib/api/category-api";
+import { categoryDelete } from "@/lib/api/category-api";
 import { CategoryShow } from "@/components/money/category/show";
 
 export const CategoryRow: React.FC<categoryRowProps> = (props) => {
   const { category, category_type } = props;
-  const { setIsEditing } = useContext(moneyContext);
+  const { setIsEditing, setLoading } = useContext(moneyContext);
 
   const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
 
   const deleteCategory = async (id: string) => {
+    setLoading(true);
     try {
       await categoryDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete category:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -35,7 +35,7 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TransferNew: React.FC<transferNewProps> = (props) => {
   const { onClose } = props;
-  const { accounts, setIsEditing } = useContext(moneyContext);
+  const { accounts, setIsEditing, setLoading } = useContext(moneyContext);
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
   currentDate.setFullYear(currentDate.getFullYear() + 5);
@@ -82,6 +82,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   }, [newAmount, newBeforeAccountAmount]);
 
   const newTransfer = async () => {
+    setLoading(true);
     const now = new Date();
     const endOfCurrentDay = new Date(
       now.getFullYear(),
@@ -204,6 +205,8 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create transfer:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -300,7 +303,14 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
   };
 
   const handleSchedulChange = (date: Date) => {
-    const stringDate = date.toLocaleDateString().split("T")[0];
+    let stringDate: string;
+    if (date.getTime() >= new Date(endDateObject).getTime()) {
+      let previousDate = new Date(endDateObject);
+      previousDate.setDate(previousDate.getDate() - 1);
+      stringDate = previousDate.toLocaleDateString().split("T")[0];
+    } else {
+      stringDate = date.toLocaleDateString().split("T")[0];
+    }
     setNewSchedule(stringDate);
   };
 
@@ -308,6 +318,10 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     let stringDate: string;
     if (date.getTime() >= new Date(endDateObject).getTime()) {
       stringDate = endDateObject;
+    } else if (date.getTime() <= new Date(newSchedule).getTime()) {
+      let nextDate = new Date(newSchedule);
+      nextDate.setDate(nextDate.getDate() + 1);
+      stringDate = nextDate.toLocaleDateString().split("T")[0];
     } else {
       stringDate = date.toLocaleDateString().split("T")[0];
     }
@@ -703,6 +717,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
           )}
           <Box
             sx={{
+              width: 98,
               border: "1px solid #ccc",
               borderRadius: "4px",
               borderWidth: "px",
@@ -719,6 +734,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             <Typography variant="subtitle1">繰り返し終了日</Typography>
             <Box
               sx={{
+                width: 98,
                 border: "1px solid #ccc",
                 borderRadius: "4px",
                 borderWidth: "px",

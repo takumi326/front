@@ -65,6 +65,8 @@ export const moneyContext = createContext<{
   setCurrentMonth: React.Dispatch<React.SetStateAction<string>>;
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
   repetitionMoneies: [],
   setRepetitionMoneies: () => {},
@@ -102,6 +104,8 @@ export const moneyContext = createContext<{
   setCurrentMonth: () => {},
   isEditing: false,
   setIsEditing: () => {},
+  loading: false,
+  setLoading: () => {},
 });
 
 export const MoneyProvider: React.FC = ({ children }) => {
@@ -128,6 +132,7 @@ export const MoneyProvider: React.FC = ({ children }) => {
   );
   const [currentMonth, setCurrentMonth] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   return (
     <moneyContext.Provider
@@ -160,6 +165,8 @@ export const MoneyProvider: React.FC = ({ children }) => {
         setCurrentMonth,
         isEditing,
         setIsEditing,
+        loading,
+        setLoading,
       }}
     >
       {children}

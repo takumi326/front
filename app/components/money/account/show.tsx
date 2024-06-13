@@ -18,7 +18,7 @@ import { accountShowProps } from "@/interface/account-interface";
 
 export const AccountShow: React.FC<accountShowProps> = (props) => {
   const { id, name, amount, body, onClose, onDelete } = props;
-  const { setIsEditing } = useContext(moneyContext);
+  const { setIsEditing, setLoading } = useContext(moneyContext);
 
   const [editName, setEditName] = useState<string>(name);
   const [editAmount, setEditAmount] = useState<number>(amount);
@@ -29,11 +29,14 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
   const [isFormValid, setIsFormValid] = useState(true);
 
   const editAccount = async (id: string) => {
+    setLoading(true);
     try {
       await accountEdit(id, editName, editAmount, editBody);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit account:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

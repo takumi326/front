@@ -27,10 +27,7 @@ import {
   classificationMonthlyAmountEdit,
 } from "@/lib/api/classificationMonthlyAmount-api";
 
-import {
-  paymentRowProps,
-  displayPaymentData,
-} from "@/interface/Payment-interface";
+import { paymentRowProps } from "@/interface/Payment-interface";
 import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
 
 import { PaymentShow } from "@/components/money/payment/show";
@@ -43,6 +40,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
+    loading,
+    setLoading,
   } = useContext(moneyContext);
 
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
@@ -50,11 +49,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHistory, setIsHistory] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const handleClassificationMonthlyAmount = async () => {
-      setIsProcessing(true);
+      setLoading(true);
       try {
         const shouldCreateNewAmount: classificationMonthlyAmountData =
           classificationMonthlyAmounts.some(
@@ -94,7 +92,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
         let money = 0;
         if (!shouldCreateNewAmount) {
-          sortedHistoryRows.map((historyRow) => {
+          row.history.map((historyRow) => {
             if (historyRow.payment_repetition === true) {
               repetitionMoneies
                 .filter(
@@ -122,10 +120,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       } catch (error) {
         console.error("Failed to new classificationMonthlyAmount:", error);
       } finally {
-        setIsProcessing(false);
+        setLoading(false);
       }
     };
-    if (!isProcessing) {
+    if (!loading) {
       handleClassificationMonthlyAmount();
     }
   }, [row]);
@@ -148,11 +146,12 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   };
 
   const deletePayment = async (id: string, index: number) => {
+    setLoading(true);
     try {
       if (row.classification_name === "分類なし") {
         paymentDelete(id);
       } else {
-        if (sortedHistoryRows[index].payment_repetition === true) {
+        if (row.history[index].payment_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id === row.id
@@ -202,7 +201,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(sortedHistoryRows[index].payment_amount));
+              parseFloat(String(row.history[index].payment_amount));
 
             await classificationMonthlyAmountEdit(
               editClassificationMonthlyAmount.id,
@@ -218,15 +217,20 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       }
     } catch (error) {
       console.error("Failed to edit payment:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteClassification = async (id: string) => {
+    setLoading(true);
     try {
       await classificationDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete classification:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -260,7 +264,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
   const renderRepetition = (index: number) => {
     const { payment_repetition_type, payment_repetition_settings } =
-      sortedHistoryRows[index];
+      row.history[index];
     if (!payment_repetition_type || !payment_repetition_settings) return "";
 
     if (
@@ -298,14 +302,14 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
   const sortedHistoryRows = row.history.slice().sort((a, b) => {
     if (a.payment_repetition && !b.payment_repetition) {
-      return -1;
-    } else if (!a.payment_repetition && b.payment_repetition) {
       return 1;
+    } else if (!a.payment_repetition && b.payment_repetition) {
+      return -1;
     }
 
     const dateA = new Date(a.payment_schedule).getTime();
     const dateB = new Date(b.payment_schedule).getTime();
-    return dateA > dateB ? 1 : -1;
+    return dateA - dateB;
   });
 
   return (
@@ -443,7 +447,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           )}
         </TableCell>
       </TableRow>
-      {sortedHistoryRows.length > 0 && (
+      {row.history.length > 0 && (
         <TableRow>
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={isHistoryOpen} timeout="auto" unmountOnExit>

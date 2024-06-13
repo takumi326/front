@@ -21,7 +21,8 @@ import { classificationNewProps } from "@/interface/classification-interface";
 
 export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const { onClose, classification_type } = props;
-  const { accounts, currentMonth, setIsEditing } = useContext(moneyContext);
+  const { accounts, currentMonth, setIsEditing, setLoading } =
+    useContext(moneyContext);
 
   const [newAccountId, setNewAccountId] = useState("");
   const [newName, setNewName] = useState("");
@@ -31,7 +32,8 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [completed, setCompleted] = useState<boolean>(false);
 
-  const newAccount = async () => {
+  const newClassification = async () => {
+    setLoading(true);
     try {
       if (completed === true) {
         const response = await classificationNew(
@@ -62,6 +64,8 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create classification:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,7 +110,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   };
 
   const handleSave = () => {
-    newAccount();
+    newClassification();
     onClose();
   };
 

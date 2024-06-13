@@ -10,7 +10,7 @@ import { accountNewProps } from "@/interface/account-interface";
 
 export const AccountNew: React.FC<accountNewProps> = (props) => {
   const { onClose } = props;
-  const { setIsEditing } = useContext(moneyContext);
+  const { setIsEditing, setLoading } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
   const [newAmount, setNewAmount] = useState<number>(0);
@@ -19,11 +19,14 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
   const [isFormValid, setIsFormValid] = useState(false);
 
   const newAccount = async () => {
+    setLoading(true);
     try {
       await accountNew(newName, newAmount, newBody);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create account:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
