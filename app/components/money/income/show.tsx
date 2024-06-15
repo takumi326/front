@@ -100,8 +100,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   );
   const [editRepetitionAmountError, setEditRepetitionAmountError] =
     useState<boolean>(false);
-  const [editRepetitionAmountOverError, setEditRepetitionAmountOverError] =
-    useState<boolean>(false);
   const [editRepetitionSchedule, setEditRepetitionSchedule] =
     useState(initialDateObject);
 
@@ -130,8 +128,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   const initialRepetition = repetition;
   const intialRepetitionType = repetition_type;
   const intialRepetitionSettings = repetition_settings;
-  // const [initialRepetitionAllMoney, setInitialRepetitionAllMoney] =
-  //   useState<number>(0);
 
   const [editCategoryId, setEditCategoryId] = useState(category_id);
   const [editClassificationId, setEditClassificationId] =
@@ -174,36 +170,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     } else {
       setEditRepetitionAmountError(true);
     }
-
-    if (
-      new Date(editRepetitionSchedule).getTime() <= endOfCurrentDay.getTime()
-    ) {
-      if (initialBeforeAccountId === editBeforeAccountId) {
-        if (
-          parseFloat(String(editBeforeAccountAmount)) >=
-          parseFloat(String(editRepetitionAmount))
-        ) {
-          setEditRepetitionAmountOverError(false);
-        } else {
-          setEditRepetitionAmountOverError(true);
-        }
-      } else {
-        if (
-          parseFloat(String(editBeforeAccountAmount)) >=
-          parseFloat(String(initialRepetitionAllMoney)) +
-            parseFloat(String(editRepetitionAmount))
-        ) {
-          setEditRepetitionAmountOverError(false);
-        } else {
-          setEditRepetitionAmountOverError(true);
-        }
-      }
-    }
-  }, [
-    editRepetitionAmount,
-    editBeforeAccountAmount,
-    initialBeforeAccountAmount,
-  ]);
+  }, [editRepetitionAmount]);
 
   const editIncome = async (id: string) => {
     setLoading(true);
@@ -963,43 +930,53 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     setLoading(true);
     setRepetitionNewDialogOpen(false);
     try {
-      await repetitionMoneyNew(
-        "transfer",
-        "",
+      const response = await repetitionMoneyNew(
+        "income",
         "",
         id,
+        "",
         editRepetitionAmount,
         editRepetitionSchedule
       );
-      const initialBeforeMoney =
-        parseFloat(String(initialBeforeAccount.amount)) -
-        parseFloat(String(editRepetitionAmount));
-      const initialAfterMoney =
-        parseFloat(String(initialAfterAccount.amount)) +
-        parseFloat(String(editRepetitionAmount));
-
-      if (
-        new Date(editRepetitionSchedule).getTime() <= endOfCurrentDay.getTime()
-      ) {
-        await accountEdit(
-          initialBeforeAccount.id,
-          initialBeforeAccount.name,
-          Math.max(0, initialBeforeMoney),
-          initialBeforeAccount.body
+      for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id ===
+          initialClassificationId
+      )) {
+        let money = parseFloat(String(classificationMonthlyAmount.amount));
+        const start = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)) - 1,
+          1
+        );
+        const end = new Date(
+          Number(classificationMonthlyAmount.month.slice(0, 4)),
+          Number(classificationMonthlyAmount.month.slice(4)),
+          0,
+          23,
+          59
         );
 
-        await accountEdit(
-          initialAfterAccount.id,
-          initialAfterAccount.name,
-          Math.max(0, initialAfterMoney),
-          initialAfterAccount.body
-        );
+        if (
+          new Date(response.repetition_schedule).getTime() >= start.getTime() &&
+          new Date(response.repetition_schedule).getTime() <= end.getTime()
+        ) {
+          money = money + parseFloat(String(response.amount));
+
+          await classificationMonthlyAmountEdit(
+            classificationMonthlyAmount.id,
+            classificationMonthlyAmount.classification_id,
+            classificationMonthlyAmount.month,
+            classificationMonthlyAmount.date,
+            money
+          );
+        }
       }
 
       repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
-      console.error("Failed to delete repetitionPayment:", error);
+      console.error("Failed to add repetitionPayment:", error);
     } finally {
       setLoading(false);
     }
@@ -1436,20 +1413,13 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
                 金額を0以上にして下さい
               </Typography>
             )}
-            {editRepetitionAmountOverError && (
-              <Typography align="left" variant="subtitle1">
-                送金元口座に入っているお金以下にして下さい
-              </Typography>
-            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center" }} className="mb-16">
           <Button
             onClick={handleNewRepetitionMoneySave}
             sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
-            disabled={
-              editRepetitionAmountError || editRepetitionAmountOverError
-            }
+            disabled={editRepetitionAmountError}
           >
             追加
           </Button>
@@ -1708,7 +1678,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
                     <Typography>カレンダーの表示月のみ</Typography>
                   </Box>
                 </Box>
-                <IconButton>
+                <IconButton onClick={handleNewRepetitionMoneyDialogOpen}>
                   <AddIcon />
                 </IconButton>
               </Box>

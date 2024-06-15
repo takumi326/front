@@ -230,7 +230,6 @@ export const MoneyTable: React.FC = () => {
                 }
               });
               setCalendarPayments(allPayments);
-              repetitionMoneies;
             }
           );
         });
@@ -290,7 +289,6 @@ export const MoneyTable: React.FC = () => {
                 }
               });
               setCalendarIncomes(allIncomes);
-              repetitionMoneies;
             }
           );
         });
@@ -367,7 +365,6 @@ export const MoneyTable: React.FC = () => {
                 }
               });
               setCalendarTransfers(allTransfers);
-              repetitionMoneies;
             }
           );
         });

@@ -30,24 +30,24 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const [newMonthlyAmount, setNewMonthlyAmount] = useState<number>(0);
   const [newMonthlAmountString, setNewMonthlAmountString] = useState("0");
   const [isFormValid, setIsFormValid] = useState(false);
-  const [completed, setCompleted] = useState<boolean>(false);
+  // const [completed, setCompleted] = useState<boolean>(false);
 
   const newClassification = async () => {
     setLoading(true);
     try {
-      if (completed === true) {
-        const response = await classificationNew(
-          newAccountId,
-          newName,
-          classification_type
-        );
-        await classificationMonthlyAmountNew(
-          response.id,
-          currentMonth,
-          "即日",
-          newMonthlyAmount
-        );
-      } else {
+      // if (completed === true) {
+      //   const response = await classificationNew(
+      //     newAccountId,
+      //     newName,
+      //     classification_type
+      //   );
+      //   await classificationMonthlyAmountNew(
+      //     response.id,
+      //     currentMonth,
+      //     "即日",
+      //     newMonthlyAmount
+      //   );
+      // } else {
         const response = await classificationNew(
           newAccountId,
           newName,
@@ -59,7 +59,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
           String(newDate),
           newMonthlyAmount
         );
-      }
+      // }
 
       setIsEditing(true);
     } catch (error) {
@@ -99,9 +99,9 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
     }
   };
 
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCompleted(!completed);
-  };
+  // const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   setCompleted(!completed);
+  // };
 
   const handleAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
@@ -176,7 +176,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
                 name="date"
                 value={newDate}
                 onChange={handleChange}
-                disabled={completed}
+                // disabled={completed}
                 inputProps={{
                   inputMode: "numeric",
                   pattern: "[0-9]*",
@@ -184,14 +184,14 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
               />
               <span>日</span>
             </div>
-            <Stack direction="row" alignItems="center">
+            {/* <Stack direction="row" alignItems="center">
               <Checkbox
                 checked={completed}
                 onChange={handleCheckboxChange}
                 color="primary"
               />
               <Typography>即日反映</Typography>
-            </Stack>
+            </Stack> */}
           </li>
         )}
         <li className="pt-10">
