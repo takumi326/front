@@ -125,6 +125,9 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   const initialAmount = amount;
   const initialSchedule = schedule;
   const initialEndDate = end_date;
+  const initialMonth = `${new Date(schedule).getFullYear()}${
+    new Date(schedule).getMonth() + 1
+  }`;
   const initialRepetition = repetition;
   const intialRepetitionType = repetition_type;
   const intialRepetitionSettings = repetition_settings;
@@ -179,9 +182,9 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         (classificationMonthlyAmount) =>
           classificationMonthlyAmount.classification_id ===
             initialClassificationId &&
-          classificationMonthlyAmount.month === currentMonth
+          classificationMonthlyAmount.month === initialMonth
       )[0];
-
+    console.log(editMonth);
     const editClassificationMonthlyAmount: classificationMonthlyAmountData =
       classificationMonthlyAmounts.filter(
         (classificationMonthlyAmount) =>
@@ -544,10 +547,13 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 }
               }
             } else {
+              console.log(initialClassificationMonthlyAmount);
+              console.log(editClassificationMonthlyAmount);
               if (
-                initialClassificationMonthlyAmount.month ===
-                editClassificationMonthlyAmount.month
+                initialClassificationMonthlyAmount.id ===
+                editClassificationMonthlyAmount.id
               ) {
+                console.log(3);
                 const editMoney =
                   parseFloat(
                     String(initialClassificationMonthlyAmount.amount)
@@ -563,6 +569,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   Math.max(0, editMoney)
                 );
               } else {
+                console.log(2);
                 const initialMoney =
                   parseFloat(
                     String(initialClassificationMonthlyAmount.amount)
@@ -576,6 +583,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   Math.max(0, initialMoney)
                 );
                 if (editClassificationMonthlyAmount) {
+                  console.log(1);
                   const editMoney =
                     parseFloat(String(editClassificationMonthlyAmount.amount)) +
                     parseFloat(String(editAmount));
@@ -733,7 +741,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                   initialClassificationId &&
-                classificationMonthlyAmount.month === currentMonth
+                classificationMonthlyAmount.month === initialMonth
             );
 
           if (editClassificationMonthlyAmount) {
@@ -751,9 +759,9 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           }
         }
         paymentDelete(id);
-        setIsEditing(true);
-        onClose();
       }
+      setIsEditing(true);
+      onClose();
     } catch (error) {
       console.error("Failed to edit payment:", error);
     } finally {
@@ -765,6 +773,11 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setEditAmountError(true);
+        } else {
+          setEditAmountError(false);
+        }
         setEditAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -1228,7 +1241,9 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     });
 
   const sortedClassifications = classifications
-    .filter((classification) => classification.classification_type === "payment")
+    .filter(
+      (classification) => classification.classification_type === "payment"
+    )
     .slice()
     .sort((a, b) => {
       if (a.id === editClassificationId) {
@@ -1410,7 +1425,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             </div>
             {editRepetitionAmountError && (
               <Typography align="left" variant="subtitle1">
-                金額を0以上にして下さい
+                金額を0より上にして下さい
               </Typography>
             )}
           </Box>
@@ -1497,7 +1512,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
               <li>
                 {editAmountError && (
                   <Typography align="left" variant="subtitle1">
-                    金額を0以上にして下さい
+                    金額を0より上にして下さい
                   </Typography>
                 )}
               </li>
@@ -1603,50 +1618,50 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
           <li className="pt-10">
             <Stack direction="row" justifyContent="center">
               {loading === true ? (
-                <Typography variant="subtitle1" className="ml-48">
-                  Loading...
-                </Typography>
+                <Typography variant="subtitle1">Loading...</Typography>
               ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={
-                    isClassificationFormValid ||
-                    isCategoryFormValid ||
-                    (editAmountError &&
-                      !(
-                        editRepetition === true &&
-                        intialRepetitionType === editRepetitionType &&
-                        JSON.stringify(intialRepetitionSettings) ===
-                          JSON.stringify(editRepetitionSettings) &&
-                        initialSchedule === editSchedule &&
-                        initialEndDate === editEndDate
-                      ))
-                  }
-                  color="primary"
-                  className={
-                    editRepetition === true &&
-                    intialRepetitionType === editRepetitionType &&
-                    JSON.stringify(intialRepetitionSettings) ===
-                      JSON.stringify(editRepetitionSettings) &&
-                    initialSchedule === editSchedule &&
-                    initialEndDate === editEndDate &&
-                    repetitionMoneies.filter(
-                      (repetitionMoney) => repetitionMoney.payment_id === id
-                    ).length > 0
-                      ? "ml-48"
-                      : "ml-60"
-                  }
-                >
-                  保存
-                </Button>
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={
+                      isClassificationFormValid ||
+                      isCategoryFormValid ||
+                      (editAmountError &&
+                        !(
+                          editRepetition === true &&
+                          intialRepetitionType === editRepetitionType &&
+                          JSON.stringify(intialRepetitionSettings) ===
+                            JSON.stringify(editRepetitionSettings) &&
+                          initialSchedule === editSchedule &&
+                          initialEndDate === editEndDate
+                        ))
+                    }
+                    color="primary"
+                    className={
+                      editRepetition === true &&
+                      intialRepetitionType === editRepetitionType &&
+                      JSON.stringify(intialRepetitionSettings) ===
+                        JSON.stringify(editRepetitionSettings) &&
+                      initialSchedule === editSchedule &&
+                      initialEndDate === editEndDate &&
+                      repetitionMoneies.filter(
+                        (repetitionMoney) => repetitionMoney.payment_id === id
+                      ).length > 0
+                        ? "ml-48"
+                        : "ml-60"
+                    }
+                  >
+                    保存
+                  </Button>
+                  <IconButton
+                    onClick={() => handlePaymentDelete(id)}
+                    className="ml-auto"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </>
               )}
-              <IconButton
-                onClick={() => handlePaymentDelete(id)}
-                className="ml-auto"
-              >
-                <DeleteIcon />
-              </IconButton>
             </Stack>
           </li>
         </ul>

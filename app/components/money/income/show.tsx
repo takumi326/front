@@ -125,6 +125,9 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
   const initialAmount = amount;
   const initialSchedule = schedule;
   const initialEndDate = end_date;
+  const initialMonth = `${new Date(schedule).getFullYear()}${
+    new Date(schedule).getMonth() + 1
+  }`;
   const initialRepetition = repetition;
   const intialRepetitionType = repetition_type;
   const intialRepetitionSettings = repetition_settings;
@@ -179,7 +182,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
         (classificationMonthlyAmount) =>
           classificationMonthlyAmount.classification_id ===
             initialClassificationId &&
-          classificationMonthlyAmount.month === currentMonth
+          classificationMonthlyAmount.month === initialMonth
       )[0];
 
     const editClassificationMonthlyAmount: classificationMonthlyAmountData =
@@ -733,7 +736,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                   initialClassificationId &&
-                classificationMonthlyAmount.month === currentMonth
+                classificationMonthlyAmount.month === initialMonth
             );
 
           if (editClassificationMonthlyAmount) {
@@ -751,9 +754,9 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           }
         }
         incomeDelete(id);
-        setIsEditing(true);
-        onClose();
       }
+      setIsEditing(true);
+      onClose();
     } catch (error) {
       console.error("Failed to edit income:", error);
     } finally {
@@ -765,6 +768,11 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setEditAmountError(true);
+        } else {
+          setEditAmountError(false);
+        }
         setEditAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -1410,7 +1418,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
             </div>
             {editRepetitionAmountError && (
               <Typography align="left" variant="subtitle1">
-                金額を0以上にして下さい
+                金額を0より上にして下さい
               </Typography>
             )}
           </Box>
@@ -1497,7 +1505,7 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
               <li>
                 {editAmountError && (
                   <Typography align="left" variant="subtitle1">
-                    金額を0以上にして下さい
+                    金額を0より上にして下さい
                   </Typography>
                 )}
               </li>
@@ -1603,50 +1611,50 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           <li className="pt-10">
             <Stack direction="row" justifyContent="center">
               {loading === true ? (
-                <Typography variant="subtitle1" className="ml-48">
-                  Loading...
-                </Typography>
+                <Typography variant="subtitle1">Loading...</Typography>
               ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={
-                    isClassificationFormValid ||
-                    isCategoryFormValid ||
-                    (editAmountError &&
-                      !(
-                        editRepetition === true &&
-                        intialRepetitionType === editRepetitionType &&
-                        JSON.stringify(intialRepetitionSettings) ===
-                          JSON.stringify(editRepetitionSettings) &&
-                        initialSchedule === editSchedule &&
-                        initialEndDate === editEndDate
-                      ))
-                  }
-                  color="primary"
-                  className={
-                    editRepetition === true &&
-                    intialRepetitionType === editRepetitionType &&
-                    JSON.stringify(intialRepetitionSettings) ===
-                      JSON.stringify(editRepetitionSettings) &&
-                    initialSchedule === editSchedule &&
-                    initialEndDate === editEndDate &&
-                    repetitionMoneies.filter(
-                      (repetitionMoney) => repetitionMoney.income_id === id
-                    ).length > 0
-                      ? "ml-48"
-                      : "ml-60"
-                  }
-                >
-                  保存
-                </Button>
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={
+                      isClassificationFormValid ||
+                      isCategoryFormValid ||
+                      (editAmountError &&
+                        !(
+                          editRepetition === true &&
+                          intialRepetitionType === editRepetitionType &&
+                          JSON.stringify(intialRepetitionSettings) ===
+                            JSON.stringify(editRepetitionSettings) &&
+                          initialSchedule === editSchedule &&
+                          initialEndDate === editEndDate
+                        ))
+                    }
+                    color="primary"
+                    className={
+                      editRepetition === true &&
+                      intialRepetitionType === editRepetitionType &&
+                      JSON.stringify(intialRepetitionSettings) ===
+                        JSON.stringify(editRepetitionSettings) &&
+                      initialSchedule === editSchedule &&
+                      initialEndDate === editEndDate &&
+                      repetitionMoneies.filter(
+                        (repetitionMoney) => repetitionMoney.income_id === id
+                      ).length > 0
+                        ? "ml-48"
+                        : "ml-60"
+                    }
+                  >
+                    保存
+                  </Button>
+                  <IconButton
+                    onClick={() => handleIncomeDelete(id)}
+                    className="ml-auto"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </>
               )}
-              <IconButton
-                onClick={() => handleIncomeDelete(id)}
-                className="ml-auto"
-              >
-                <DeleteIcon />
-              </IconButton>
             </Stack>
           </li>
         </ul>

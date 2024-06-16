@@ -214,6 +214,11 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setNewAmountError(true);
+        } else {
+          setNewAmountError(false);
+        }
         setNewAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -579,7 +584,7 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
 
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">送金元口座</Typography>
+          <Typography variant="subtitle1">送金元名称</Typography>
           <Select
             fullWidth
             value={newBeforeAccountId}
@@ -597,17 +602,17 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             .filter((account) => account.id === newBeforeAccountId)
             .map((account) => (
               <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
+                残高：{formatAmountCommas(account.amount)}
               </Typography>
             ))}
           {isBeforeTitleFormValid && (
             <Typography align="left" variant="subtitle1">
-              送金元口座を選択してください
+              送金元を選択してください
             </Typography>
           )}
         </li>
         <li className="pt-5">
-          <Typography variant="subtitle1">送金先口座</Typography>
+          <Typography variant="subtitle1">送金先名称</Typography>
           <Select
             fullWidth
             value={newAfterAccountId}
@@ -625,12 +630,12 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
             .filter((account) => account.id === newAfterAccountId)
             .map((account) => (
               <Typography key={account.id} align="left" variant="subtitle1">
-                口座金額：{formatAmountCommas(account.amount)}
+                残高：{formatAmountCommas(account.amount)}
               </Typography>
             ))}
           {isAfterTitleFormValid && (
             <Typography align="left" variant="subtitle1">
-              送金先口座を選択してください
+              送金先を選択してください
             </Typography>
           )}
         </li>
@@ -653,12 +658,12 @@ export const TransferNew: React.FC<transferNewProps> = (props) => {
         <li>
           {newAmountError && (
             <Typography align="left" variant="subtitle1">
-              金額を0以上にして下さい
+              金額を0より上にして下さい
             </Typography>
           )}
           {newAmountOverError && (
             <Typography align="left" variant="subtitle1">
-              送金元口座に入っているお金以下にして下さい
+              送金元に入っている残高以下にして下さい
             </Typography>
           )}
         </li>

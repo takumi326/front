@@ -34,7 +34,7 @@ import { TransferShow } from "@/components/money/transfer/show";
 
 export const AccountRow: React.FC<accountRowProps> = (props) => {
   const { row, visibleColumns } = props;
-  const { accounts, repetitionMoneies, setIsEditing, setLoading } =
+  const { accounts, repetitionMoneies, setIsEditing, loading, setLoading } =
     useContext(moneyContext);
   const now = new Date();
   const endOfCurrentDay = new Date(
@@ -73,13 +73,15 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
   const deleteTransfer = async (id: string, index: number) => {
     setLoading(true);
     const selectedBeforeAccount: accountData = accounts.filter(
-      (account) => account.id === row.history[index].transfer_before_account_id
+      (account) =>
+        account.id === sortedHistoryRows[index].transfer_before_account_id
     )[0];
     const selectedAfterAccount: accountData = accounts.filter(
-      (account) => account.id === row.history[index].transfer_after_account_id
+      (account) =>
+        account.id === sortedHistoryRows[index].transfer_after_account_id
     )[0];
     try {
-      if (row.history[index].transfer_repetition === true) {
+      if (sortedHistoryRows[index].transfer_repetition === true) {
         let beforeAccountEditedAmount = parseFloat(
           String(selectedBeforeAccount.amount)
         );
@@ -128,10 +130,10 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
       } else {
         const beforeAccountEditedAmount =
           parseFloat(String(selectedBeforeAccount.amount)) +
-          parseFloat(String(row.history[index].transfer_amount));
+          parseFloat(String(sortedHistoryRows[index].transfer_amount));
         const afterAccountEditedAmount =
           parseFloat(String(selectedAfterAccount.amount)) -
-          parseFloat(String(row.history[index].transfer_amount));
+          parseFloat(String(sortedHistoryRows[index].transfer_amount));
 
         await accountEdit(
           selectedBeforeAccount.id,
@@ -195,7 +197,7 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
 
   const renderRepetition = (index: number) => {
     const { transfer_repetition_type, transfer_repetition_settings } =
-      row.history[index];
+      sortedHistoryRows[index];
     if (!transfer_repetition_type || !transfer_repetition_settings) return "";
 
     if (
@@ -347,9 +349,13 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          <IconButton onClick={() => deleteAccount(row.id)}>
-            <DeleteIcon />
-          </IconButton>
+          {loading ? (
+            <Typography variant="subtitle1">...</Typography>
+          ) : (
+            <IconButton onClick={() => deleteAccount(row.id)}>
+              <DeleteIcon />
+            </IconButton>
+          )}
         </TableCell>
       </TableRow>
       {row.history.length > 0 && (
@@ -423,16 +429,20 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
                         </TableCell>
                         <TableCell>{renderRepetition(historyIndex)}</TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            onClick={() =>
-                              deleteTransfer(
-                                historyRow.transfer_id,
-                                historyIndex
-                              )
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                          {loading ? (
+                            <Typography variant="subtitle1">...</Typography>
+                          ) : (
+                            <IconButton
+                              onClick={() =>
+                                deleteTransfer(
+                                  historyRow.transfer_id,
+                                  historyIndex
+                                )
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

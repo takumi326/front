@@ -151,7 +151,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
       if (row.classification_name === "分類なし") {
         incomeDelete(id);
       } else {
-        if (row.history[index].income_repetition === true) {
+        if (sortedHistoryRows[index].income_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id === row.id
@@ -201,7 +201,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(row.history[index].income_amount));
+              parseFloat(String(sortedHistoryRows[index].income_amount));
 
             await classificationMonthlyAmountEdit(
               editClassificationMonthlyAmount.id,
@@ -213,8 +213,8 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
           }
         }
         incomeDelete(id);
-        setIsEditing(true);
       }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit income:", error);
     } finally {
@@ -264,7 +264,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
 
   const renderRepetition = (index: number) => {
     const { income_repetition_type, income_repetition_settings } =
-      row.history[index];
+      sortedHistoryRows[index];
     if (!income_repetition_type || !income_repetition_settings) return "";
 
     if (
@@ -329,6 +329,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
               account_id={row.classification_account_id}
               name={row.classification_name}
               classification_type={"income"}
+              calendarMonth={""}
               onClose={handleCloseEditClassificationModal}
               onDelete={deleteClassification}
             />
@@ -440,10 +441,14 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          {row.classification_name !== "分類なし" && (
-            <IconButton onClick={() => deleteClassification(row.id)}>
-              <DeleteIcon />
-            </IconButton>
+          {loading ? (
+            <Typography variant="subtitle1">...</Typography>
+          ) : (
+            row.classification_name !== "分類なし" && (
+              <IconButton onClick={() => deleteClassification(row.id)}>
+                <DeleteIcon />
+              </IconButton>
+            )
           )}
         </TableCell>
       </TableRow>
@@ -507,13 +512,17 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                         </TableCell>
                         <TableCell>{renderRepetition(historyIndex)}</TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            onClick={() =>
-                              deleteIncome(historyRow.income_id, isHistory)
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                          {loading ? (
+                            <Typography variant="subtitle1">...</Typography>
+                          ) : (
+                            <IconButton
+                              onClick={() =>
+                                deleteIncome(historyRow.income_id, isHistory)
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

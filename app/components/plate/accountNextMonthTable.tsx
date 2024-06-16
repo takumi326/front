@@ -66,7 +66,7 @@ export const AccountNextMonthTable: React.FC = () => {
     "3月",
   ];
   const [page, setPage] = useState(0);
-  const [displayMonth, setDisplayMonth] = useState([]);
+  const [displayMonth, setDisplayMonth] = useState<string[]>([]);
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -103,7 +103,7 @@ export const AccountNextMonthTable: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell sx={{ minWidth: 150 }}>
-                口座 {selectedYear}年度
+                名称 {selectedYear}年度
               </TableCell>
               {displayMonth.map((month, index) => (
                 <TableCell key={index} sx={{ minWidth: 80 }}>
@@ -116,7 +116,9 @@ export const AccountNextMonthTable: React.FC = () => {
             {accounts.map((account) => (
               <TableRow key={account.id}>
                 <TableCell>{account.name}</TableCell>
-                <TableCell>{displayMonth.length}</TableCell>
+                {displayMonth.map((month, index) => (
+                  <TableCell key={index}>{month}</TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>

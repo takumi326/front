@@ -26,10 +26,13 @@ export const MoneyCalendar = (): JSX.Element => {
     classifications,
     classificationMonthlyAmounts,
     accounts,
+    allPayments,
     payments,
     calendarPayments,
+    allIncomes,
     incomes,
     calendarIncomes,
+    allTransfers,
     transfers,
     calendarTransfers,
     filter,
@@ -49,6 +52,7 @@ export const MoneyCalendar = (): JSX.Element => {
   const [sortedClassificationRows, setSortedClassificationRows] = useState<
     classificationData[]
   >([]);
+  const [classificationMonth, setClassificationMonth] = useState("");
 
   const calendarRef = useRef(null);
 
@@ -78,7 +82,7 @@ export const MoneyCalendar = (): JSX.Element => {
   const date = (month: string, date: string) =>
     new Date(
       Number(month.slice(0, 4)),
-      Number(month.slice(4)),
+      Number(month.slice(4)) - 1,
       Number(date),
       0,
       0
@@ -104,14 +108,13 @@ export const MoneyCalendar = (): JSX.Element => {
       | classificationData
       | undefined;
 
-    console.log(clickInfo.event.extendedProps);
     if (clickInfo.event.extendedProps.paymentId) {
       data = calendarPayments.filter(
         (payment) => payment.id === clickInfo.event.extendedProps.paymentId
       )[0];
       if (data !== undefined) {
         if (payments) {
-          const showPayment = payments.filter(
+          const showPayment = allPayments.filter(
             (showPayment: paymentData) => showPayment.id === data.id
           )[0];
           selectedEvent = showPayment;
@@ -127,16 +130,10 @@ export const MoneyCalendar = (): JSX.Element => {
       )[0];
       if (data !== undefined) {
         if (incomes) {
-          const showIncome = incomes.filter(
+          const showIncome = allIncomes.filter(
             (showIncome: incomeData) => showIncome.id === data.id
           )[0];
           selectedEvent = showIncome;
-          console.log(showIncome);
-          console.log(sortedPaymentRows);
-          console.log(sortedIncomeRows);
-          console.log(sortedTransferRows);
-          console.log(sortedClassificationRows);
-          setSortedPaymentRows([]);
           setSortedIncomeRows([showIncome]);
           setSortedTransferRows([]);
           setSortedClassificationRows([]);
@@ -148,7 +145,7 @@ export const MoneyCalendar = (): JSX.Element => {
       )[0];
       if (data !== undefined) {
         if (transfers) {
-          const showTransfer = transfers.filter(
+          const showTransfer = allTransfers.filter(
             (showTransfer: transferData) => showTransfer.id === data.id
           )[0];
           selectedEvent = showTransfer;
@@ -174,6 +171,9 @@ export const MoneyCalendar = (): JSX.Element => {
           setSortedIncomeRows([]);
           setSortedTransferRows([]);
           setSortedClassificationRows([showClassification]);
+          setClassificationMonth(
+            clickInfo.event.extendedProps.classificationMonth
+          );
         }
       }
     }
@@ -183,6 +183,13 @@ export const MoneyCalendar = (): JSX.Element => {
 
   const handleEditCloseModal = () => {
     setIsEditModalOpen(false);
+  };
+
+  const handleTodayClick = () => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.today();
+    }
   };
 
   const historyEvents =
@@ -229,10 +236,12 @@ export const MoneyCalendar = (): JSX.Element => {
               .filter(
                 (classificationMonthlyAmount) =>
                   classificationMonthlyAmount.classification_id ===
-                    classification.id && classificationMonthlyAmount.date != "0"
+                    classification.id &&
+                  classificationMonthlyAmount.date != "-1"
               )
               .map((classificationMonthlyAmount) => ({
                 classificationId: classification.id,
+                classificationMonth: classificationMonthlyAmount.month,
                 title: classification.name + "(支払日)",
                 start: date(
                   classificationMonthlyAmount.month,
@@ -260,6 +269,7 @@ export const MoneyCalendar = (): JSX.Element => {
               )
               .map((classificationMonthlyAmount) => ({
                 classificationId: classification.id,
+                classificationMonth: classificationMonthlyAmount.month,
                 title: classification.name + "(給料日)",
                 start: date(
                   classificationMonthlyAmount.month,
@@ -337,6 +347,7 @@ export const MoneyCalendar = (): JSX.Element => {
                 account_id={sortedClassificationRows[0].account_id}
                 name={sortedClassificationRows[0].name}
                 classification_type={filter}
+                calendarMonth={classificationMonth}
                 onClose={handleEditCloseModal}
                 onDelete={deleteClassification}
               />
@@ -359,7 +370,13 @@ export const MoneyCalendar = (): JSX.Element => {
           headerToolbar={{
             start: "prevYear,nextYear",
             center: "title",
-            end: "today prev,next",
+            end: "myCustomButton prev,next",
+          }}
+          customButtons={{
+            myCustomButton: {
+              text: "今月",
+              click: handleTodayClick,
+            },
           }}
           eventClick={handleEventClick}
           eventClassNames="cursor-pointer"

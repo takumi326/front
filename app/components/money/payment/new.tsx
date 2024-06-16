@@ -200,6 +200,11 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setNewAmountError(true);
+        } else {
+          setNewAmountError(false);
+        }
         setNewAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -608,7 +613,7 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         <li>
           {newAmountError && (
             <Typography align="left" variant="subtitle1">
-              金額を0以上にして下さい
+              金額を0より上にして下さい
             </Typography>
           )}
         </li>

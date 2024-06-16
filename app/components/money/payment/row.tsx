@@ -151,7 +151,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       if (row.classification_name === "分類なし") {
         paymentDelete(id);
       } else {
-        if (row.history[index].payment_repetition === true) {
+        if (sortedHistoryRows[index].payment_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id === row.id
@@ -201,7 +201,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
               parseFloat(String(editClassificationMonthlyAmount.amount)) -
-              parseFloat(String(row.history[index].payment_amount));
+              parseFloat(String(sortedHistoryRows[index].payment_amount));
 
             await classificationMonthlyAmountEdit(
               editClassificationMonthlyAmount.id,
@@ -213,8 +213,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           }
         }
         paymentDelete(id);
-        setIsEditing(true);
       }
+      setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit payment:", error);
     } finally {
@@ -264,7 +264,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
 
   const renderRepetition = (index: number) => {
     const { payment_repetition_type, payment_repetition_settings } =
-      row.history[index];
+      sortedHistoryRows[index];
     if (!payment_repetition_type || !payment_repetition_settings) return "";
 
     if (
@@ -329,6 +329,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               account_id={row.classification_account_id}
               name={row.classification_name}
               classification_type={"payment"}
+              calendarMonth={""}
               onClose={handleCloseEditClassificationModal}
               onDelete={deleteClassification}
             />
@@ -440,10 +441,14 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          {row.classification_name !== "分類なし" && (
-            <IconButton onClick={() => deleteClassification(row.id)}>
-              <DeleteIcon />
-            </IconButton>
+          {loading ? (
+            <Typography variant="subtitle1">...</Typography>
+          ) : (
+            row.classification_name !== "分類なし" && (
+              <IconButton onClick={() => deleteClassification(row.id)}>
+                <DeleteIcon />
+              </IconButton>
+            )
           )}
         </TableCell>
       </TableRow>
@@ -507,13 +512,17 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                         </TableCell>
                         <TableCell>{renderRepetition(historyIndex)}</TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            onClick={() =>
-                              deletePayment(historyRow.payment_id, isHistory)
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                          {loading ? (
+                            <Typography variant="subtitle1">...</Typography>
+                          ) : (
+                            <IconButton
+                              onClick={() =>
+                                deletePayment(historyRow.payment_id, isHistory)
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

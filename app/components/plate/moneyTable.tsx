@@ -89,14 +89,17 @@ export const MoneyTable: React.FC = () => {
     categories,
     setCategories,
     setCalendarPayments,
+    setAllPayments,
     payments,
     setPayments,
     setCalendarIncomes,
+    setAllIncomes,
     incomes,
     setIncomes,
     accounts,
     setAccounts,
     setCalendarTransfers,
+    setAllTransfers,
     transfers,
     setTransfers,
     filter,
@@ -197,6 +200,10 @@ export const MoneyTable: React.FC = () => {
           }
         );
 
+        await paymentGetData().then((payments: paymentData[]) => {
+          setAllPayments(payments);
+        });
+
         await paymentGetData().then((paymentDatas: paymentData[]) => {
           const allPayments: Array<paymentData> = [];
           repetitionMoneyGetData().then(
@@ -254,6 +261,10 @@ export const MoneyTable: React.FC = () => {
           } else {
             setPayments(payments);
           }
+        });
+
+        await incomeGetData().then((incomes: incomeData[]) => {
+          setAllIncomes(incomes);
         });
 
         await incomeGetData().then((incomeDatas: incomeData[]) => {
@@ -333,6 +344,10 @@ export const MoneyTable: React.FC = () => {
           setAccounts(accounts);
         });
 
+        await transferGetData().then((transfers: transferData[]) => {
+          setAllTransfers(transfers);
+        });
+
         await transferGetData().then((transferDatas: transferData[]) => {
           const allTransfers: Array<transferData> = [];
           repetitionMoneyGetData().then(
@@ -389,7 +404,7 @@ export const MoneyTable: React.FC = () => {
           }
         });
       } catch (error) {
-        console.error("Failed to create income:", error);
+        console.error("Failed to create money:", error);
       } finally {
         setLoading(false);
       }
@@ -1023,7 +1038,7 @@ export const MoneyTable: React.FC = () => {
             variant={filter === "account" ? "contained" : "outlined"}
             onClick={() => handleFilterChange("account")}
           >
-            口座
+            残高
           </Button>
         </Stack>
         <Button

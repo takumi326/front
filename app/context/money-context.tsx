@@ -43,6 +43,8 @@ export const moneyContext = createContext<{
   setCalendarPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   payments: paymentData[];
   setPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
+  allPayments: paymentData[];
+  setAllPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   // displayIncomes: incomeData[];
   // setDisplayIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   // calendarIncomes: incomeData[];
@@ -51,12 +53,16 @@ export const moneyContext = createContext<{
   setCalendarIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   incomes: incomeData[];
   setIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
+  allIncomes: incomeData[];
+  setAllIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   accounts: accountData[];
   setAccounts: React.Dispatch<React.SetStateAction<accountData[]>>;
   calendarTransfers: transferData[];
   setCalendarTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
   transfers: transferData[];
   setTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
+  allTransfers: transferData[];
+  setAllTransfers: React.Dispatch<React.SetStateAction<transferData[]>>;
   filter: string;
   setFilter: React.Dispatch<
     React.SetStateAction<"payment" | "income" | "account">
@@ -84,12 +90,16 @@ export const moneyContext = createContext<{
   setCalendarPayments: () => {},
   payments: [],
   setPayments: () => {},
+  allPayments: [],
+  setAllPayments: () => {},
   // displayIncomes: [],
   // setDisplayIncomes: () => {},
   // calendarIncomes: [],
   // setCalendarIncomes: () => {},
   calendarIncomes: [],
   setCalendarIncomes: () => {},
+  allIncomes: [],
+  setAllIncomes: () => {},
   incomes: [],
   setIncomes: () => {},
   accounts: [],
@@ -98,6 +108,8 @@ export const moneyContext = createContext<{
   setCalendarTransfers: () => {},
   transfers: [],
   setTransfers: () => {},
+  allTransfers: [],
+  setAllTransfers: () => {},
   filter: "payment",
   setFilter: () => {},
   currentMonth: "",
@@ -119,13 +131,16 @@ export const MoneyProvider: React.FC = ({ children }) => {
     useState<classificationMonthlyAmountData[]>([]);
   const [categories, setCategories] = useState<categoryData[]>([]);
   const [calendarPayments, setCalendarPayments] = useState<paymentData[]>([]);
+  const [allPayments, setAllPayments] = useState<paymentData[]>([]);
   const [payments, setPayments] = useState<paymentData[]>([]);
   const [calendarIncomes, setCalendarIncomes] = useState<incomeData[]>([]);
+  const [allIncomes, setAllIncomes] = useState<incomeData[]>([]);
   const [incomes, setIncomes] = useState<incomeData[]>([]);
   const [accounts, setAccounts] = useState<accountData[]>([]);
   const [calendarTransfers, setCalendarTransfers] = useState<transferData[]>(
     []
   );
+  const [allTransfers, setAllTransfers] = useState<transferData[]>([]);
   const [transfers, setTransfers] = useState<transferData[]>([]);
   const [filter, setFilter] = useState<"payment" | "income" | "account">(
     "payment"
@@ -147,16 +162,22 @@ export const MoneyProvider: React.FC = ({ children }) => {
         setCategories,
         calendarPayments,
         setCalendarPayments,
+        allPayments,
+        setAllPayments,
         payments,
         setPayments,
         calendarIncomes,
         setCalendarIncomes,
+        allIncomes,
+        setAllIncomes,
         incomes,
         setIncomes,
         accounts,
         setAccounts,
         calendarTransfers,
         setCalendarTransfers,
+        allTransfers,
+        setAllTransfers,
         transfers,
         setTransfers,
         filter,

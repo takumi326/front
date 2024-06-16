@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext, ChangeEvent } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
@@ -10,13 +10,33 @@ import { accountNewProps } from "@/interface/account-interface";
 
 export const AccountNew: React.FC<accountNewProps> = (props) => {
   const { onClose } = props;
-  const { setIsEditing, setLoading } = useContext(moneyContext);
+  const { accounts, setIsEditing, setLoading } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
+  const [newNameError, setNewNameError] = useState<boolean>(false);
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newAmountString, setNewAmountString] = useState("0");
+  const [newAmountError, setNewAmountError] = useState<boolean>(false);
   const [newBody, setNewBody] = useState("");
-  const [isFormValid, setIsFormValid] = useState(false);
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
+
+  useEffect(() => {
+    const account = accounts.filter((account) => account.name === newName)[0];
+    console.log(account);
+    if (account != undefined) {
+      setNewNameError(true);
+          } else {
+      setNewNameError(false);
+    }
+  }, [newName]);
+
+  useEffect(() => {
+    if (newAmount >= 0) {
+      setNewAmountError(false);
+    } else {
+      setNewAmountError(true);
+    }
+  }, [newAmount]);
 
   const newAccount = async () => {
     setLoading(true);
@@ -38,6 +58,11 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
         setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setNewAmountError(true);
+        } else {
+          setNewAmountError(false);
+        }
         setNewAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -69,7 +94,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
     <Box width={560} height={450}>
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">口座名</Typography>
+          <Typography variant="subtitle1">名称</Typography>
           <TextField
             fullWidth
             variant="outlined"
@@ -78,8 +103,15 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
             onChange={handleChange}
           />
         </li>
+        <li>
+          {newNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
+        </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">金額</Typography>
+          <Typography variant="subtitle1">残高</Typography>
           <div className="flex items-center">
             <TextField
               variant="outlined"
@@ -93,6 +125,13 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
             />
             <span>円</span>
           </div>
+          <li>
+            {newAmountError && (
+              <Typography align="left" variant="subtitle1">
+                残高を0以上にして下さい
+              </Typography>
+            )}
+          </li>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>
@@ -110,7 +149,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid}
+              disabled={!isFormValid || newAmountError}
               color="primary"
             >
               作成
