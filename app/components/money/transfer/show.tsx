@@ -821,6 +821,11 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
     const { name, value } = e.target;
     switch (name) {
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setEditAmountError(true);
+        } else {
+          setEditAmountError(false);
+        }
         setEditAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -1466,12 +1471,12 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
             </div>
             {editRepetitionAmountError && (
               <Typography align="left" variant="subtitle1">
-                金額を0以上にして下さい
+                金額を0より上にして下さい
               </Typography>
             )}
             {editRepetitionAmountOverError && (
               <Typography align="left" variant="subtitle1">
-                送金元口座に入っているお金以下にして下さい
+                送金元名称に入っている残高以下にして下さい
               </Typography>
             )}
           </Box>
@@ -1492,7 +1497,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
       <Stack direction="row" spacing={5}>
         <ul className="w-full">
           <li className="pt-10">
-            <Typography variant="subtitle1">送金元口座</Typography>
+            <Typography variant="subtitle1">送金元名称</Typography>
             <Select
               fullWidth
               value={editBeforeAccountId}
@@ -1522,7 +1527,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                       align="left"
                       variant="subtitle1"
                     >
-                      口座金額：
+                      残高：
                       {formatAmountCommas(
                         parseFloat(String(initialBeforeAccount.amount)) +
                           parseFloat(String(initialRepetitionAllMoney))
@@ -1537,12 +1542,12 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                       align="left"
                       variant="subtitle1"
                     >
-                      口座金額：{formatAmountCommas(account.amount)}
+                      残高：{formatAmountCommas(account.amount)}
                     </Typography>
                   ))}
             {isBeforeTitleFormValid && (
               <Typography align="left" variant="subtitle1">
-                送金元口座を選択してください
+                送金元を選択してください
               </Typography>
             )}
             {editRepetition === true &&
@@ -1561,13 +1566,13 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                     variant="subtitle1"
                     style={{ color: "red" }}
                   >
-                    送金元口座の金額がマイナスになってしまいます
+                    送金元の残高がマイナスになってしまいます
                   </Typography>
                 )
               : false}
           </li>
           <li className="pt-5">
-            <Typography variant="subtitle1">送金先口座</Typography>
+            <Typography variant="subtitle1">送金先名称</Typography>
             <Select
               fullWidth
               value={editAfterAccountId}
@@ -1585,12 +1590,12 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
               .filter((account) => account.id === editAfterAccountId)
               .map((account) => (
                 <Typography key={account.id} align="left" variant="subtitle1">
-                  口座金額：{formatAmountCommas(account.amount)}
+                  残高：{formatAmountCommas(account.amount)}
                 </Typography>
               ))}
             {isAfterTitleFormValid && (
               <Typography align="left" variant="subtitle1">
-                送金先口座を選択してください
+                送金先を選択してください
               </Typography>
             )}
           </li>
@@ -1627,7 +1632,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                       variant="subtitle1"
                       style={{ color: "red" }}
                     >
-                      金額を0より上にしてください
+                      残高を0より上にしてください
                     </Typography>
                   )}
                   {editAmountOverError && (
@@ -1636,7 +1641,7 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
                       variant="subtitle1"
                       style={{ color: "red" }}
                     >
-                      送金元口座に入っているお金以下にして下さい
+                      送金元に入っている残高以下にして下さい
                     </Typography>
                   )}
                 </Typography>
@@ -1743,63 +1748,63 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
           <li className="pt-10">
             <Stack direction="row" justifyContent="center">
               {loading === true ? (
-                <Typography variant="subtitle1" className="ml-48">
-                  Loading...
-                </Typography>
+                <Typography variant="subtitle1">Loading...</Typography>
               ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={
-                    loading ||
-                    isBeforeTitleFormValid ||
-                    isAfterTitleFormValid ||
-                    ((editAmountError || editAmountOverError) &&
-                      !(
-                        editRepetition === true &&
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={
+                      loading ||
+                      isBeforeTitleFormValid ||
+                      isAfterTitleFormValid ||
+                      ((editAmountError || editAmountOverError) &&
+                        !(
+                          editRepetition === true &&
+                          intialRepetitionType === editRepetitionType &&
+                          JSON.stringify(intialRepetitionSettings) ===
+                            JSON.stringify(editRepetitionSettings) &&
+                          initialSchedule === editSchedule &&
+                          initialEndDate === editEndDate
+                        )) ||
+                      (editRepetition === true &&
                         intialRepetitionType === editRepetitionType &&
                         JSON.stringify(intialRepetitionSettings) ===
                           JSON.stringify(editRepetitionSettings) &&
                         initialSchedule === editSchedule &&
-                        initialEndDate === editEndDate
-                      )) ||
-                    (editRepetition === true &&
+                        initialEndDate === editEndDate &&
+                        initialBeforeAccountId != editBeforeAccountId)
+                        ? initialRepetitionAllMoney >
+                          accounts.filter(
+                            (account) => account.id === editBeforeAccountId
+                          )[0].amount
+                        : false
+                    }
+                    color="primary"
+                    className={
+                      editRepetition === true &&
                       intialRepetitionType === editRepetitionType &&
                       JSON.stringify(intialRepetitionSettings) ===
                         JSON.stringify(editRepetitionSettings) &&
                       initialSchedule === editSchedule &&
                       initialEndDate === editEndDate &&
-                      initialBeforeAccountId != editBeforeAccountId)
-                      ? initialRepetitionAllMoney >
-                        accounts.filter(
-                          (account) => account.id === editBeforeAccountId
-                        )[0].amount
-                      : false
-                  }
-                  color="primary"
-                  className={
-                    editRepetition === true &&
-                    intialRepetitionType === editRepetitionType &&
-                    JSON.stringify(intialRepetitionSettings) ===
-                      JSON.stringify(editRepetitionSettings) &&
-                    initialSchedule === editSchedule &&
-                    initialEndDate === editEndDate &&
-                    repetitionMoneies.filter(
-                      (repetitionMoney) => repetitionMoney.transfer_id === id
-                    ).length > 0
-                      ? "ml-48"
-                      : "ml-60"
-                  }
-                >
-                  保存
-                </Button>
+                      repetitionMoneies.filter(
+                        (repetitionMoney) => repetitionMoney.transfer_id === id
+                      ).length > 0
+                        ? "ml-48"
+                        : "ml-60"
+                    }
+                  >
+                    保存
+                  </Button>
+                  <IconButton
+                    onClick={() => handleTransferDelete(id)}
+                    className="ml-auto"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </>
               )}
-              <IconButton
-                onClick={() => handleTransferDelete(id)}
-                className="ml-auto"
-              >
-                <DeleteIcon />
-              </IconButton>
             </Stack>
           </li>
         </ul>

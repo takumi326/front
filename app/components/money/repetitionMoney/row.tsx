@@ -28,7 +28,7 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
 ) => {
   const { id, amount, repetition_schedule, limitAmount, onChange, onDelete } =
     props;
-  const { repetitionMoneies } = useContext(moneyContext);
+  const { repetitionMoneies, loading } = useContext(moneyContext);
 
   const [editRepetitionSchedule, setEditRepetitionSchedule] =
     useState(repetition_schedule);
@@ -222,9 +222,13 @@ export const RepetitionMoneyRow: React.FC<repetitionMoneyRowProps> = (
           </button>
         </TableCell>
         <TableCell align="right">
-          <IconButton onClick={() => onDelete(id)}>
-            <DeleteIcon />
-          </IconButton>
+          {loading ? (
+            <Typography variant="subtitle1">...</Typography>
+          ) : (
+            <IconButton onClick={() => onDelete(id)}>
+              <DeleteIcon />
+            </IconButton>
+          )}
         </TableCell>
       </TableRow>
     </React.Fragment>

@@ -32,6 +32,7 @@ export interface classificationShowProps {
   account_id: string;
   name: string;
   classification_type: string;
+  calendarMonth: string;
   onClose: () => void;
   onDelete: (id: string) => void;
 }

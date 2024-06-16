@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext, ChangeEvent } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -26,46 +26,103 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
 
   const [newAccountId, setNewAccountId] = useState("");
   const [newName, setNewName] = useState("");
-  const [newDate, setNewDate] = useState<number>(0);
+  const [newMonthlyDate, setNewMonthlyDate] = useState("1");
+  const [newMonthlyDateNumber, setNewMonthlyDateNumber] = useState<number>(1);
+  const [newMonthlyDateError, setNewMonthlyDateError] =
+    useState<boolean>(false);
   const [newMonthlyAmount, setNewMonthlyAmount] = useState<number>(0);
-  const [newMonthlAmountString, setNewMonthlAmountString] = useState("0");
+  const [newMonthlyAmountString, setNewMonthlyAmountString] = useState("0");
+  const [newMonthlyAmountError, setNewMonthlyAmountError] =
+    useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(false);
-  const [completed, setCompleted] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (newMonthlyAmount >= 0) {
+      setNewMonthlyAmountError(false);
+    } else {
+      setNewMonthlyAmountError(true);
+    }
+  }, [newMonthlyAmount]);
+
+  useEffect(() => {
+    if (newMonthlyDateNumber > 0) {
+      setNewMonthlyDateError(false);
+    } else {
+      setNewMonthlyDateError(true);
+    }
+
+    if (
+      Number(currentMonth.slice(4)) === 1 ||
+      Number(currentMonth.slice(4)) === 3 ||
+      Number(currentMonth.slice(4)) === 5 ||
+      Number(currentMonth.slice(4)) === 7 ||
+      Number(currentMonth.slice(4)) === 8 ||
+      Number(currentMonth.slice(4)) === 10 ||
+      Number(currentMonth.slice(4)) === 12
+    ) {
+      if (newMonthlyDateNumber >= 32) {
+        setNewMonthlyDateError(true);
+      }
+    } else if (
+      Number(currentMonth.slice(4)) === 4 ||
+      Number(currentMonth.slice(4)) === 6 ||
+      Number(currentMonth.slice(4)) === 9 ||
+      Number(currentMonth.slice(4)) === 11
+    ) {
+      if (newMonthlyDateNumber >= 31) {
+        setNewMonthlyDateError(true);
+      }
+    } else {
+      if (Number(currentMonth.slice(2, 4)) % 4 === 0) {
+        if (newMonthlyDateNumber >= 30) {
+          setNewMonthlyDateError(true);
+        }
+      } else {
+        if (newMonthlyDateNumber >= 29) {
+          setNewMonthlyDateError(true);
+        }
+      }
+    }
+    setNewMonthlyAmountError(false);
+  }, [newMonthlyDateNumber]);
 
   const newClassification = async () => {
     setLoading(true);
     try {
-      if (completed === true) {
-        const response = await classificationNew(
-          newAccountId,
-          newName,
-          classification_type
-        );
+      const response = await classificationNew(
+        newAccountId,
+        newName,
+        classification_type
+      );
+
+      if (newAccountId === null) {
         await classificationMonthlyAmountNew(
           response.id,
           currentMonth,
-          "即日",
+          "-1",
           newMonthlyAmount
         );
       } else {
-        const response = await classificationNew(
-          newAccountId,
-          newName,
-          classification_type
-        );
         await classificationMonthlyAmountNew(
           response.id,
           currentMonth,
-          String(newDate),
+          newMonthlyDate,
           newMonthlyAmount
         );
       }
-
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create classification:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAccountChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value as string;
+    setNewAccountId(value);
+    if (newAccountId === null) {
+      setNewMonthlyDateNumber(1);
     }
   };
 
@@ -77,7 +134,12 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
-        setNewMonthlAmountString(
+        if (!/^\d+$/.test(value)) {
+          setNewMonthlyAmountError(true);
+        } else {
+          setNewMonthlyAmountError(false);
+        }
+        setNewMonthlyAmountString(
           value.startsWith("0") && value.length > 1
             ? value
                 .replace(/^0+/, "")
@@ -92,21 +154,17 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         );
         break;
       case "date":
-        setNewDate(Number(value));
+        if (!/^\d+$/.test(value)) {
+          setNewMonthlyDateError(true);
+        } else {
+          setNewMonthlyDateError(false);
+        }
+        setNewMonthlyDate(value);
+        setNewMonthlyDateNumber(Number(value));
         break;
       default:
         break;
     }
-  };
-
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCompleted(!completed);
-  };
-
-  const handleAccountChange = (event: SelectChangeEvent<string>) => {
-    const value = event.target.value as string;
-    setNewAccountId(value);
-    setNewDate(1);
   };
 
   const handleSave = () => {
@@ -153,7 +211,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             <TextField
               variant="outlined"
               name="amount"
-              value={newMonthlAmountString}
+              value={newMonthlyAmountString}
               onChange={handleChange}
               inputProps={{
                 inputMode: "numeric",
@@ -162,21 +220,31 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             />
             <span>円</span>
           </div>
+          <li>
+            {newMonthlyAmountError && (
+              <Typography align="left" variant="subtitle1">
+                金額を0以上にして下さい
+              </Typography>
+            )}
+          </li>
         </li>
         {newAccountId && (
           <li className="pt-10">
             {classification_type === "payment" ? (
-              <Typography variant="subtitle1">支払い日</Typography>
+              <Typography variant="subtitle1">
+                {currentMonth.slice(4)}支払い日
+              </Typography>
             ) : (
-              <Typography variant="subtitle1">振込み日</Typography>
+              <Typography variant="subtitle1">
+                {currentMonth.slice(4)}振込み日
+              </Typography>
             )}
             <div className="flex items-center">
               <TextField
                 variant="outlined"
                 name="date"
-                value={newDate}
+                value={newMonthlyDate}
                 onChange={handleChange}
-                disabled={completed}
                 inputProps={{
                   inputMode: "numeric",
                   pattern: "[0-9]*",
@@ -184,22 +252,22 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
               />
               <span>日</span>
             </div>
-            <Stack direction="row" alignItems="center">
-              <Checkbox
-                checked={completed}
-                onChange={handleCheckboxChange}
-                color="primary"
-              />
-              <Typography>即日反映</Typography>
-            </Stack>
+            {newMonthlyDateError && (
+              <Typography align="left" variant="subtitle1">
+                存在する日付にして下さい
+              </Typography>
+            )}
           </li>
         )}
+
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid}
+              disabled={
+                !isFormValid || newMonthlyAmountError || newMonthlyDateError
+              }
               color="primary"
             >
               作成

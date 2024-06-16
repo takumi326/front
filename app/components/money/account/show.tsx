@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext, ChangeEvent } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -18,15 +18,36 @@ import { accountShowProps } from "@/interface/account-interface";
 
 export const AccountShow: React.FC<accountShowProps> = (props) => {
   const { id, name, amount, body, onClose, onDelete } = props;
-  const { setIsEditing, setLoading } = useContext(moneyContext);
+  const { accounts, setIsEditing, setLoading } = useContext(moneyContext);
 
   const [editName, setEditName] = useState<string>(name);
+  const [editNameError, setEditNameError] = useState<boolean>(false);
   const [editAmount, setEditAmount] = useState<number>(amount);
   const [editAmountString, setEditAmountString] = useState<string>(
     String(Math.floor(editAmount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   );
+  const [editAmountError, setEditAmountError] = useState<boolean>(false);
   const [editBody, setEditBody] = useState<string>(body);
   const [isFormValid, setIsFormValid] = useState(true);
+
+  useEffect(() => {
+    const account = accounts.filter((account) => account.name === editName)[0];
+    if (account != undefined) {
+      if (account.id != id) {
+        setEditNameError(true);
+      }
+    } else {
+      setEditNameError(false);
+    }
+  }, [editName]);
+
+  useEffect(() => {
+    if (editAmount >= 0) {
+      setEditAmountError(false);
+    } else {
+      setEditAmountError(true);
+    }
+  }, [editAmount]);
 
   const editAccount = async (id: string) => {
     setLoading(true);
@@ -48,6 +69,11 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
         setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
+        if (!/^\d+$/.test(value)) {
+          setEditAmountError(true);
+        } else {
+          setEditAmountError(false);
+        }
         setEditAmountString(
           value.startsWith("0") && value.length > 1
             ? value
@@ -79,7 +105,7 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
     <Box width={560} height={450}>
       <ul className="w-full">
         <li className="pt-10">
-          <Typography variant="subtitle1">口座名</Typography>
+          <Typography variant="subtitle1">名称</Typography>
           <TextField
             fullWidth
             variant="outlined"
@@ -88,8 +114,15 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
             onChange={handleChange}
           />
         </li>
+        <li>
+          {editNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
+        </li>
         <li className="pt-10">
-          <Typography variant="subtitle1">金額</Typography>
+          <Typography variant="subtitle1">残高</Typography>
           <div className="flex items-center">
             <TextField
               variant="outlined"
@@ -102,7 +135,14 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
               }}
             />
             <span>円</span>
-          </div>
+          </div>{" "}
+          <li>
+            {editAmountError && (
+              <Typography align="left" variant="subtitle1">
+                残高を0以上にして下さい
+              </Typography>
+            )}
+          </li>
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">備考</Typography>

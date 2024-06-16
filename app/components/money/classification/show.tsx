@@ -26,8 +26,15 @@ import { classificationMonthlyAmountData } from "@/interface/classification-inte
 export const ClassificationShow: React.FC<classificationShowProps> = (
   props
 ) => {
-  const { id, account_id, name, classification_type, onClose, onDelete } =
-    props;
+  const {
+    id,
+    account_id,
+    name,
+    classification_type,
+    calendarMonth,
+    onClose,
+    onDelete,
+  } = props;
   const {
     accounts,
     classificationMonthlyAmounts,
@@ -36,85 +43,121 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     setLoading,
   } = useContext(moneyContext);
 
+  const viewMonth = calendarMonth != "" ? calendarMonth : currentMonth;
+
   const classificationMonthlyAmount: classificationMonthlyAmountData =
     classificationMonthlyAmounts.filter(
       (classificationMonthlyAmount) =>
         classificationMonthlyAmount.classification_id === id &&
-        classificationMonthlyAmount.month === currentMonth
+        classificationMonthlyAmount.month === viewMonth
     )[0];
 
   const [editAccountId, setEditAccountId] = useState(account_id);
   const [editName, setEditName] = useState(name);
-  // const [editDate, setEditDate] = useState(classificationMonthlyAmount.date);
-  const [editDateNumber, setEditDateNumber] = useState<number>(
-    classificationMonthlyAmount.date === "即日"
-      ? 0
-      : Number(classificationMonthlyAmount.date)
+  const [editMonthlyDate, setEditMonthlyDate] = useState(
+    classificationMonthlyAmount.date
   );
-  const [editAmount, setEditAmount] = useState<number>(
+  const [editMonthlyDateNumber, setEditMonthlyDateNumber] = useState<number>(
+    Number(classificationMonthlyAmount.date)
+  );
+  const [editMonthlyDateError, setEditMonthlyDateError] =
+    useState<boolean>(false);
+  const [editMonthlyAmount, setEditMonthlyAmount] = useState<number>(
     classificationMonthlyAmount.amount
   );
-  const [editAmountString, setEditAmountString] = useState<string>(
-    String(Math.floor(classificationMonthlyAmount.amount)).replace(
-      /\B(?=(\d{3})+(?!\d))/g,
-      ","
-    )
-  );
+  const [editMonthlyAmountString, setEditMonthlyAmountString] =
+    useState<string>(
+      String(Math.floor(classificationMonthlyAmount.amount)).replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        ","
+      )
+    );
+  const [editMonthlyAmountError, setEditMonthlyAmountError] =
+    useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(true);
-  // const [completed, setCompleted] = useState<boolean>(
-  //   classificationMonthlyAmount.date === "即日" ? true : false
-  // );
-
-  useEffect(() => {
-    if (editAccountId === null) {
-      setEditDateNumber(0);
-    } else {
-      if (editDateNumber >= 32) {
-        setEditDateNumber(31);
-      } else if (editDateNumber <= 0) {
-        setEditDateNumber(1);
-      }
-    }
-  }, [editDateNumber]);
 
   // useEffect(() => {
-  //   if (editDate === "即日") {
-  //     setEditDateNumber(0);
-  //   }
-  // }, [editDate]);
+  //   console.log(editMonthlyAmount);
+  //   console.log(editMonthlyDateNumber);
+  // }, []);
+
+  useEffect(() => {
+    if (editMonthlyAmount >= 0) {
+      setEditMonthlyAmountError(false);
+    } else {
+      setEditMonthlyAmountError(true);
+    }
+  }, [editMonthlyAmount]);
+
+  useEffect(() => {
+    if (editMonthlyDateNumber > 0 || editMonthlyDateNumber === -1) {
+      setEditMonthlyDateError(false);
+    } else {
+      setEditMonthlyDateError(true);
+    }
+
+    if (
+      Number(viewMonth.slice(4)) === 1 ||
+      Number(viewMonth.slice(4)) === 3 ||
+      Number(viewMonth.slice(4)) === 5 ||
+      Number(viewMonth.slice(4)) === 7 ||
+      Number(viewMonth.slice(4)) === 8 ||
+      Number(viewMonth.slice(4)) === 10 ||
+      Number(viewMonth.slice(4)) === 12
+    ) {
+      if (editMonthlyDateNumber >= 32) {
+        setEditMonthlyDateError(true);
+      }
+    } else if (
+      Number(viewMonth.slice(4)) === 4 ||
+      Number(viewMonth.slice(4)) === 6 ||
+      Number(viewMonth.slice(4)) === 9 ||
+      Number(viewMonth.slice(4)) === 11
+    ) {
+      if (editMonthlyDateNumber >= 31) {
+        setEditMonthlyDateError(true);
+      }
+    } else {
+      if (Number(viewMonth.slice(2, 4)) % 4 === 0) {
+        if (editMonthlyDateNumber >= 30) {
+          setEditMonthlyDateError(true);
+        }
+      } else {
+        if (editMonthlyDateNumber >= 29) {
+          setEditMonthlyDateError(true);
+        }
+      }
+    }
+    setEditMonthlyAmountError(false);
+  }, [editMonthlyDateNumber, editAccountId]);
 
   const editClassification = async (id: string) => {
     setLoading(true);
     try {
-      // if (completed === true) {
-      //   await classificationEdit(
-      //     id,
-      //     editAccountId,
-      //     editName,
-      //     classification_type
-      //   );
-      //   await classificationMonthlyAmountEdit(
-      //     classificationMonthlyAmount.id,
-      //     classificationMonthlyAmount.classification_id,
-      //     classificationMonthlyAmount.month,
-      //     editDate,
-      //     editAmount
-      //   );
-      // } else {
       await classificationEdit(
         id,
         editAccountId,
         editName,
         classification_type
       );
-      await classificationMonthlyAmountEdit(
-        classificationMonthlyAmount.id,
-        classificationMonthlyAmount.classification_id,
-        classificationMonthlyAmount.month,
-        String(editDateNumber),
-        editAmount
-      );
-      // }
+
+      if (editAccountId === null) {
+        await classificationMonthlyAmountEdit(
+          classificationMonthlyAmount.id,
+          classificationMonthlyAmount.classification_id,
+          classificationMonthlyAmount.month,
+          "-1",
+          editMonthlyAmount
+        );
+      } else {
+        await classificationMonthlyAmountEdit(
+          classificationMonthlyAmount.id,
+          classificationMonthlyAmount.classification_id,
+          classificationMonthlyAmount.month,
+          editMonthlyDate,
+          editMonthlyAmount
+        );
+      }
 
       setIsEditing(true);
     } catch (error) {
@@ -128,20 +171,10 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     const value = event.target.value as string;
     setEditAccountId(value);
     if (editAccountId === null) {
-      setEditDateNumber(1);
+      setEditMonthlyDate("1");
+      setEditMonthlyDateNumber(1);
     }
   };
-
-  // const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-  //   setCompleted(!completed);
-  //   if (completed === false) {
-  //     setEditDate("即日");
-  //     setEditDateNumber(0);
-  //   } else {
-  //     setEditDate("");
-  //     setEditDateNumber(1);
-  //   }
-  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -151,7 +184,12 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         setIsFormValid(value.trim().length > 0);
         break;
       case "amount":
-        setEditAmountString(
+        if (!/^\d+$/.test(value)) {
+          setEditMonthlyAmountError(true);
+        } else {
+          setEditMonthlyAmountError(false);
+        }
+        setEditMonthlyAmountString(
           value.startsWith("0") && value.length > 1
             ? value
                 .replace(/^0+/, "")
@@ -161,12 +199,18 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             ? ""
             : value.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
         );
-        setEditAmount(
+        setEditMonthlyAmount(
           value === "" ? 0 : Math.floor(parseInt(value.replace(/,/g, ""), 10))
         );
         break;
       case "date":
-        setEditDateNumber(Number(value));
+        if (!/^\d+$/.test(value)) {
+          setEditMonthlyDateError(true);
+        } else {
+          setEditMonthlyDateError(false);
+        }
+        setEditMonthlyDate(value);
+        setEditMonthlyDateNumber(Number(value));
         break;
       default:
         break;
@@ -214,7 +258,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             <TextField
               variant="outlined"
               name="amount"
-              value={editAmountString}
+              value={editMonthlyAmountString}
               onChange={handleChange}
               inputProps={{
                 inputMode: "numeric",
@@ -223,25 +267,31 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             />
             <span>円</span>
           </div>
+          <li>
+            {editMonthlyAmountError && (
+              <Typography align="left" variant="subtitle1">
+                金額を0以上にして下さい
+              </Typography>
+            )}
+          </li>
         </li>
         {editAccountId && (
           <li className="pt-10">
             {classification_type === "payment" ? (
               <Typography variant="subtitle1">
-                {currentMonth.slice(4)}月支払い日
+                {viewMonth.slice(4)}月支払い日
               </Typography>
             ) : (
               <Typography variant="subtitle1">
-                {currentMonth.slice(4)}月振込み日
+                {viewMonth.slice(4)}月振込み日
               </Typography>
             )}
             <div className="flex items-center">
               <TextField
                 variant="outlined"
                 name="date"
-                value={editDateNumber}
+                value={editMonthlyDate}
                 onChange={handleChange}
-                // disabled={completed}
                 inputProps={{
                   inputMode: "numeric",
                   pattern: "[0-9]*",
@@ -249,14 +299,11 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
               />
               <span>日</span>
             </div>
-            {/* <Stack direction="row" alignItems="center">
-              <Checkbox
-                checked={completed}
-                onChange={handleCheckboxChange}
-                color="primary"
-              />
-              <Typography>即日反映</Typography>
-            </Stack> */}
+            {editMonthlyDateError && (
+              <Typography align="left" variant="subtitle1">
+                存在する日付にして下さい
+              </Typography>
+            )}
           </li>
         )}
         <li className="pt-10">
@@ -264,7 +311,9 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid}
+              disabled={
+                !isFormValid || editMonthlyAmountError || editMonthlyDateError
+              }
               color="primary"
             >
               保存

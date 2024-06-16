@@ -38,8 +38,8 @@ export type selectAccountData = {
 };
 
 export const columnAccountNames = {
-  account_name: "口座名",
-  account_amount: "金額",
+  account_name: "名称",
+  account_amount: "残高",
 };
 
 export interface accountRowProps {

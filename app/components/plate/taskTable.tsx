@@ -235,9 +235,11 @@ export const TaskTable: React.FC = () => {
       await taskGetData().then((data) => {
         setAllTasks(data);
       });
+
       await completedRepetitionTaskGetData().then((data) => {
         setCompletedRepetitionTasks(data);
       });
+
       setIsEditing(false);
     };
 
