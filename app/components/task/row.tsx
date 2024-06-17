@@ -2,7 +2,13 @@
 import React, { useState, useContext, useEffect } from "react";
 import moment from "moment";
 
-import { Checkbox, IconButton, TableCell, TableRow } from "@mui/material";
+import {
+  Checkbox,
+  IconButton,
+  TableCell,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -20,8 +26,13 @@ import { TaskShow } from "@/components/task/show";
 
 export const TaskRow: React.FC<taskRowProps> = (props) => {
   const { row, onSelect, isSelected, visibleColumns } = props;
-  const { allTasks, completedRepetitionTasks, setIsEditing } =
-    useContext(taskContext);
+  const {
+    allTasks,
+    completedRepetitionTasks,
+    setIsEditing,
+    loading,
+    setLoading,
+  } = useContext(taskContext);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isChecked, setIsChecked] = useState(row.completed);
@@ -51,6 +62,7 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
   };
 
   const deleteTask = async (taskId: string) => {
+    setLoading(true);
     try {
       if (row.repetition === true) {
         await completedRepetitionTaskDelete(
@@ -66,10 +78,13 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete task:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCompletionToggle = async () => {
+    setLoading(true);
     try {
       if (row.repetition === true) {
         await completedRepetitionTaskEdit(
@@ -101,6 +116,8 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit task:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -228,10 +245,19 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
           ) : null
         )}
         <TableCell align="right">
-          <Checkbox checked={row.completed} onChange={handleCompletionToggle} />
-          <IconButton onClick={() => deleteTask(row.id)}>
-            <DeleteIcon />
-          </IconButton>
+          {loading ? (
+            <Typography variant="subtitle1">...</Typography>
+          ) : (
+            <>
+              <Checkbox
+                checked={row.completed}
+                onChange={handleCompletionToggle}
+              />
+              <IconButton onClick={() => deleteTask(row.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </>
+          )}
         </TableCell>
       </TableRow>
     </React.Fragment>

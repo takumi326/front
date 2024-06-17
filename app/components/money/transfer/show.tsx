@@ -917,7 +917,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         );
       }
 
-      setLoading(false);
       repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
@@ -997,9 +996,9 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
   };
 
   const handleNewRepetitionMoneySave = async () => {
-    setLoading(true);
     setRepetitionNewDialogOpen(false);
     try {
+      setLoading(true);
       await repetitionMoneyNew(
         "transfer",
         "",
@@ -1033,7 +1032,6 @@ export const TransferShow: React.FC<transferShowProps> = (props) => {
         );
       }
 
-      repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to delete repetitionPayment:", error);

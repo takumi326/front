@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext, ChangeEvent } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 
 import {
   Box,
@@ -18,10 +18,24 @@ import { categoryShowProps } from "@/interface/category-interface";
 
 export const CategoryShow: React.FC<categoryShowProps> = (props) => {
   const { id, name, category_type, onClose, onDelete } = props;
-  const { setIsEditing, setLoading } = useContext(moneyContext);
+  const { categories, setIsEditing, setLoading } = useContext(moneyContext);
 
   const [editName, setEditName] = useState<string>(name);
+  const [editNameError, setEditNameError] = useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(true);
+
+  useEffect(() => {
+    const category = categories.filter(
+      (category) => category.name === editName
+    )[0];
+    if (category != undefined) {
+      if (category.id != id) {
+        setEditNameError(true);
+      }
+    } else {
+      setEditNameError(false);
+    }
+  }, [editName]);
 
   const editCategory = async (id: string) => {
     setLoading(true);
@@ -53,7 +67,7 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={200}>
+    <Box width={560} height={230}>
       <ul className="w-full">
         <li className="pt-10">
           <Typography variant="subtitle1">カテゴリ名</Typography>
@@ -64,6 +78,13 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
             value={editName}
             onChange={handleChange}
           />
+        </li>
+        <li>
+          {editNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
         </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">

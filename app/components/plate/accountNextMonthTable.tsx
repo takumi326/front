@@ -17,40 +17,65 @@ import {
   TableHead,
   TableBody,
   TablePagination,
+  MenuItem,
+  Select,
 } from "@mui/material";
+import { SelectChangeEvent } from "@mui/material/Select";
 
 import { moneyContext } from "@/context/money-context";
 
-// 表の行コンポーネント
 export const AccountNextMonthTable: React.FC = () => {
   const {
     accounts,
+    isEditing,
     payments,
     incomes,
     classifications,
     classificationMonthlyAmounts,
     currentMonth,
   } = useContext(moneyContext);
-
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isHistory, setIsHistory] = useState(0);
-
-  const formatAmountCommas = (number: number) => {
-    const integerPart = Math.floor(number);
-    const decimalPart = (number - integerPart).toFixed(0).slice(1);
-    return (
-      integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
-      decimalPart +
-      "円"
-    );
-  };
-
-  const formatDate = (date: Date | ""): string => {
-    if (!date) return "";
-    return moment(date).format("MM/DD/YY");
-  };
-
+  const currentYear = new Date().getFullYear();
   const currentMont = new Date().getMonth() + 1;
+
+  const [page, setPage] = useState(0);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [displayMonth, setDisplayMonth] = useState<string[]>([]);
+  const [displayAccountId, setDisplayAccountId] = useState("");
+
+  useEffect(() => {
+    if (page === 0) {
+      setDisplayMonth([...months.slice(currentMont - 4)]);
+    } else {
+      setDisplayMonth(months);
+    }
+  }, [page, selectedYear]);
+
+  const years = Array.from({ length: 30 }, (_, index) =>
+    (currentYear + index).toString()
+  );
+
+  const sortedRows = accounts.slice().sort((a, b) => {
+    return a.id > b.id ? 1 : -1;
+  });
+
+  // const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  // const [isHistory, setIsHistory] = useState(0);
+
+  // const formatAmountCommas = (number: number) => {
+  //   const integerPart = Math.floor(number);
+  //   const decimalPart = (number - integerPart).toFixed(0).slice(1);
+  //   return (
+  //     integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+  //     decimalPart +
+  //     "円"
+  //   );
+  // };
+
+  // const formatDate = (date: Date | ""): string => {
+  //   if (!date) return "";
+  //   return moment(date).format("MM/DD/YY");
+  // };
+
   const months = [
     "4月",
     "5月",
@@ -65,22 +90,12 @@ export const AccountNextMonthTable: React.FC = () => {
     "2月",
     "3月",
   ];
-  const [page, setPage] = useState(0);
-  const [displayMonth, setDisplayMonth] = useState<string[]>([]);
 
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const years = Array.from({ length: 30 }, (_, index) =>
-    (currentYear + index).toString()
-  );
-
-  useEffect(() => {
-    if (page === 0) {
-      setDisplayMonth([...months.slice(currentMont - 4)]);
-    } else {
-      setDisplayMonth(months);
-    }
-  }, [page, selectedYear]);
+  // useEffect(() => {
+  //   if (sortedRows[0] != undefined) {
+  //     setDisplayAccountId(sortedRows[0].id);
+  //   }
+  // }, [isEditing]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -96,6 +111,11 @@ export const AccountNextMonthTable: React.FC = () => {
     setPage(0);
   };
 
+  const handleAccountChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value as string;
+    setDisplayAccountId(value);
+  };
+
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
       <TableContainer component={Paper} sx={{ maxHeight: 126 }}>
@@ -103,7 +123,7 @@ export const AccountNextMonthTable: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell sx={{ minWidth: 150 }}>
-                名称 {selectedYear}年度
+                名称{selectedYear}年度
               </TableCell>
               {displayMonth.map((month, index) => (
                 <TableCell key={index} sx={{ minWidth: 80 }}>
@@ -113,9 +133,33 @@ export const AccountNextMonthTable: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {accounts.map((account) => (
+            {sortedRows.map((account) => (
               <TableRow key={account.id}>
-                <TableCell>{account.name}</TableCell>
+                <TableCell>
+                  <Select
+                    value={displayAccountId}
+                    onChange={handleAccountChange}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Without label" }}
+                    sx={{
+                      height: "32px",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    {sortedRows.map((sortedAccount) => (
+                      <MenuItem
+                        key={sortedAccount.id}
+                        value={sortedAccount.id}
+                        sx={{
+                          height: "32px",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {sortedAccount.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </TableCell>
                 {displayMonth.map((month, index) => (
                   <TableCell key={index}>{month}</TableCell>
                 ))}

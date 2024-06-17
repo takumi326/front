@@ -241,7 +241,7 @@ export const MoneyTable: React.FC = () => {
           );
         });
 
-        paymentGetData().then((payments: paymentData[]) => {
+        await paymentGetData().then((payments: paymentData[]) => {
           if (start !== undefined && end !== undefined) {
             const noRepetitonPayments = payments.filter(
               (payment: paymentData) =>

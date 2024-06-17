@@ -37,6 +37,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   } = props;
   const {
     accounts,
+    classifications,
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
@@ -54,6 +55,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
 
   const [editAccountId, setEditAccountId] = useState(account_id);
   const [editName, setEditName] = useState(name);
+  const [editNameError, setEditNameError] = useState<boolean>(false);
   const [editMonthlyDate, setEditMonthlyDate] = useState(
     classificationMonthlyAmount.date
   );
@@ -76,10 +78,20 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(true);
 
-  // useEffect(() => {
-  //   console.log(editMonthlyAmount);
-  //   console.log(editMonthlyDateNumber);
-  // }, []);
+  useEffect(() => {
+    const classification = classifications.filter(
+      (classification) =>
+        classification.name === editName &&
+        classification.classification_type === classification_type
+    )[0];
+    if (classification != undefined) {
+      if (classification.id != id) {
+        setEditNameError(true);
+      }
+    } else {
+      setEditNameError(false);
+    }
+  }, [editName]);
 
   useEffect(() => {
     if (editMonthlyAmount >= 0) {
@@ -234,6 +246,13 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             value={editName}
             onChange={handleChange}
           />
+        </li>
+        <li>
+          {editNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">支払い口座</Typography>

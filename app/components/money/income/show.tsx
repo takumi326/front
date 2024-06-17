@@ -981,7 +981,6 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
         }
       }
 
-      repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to add repetitionPayment:", error);

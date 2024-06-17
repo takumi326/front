@@ -40,6 +40,15 @@ export interface taskRowProps {
   visibleColumns: { [key: string]: boolean };
 }
 
+export interface repetitionTaskRowProps {
+  id: string;
+  task_id: string;
+  completed_date: string;
+  completed: boolean;
+  onChange: (id: string, date: string) => void;
+  onDelete: (id: string) => void;
+}
+
 export interface taskShowProps {
   id: string;
   title: string;

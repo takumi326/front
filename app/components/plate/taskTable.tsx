@@ -324,14 +324,19 @@ export const TaskTable: React.FC = () => {
   };
 
   const sortedRows = displayedTasks.slice().sort((a, b) => {
-    console.log(displayedTasks);
     const compare = (key: keyof (typeof tableTasks)[0]) => {
       if (order[key] === "asc") {
         return a[key] > b[key] ? 1 : -1;
       } else if (order[key] === "desc") {
         return a[key] < b[key] ? 1 : -1;
       }
-      return a.id > b.id ? 1 : -1;
+      if (a.id === b.id) {
+        const dateA = new Date(a.schedule).getTime();
+        const dateB = new Date(b.schedule).getTime();
+        return dateA - dateB;
+      } else {
+        return a.id > b.id ? 1 : -1;
+      }
     };
     return compare(orderBy);
   });
@@ -583,9 +588,6 @@ export const TaskTable: React.FC = () => {
                           );
                         if (completedRepetitionTasksFiltered.length > 0) {
                           return completedRepetitionTasksFiltered[0].id;
-                        } else {
-                          // 条件に合致する要素が見つからない場合の処理
-                          // key に代入する値を設定するか、エラーハンドリングを行う
                         }
                       })()
                     : row.id

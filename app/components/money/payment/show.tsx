@@ -184,7 +184,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             initialClassificationId &&
           classificationMonthlyAmount.month === initialMonth
       )[0];
-    console.log(editMonth);
     const editClassificationMonthlyAmount: classificationMonthlyAmountData =
       classificationMonthlyAmounts.filter(
         (classificationMonthlyAmount) =>
@@ -547,13 +546,10 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 }
               }
             } else {
-              console.log(initialClassificationMonthlyAmount);
-              console.log(editClassificationMonthlyAmount);
               if (
                 initialClassificationMonthlyAmount.id ===
                 editClassificationMonthlyAmount.id
               ) {
-                console.log(3);
                 const editMoney =
                   parseFloat(
                     String(initialClassificationMonthlyAmount.amount)
@@ -569,7 +565,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   Math.max(0, editMoney)
                 );
               } else {
-                console.log(2);
                 const initialMoney =
                   parseFloat(
                     String(initialClassificationMonthlyAmount.amount)
@@ -583,7 +578,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   Math.max(0, initialMoney)
                 );
                 if (editClassificationMonthlyAmount) {
-                  console.log(1);
                   const editMoney =
                     parseFloat(String(editClassificationMonthlyAmount.amount)) +
                     parseFloat(String(editAmount));
@@ -986,7 +980,6 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
         }
       }
 
-      repetitionMoneyDelete(id);
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to add repetitionPayment:", error);

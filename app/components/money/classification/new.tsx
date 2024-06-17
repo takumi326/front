@@ -21,11 +21,12 @@ import { classificationNewProps } from "@/interface/classification-interface";
 
 export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const { onClose, classification_type } = props;
-  const { accounts, currentMonth, setIsEditing, setLoading } =
+  const { accounts, classifications, currentMonth, setIsEditing, setLoading } =
     useContext(moneyContext);
 
   const [newAccountId, setNewAccountId] = useState("");
   const [newName, setNewName] = useState("");
+  const [newNameError, setNewNameError] = useState<boolean>(false);
   const [newMonthlyDate, setNewMonthlyDate] = useState("1");
   const [newMonthlyDateNumber, setNewMonthlyDateNumber] = useState<number>(1);
   const [newMonthlyDateError, setNewMonthlyDateError] =
@@ -35,6 +36,19 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
   const [newMonthlyAmountError, setNewMonthlyAmountError] =
     useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    const classification = classifications.filter(
+      (classification) =>
+        classification.name === newName &&
+        classification.classification_type === classification_type
+    )[0];
+    if (classification != undefined) {
+      setNewNameError(true);
+    } else {
+      setNewNameError(false);
+    }
+  }, [newName]);
 
   useEffect(() => {
     if (newMonthlyAmount >= 0) {
@@ -95,7 +109,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         classification_type
       );
 
-      if (newAccountId === null) {
+      if (newAccountId === "") {
         await classificationMonthlyAmountNew(
           response.id,
           currentMonth,
@@ -185,6 +199,13 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             onChange={handleChange}
           />
         </li>
+        <li>
+          {newNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
+        </li>
         <li className="pt-10">
           {classification_type === "payment" ? (
             <Typography variant="subtitle1">支払い口座</Typography>
@@ -259,7 +280,6 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             )}
           </li>
         )}
-
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button

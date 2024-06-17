@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 
 import {
   Box,
@@ -22,14 +22,28 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeShow: React.FC<purposeShowProps> = (props) => {
   const { id, title, result, deadline, body, completed, onClose } = props;
-  const { setIsEditing } = useContext(purposeContext);
+  const { purposes, setIsEditing } = useContext(purposeContext);
 
   const [editTitle, setEditTitle] = useState(title);
+  const [editTitleError, setEditTitleError] = useState<boolean>(false);
   const [editResult, setEditResult] = useState(result);
   const [editDeadline, setEditDeadline] = useState(deadline);
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
   const [isFormValid, setIsFormValid] = useState(true);
+
+  useEffect(() => {
+    const purpose = purposes.filter(
+      (purpose) => purpose.title === editTitle
+    )[0];
+    if (purpose != undefined) {
+      if (purpose.id != id) {
+        setEditTitleError(true);
+      }
+    } else {
+      setEditTitleError(false);
+    }
+  }, [editTitle]);
 
   const editPurpose = async (id: string) => {
     try {
@@ -99,6 +113,13 @@ export const PurposeShow: React.FC<purposeShowProps> = (props) => {
             onChange={handleCheckboxChange}
             color="primary"
           />
+        </li>
+        <li>
+          {editTitleError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">タイトル</Typography>

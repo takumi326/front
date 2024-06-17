@@ -26,6 +26,8 @@ export const taskContext = createContext<{
   setCurrentMonth: React.Dispatch<React.SetStateAction<string>>;
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
   tableTasks: [],
   setTableTasks: () => {},
@@ -41,6 +43,8 @@ export const taskContext = createContext<{
   setCurrentMonth: () => {},
   isEditing: false,
   setIsEditing: () => {},
+  loading: false,
+  setLoading: () => {},
 });
 
 export const TaskProvider: React.FC = ({ children }) => {
@@ -53,6 +57,7 @@ export const TaskProvider: React.FC = ({ children }) => {
   const [purposes, setPurposes] = useState<purposeData[]>([]);
   const [currentMonth, setCurrentMonth] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     purposeGetData().then((data) => {
@@ -77,6 +82,8 @@ export const TaskProvider: React.FC = ({ children }) => {
         setPurposes,
         isEditing,
         setIsEditing,
+        loading,
+        setLoading,
       }}
     >
       {children}
