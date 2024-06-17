@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
@@ -13,15 +13,25 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PurposeNew: React.FC<purposeNewProps> = (props) => {
   const { onClose } = props;
-  const { setIsEditing } = useContext(purposeContext);
+  const { purposes, setIsEditing } = useContext(purposeContext);
 
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
 
   const [newTitle, setNewTitle] = useState("");
+  const [newTitleError, setNewTitleError] = useState<boolean>(false);
   const [newResult, setNewResult] = useState("");
   const [newDeadline, setNewDeadline] = useState(initialDateObject);
   const [newBody, setNewBody] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    const purpose = purposes.filter((purpose) => purpose.title === newTitle)[0];
+    if (purpose != undefined) {
+      setNewTitleError(true);
+    } else {
+      setNewTitleError(false);
+    }
+  }, [newTitle]);
 
   const newPurpose = async () => {
     try {
@@ -72,6 +82,13 @@ export const PurposeNew: React.FC<purposeNewProps> = (props) => {
             value={newTitle}
             onChange={handleChange}
           />
+        </li>
+        <li>
+          {newTitleError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
         </li>
         <li className="pt-10">
           <Typography variant="subtitle1">目標</Typography>

@@ -31,7 +31,7 @@ import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const TaskNew: React.FC<taskNewProps> = (props) => {
   const { onClose } = props;
-  const { purposes, setIsEditing } = useContext(taskContext);
+  const { purposes, setIsEditing, setLoading } = useContext(taskContext);
 
   const initialDateObject = new Date().toLocaleDateString().split("T")[0];
   const currentDate = new Date();
@@ -58,6 +58,7 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
   const [isFormValid, setIsFormValid] = useState(false);
 
   const newTask = async () => {
+    setLoading(true);
     try {
       const response = await taskNew(
         newTitle,
@@ -83,6 +84,8 @@ export const TaskNew: React.FC<taskNewProps> = (props) => {
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to create task:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -12,14 +12,6 @@ import {
 import { categoryData } from "@/interface/category-interface";
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 
-// import { paymentGetData } from "@/lib/api/payment-api";
-// import { incomeGetData} from "@/lib/api/income-api";
-// import { accountGetData } from "@/lib/api/account-api";
-// import { transferGetData} from "@/lib/api/transfer-api";
-// import { categoryGetData } from "@/lib/api/category-api";
-// import { classificationGetData } from "@/lib/api/classification-api";
-// import { classificationMonthlyAmountGetData } from "@/lib/api/classificationMonthlyAmount-api";
-
 export const moneyContext = createContext<{
   repetitionMoneies: repetitionMoneyData[];
   setRepetitionMoneies: React.Dispatch<
@@ -35,20 +27,12 @@ export const moneyContext = createContext<{
   >;
   categories: categoryData[];
   setCategories: React.Dispatch<React.SetStateAction<categoryData[]>>;
-  // displayPayments: paymentData[];
-  // setDisplayPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
-  // calendarPayments: paymentData[];
-  // setCalendarPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   calendarPayments: paymentData[];
   setCalendarPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   payments: paymentData[];
   setPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
   allPayments: paymentData[];
   setAllPayments: React.Dispatch<React.SetStateAction<paymentData[]>>;
-  // displayIncomes: incomeData[];
-  // setDisplayIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
-  // calendarIncomes: incomeData[];
-  // setCalendarIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   calendarIncomes: incomeData[];
   setCalendarIncomes: React.Dispatch<React.SetStateAction<incomeData[]>>;
   incomes: incomeData[];
@@ -82,20 +66,12 @@ export const moneyContext = createContext<{
   setClassificationMonthlyAmounts: () => {},
   categories: [],
   setCategories: () => {},
-  // displayPayments: [],
-  // setDisplayPayments: () => {},
-  // calendarPayments: [],
-  // setCalendarPayments: () => {},
   calendarPayments: [],
   setCalendarPayments: () => {},
   payments: [],
   setPayments: () => {},
   allPayments: [],
   setAllPayments: () => {},
-  // displayIncomes: [],
-  // setDisplayIncomes: () => {},
-  // calendarIncomes: [],
-  // setCalendarIncomes: () => {},
   calendarIncomes: [],
   setCalendarIncomes: () => {},
   allIncomes: [],

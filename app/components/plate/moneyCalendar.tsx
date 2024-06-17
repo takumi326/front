@@ -134,6 +134,7 @@ export const MoneyCalendar = (): JSX.Element => {
             (showIncome: incomeData) => showIncome.id === data.id
           )[0];
           selectedEvent = showIncome;
+          setSortedPaymentRows([]);
           setSortedIncomeRows([showIncome]);
           setSortedTransferRows([]);
           setSortedClassificationRows([]);
@@ -265,7 +266,8 @@ export const MoneyCalendar = (): JSX.Element => {
               .filter(
                 (classificationMonthlyAmount) =>
                   classificationMonthlyAmount.classification_id ===
-                    classification.id && classificationMonthlyAmount.date != "0"
+                    classification.id &&
+                  classificationMonthlyAmount.date != "-1"
               )
               .map((classificationMonthlyAmount) => ({
                 classificationId: classification.id,

@@ -91,7 +91,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={450}>
+    <Box width={560} height={500}>
       <ul className="w-full">
         <li className="pt-10">
           <Typography variant="subtitle1">名称</Typography>
@@ -149,7 +149,7 @@ export const AccountNew: React.FC<accountNewProps> = (props) => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid || newAmountError}
+              disabled={!isFormValid || newAmountError||newNameError}
               color="primary"
             >
               作成

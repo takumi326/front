@@ -102,7 +102,7 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={450}>
+    <Box width={560} height={500}>
       <ul className="w-full">
         <li className="pt-10">
           <Typography variant="subtitle1">名称</Typography>
@@ -160,7 +160,7 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid}
+              disabled={!isFormValid||editAmountError||editNameError}
               color="primary"
             >
               保存

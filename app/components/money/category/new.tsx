@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent, useContext } from "react";
+import React, { useState, useEffect, ChangeEvent, useContext } from "react";
 
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 
@@ -10,10 +10,22 @@ import { categoryNewProps } from "@/interface/category-interface";
 
 export const CategoryNew: React.FC<categoryNewProps> = (props) => {
   const { category_type, onClose } = props;
-  const { setIsEditing, setLoading } = useContext(moneyContext);
+  const { categories, setIsEditing, setLoading } = useContext(moneyContext);
 
   const [newName, setNewName] = useState("");
+  const [newNameError, setNewNameError] = useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    const category = categories.filter(
+      (category) => category.name === newName
+    )[0];
+    if (category != undefined) {
+      setNewNameError(true);
+    } else {
+      setNewNameError(false);
+    }
+  }, [newName]);
 
   const newCategory = async () => {
     setLoading(true);
@@ -45,7 +57,7 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
   };
 
   return (
-    <Box width={560} height={200}>
+    <Box width={560} height={230}>
       <ul className="w-full">
         <li className="pt-10">
           <Typography variant="subtitle1">カテゴリ名</Typography>
@@ -57,12 +69,19 @@ export const CategoryNew: React.FC<categoryNewProps> = (props) => {
             onChange={handleChange}
           />
         </li>
+        <li>
+          {newNameError && (
+            <Typography align="left" variant="subtitle1">
+              同じ名称は作成できません
+            </Typography>
+          )}
+        </li>
         <li className="pt-10">
           <Stack direction="row" justifyContent="center">
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid}
+              disabled={!isFormValid || newNameError}
               color="primary"
             >
               作成

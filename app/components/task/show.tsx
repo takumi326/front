@@ -17,22 +17,32 @@ import {
   IconButton,
   ToggleButton,
   ToggleButtonGroup,
+  TableContainer,
+  TableCell,
+  TableRow,
+  Table,
+  TableHead,
+  TableBody,
+  Paper,
 } from "@mui/material";
 import { SelectChangeEvent } from "@mui/material/Select";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import CloseIcon from "@mui/icons-material/Add";
 
 import { taskContext } from "@/context/task-context";
 
 import { taskEdit, taskDelete } from "@/lib/api/task-api";
 import {
   completedRepetitionTaskNew,
+  completedRepetitionTaskEdit,
   completedRepetitionTaskDelete,
 } from "@/lib/api/completedRepetitionTask-api";
 import { taskShowProps } from "@/interface/task-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
+import { RepetitionTaskRow } from "@/components/repetitionTask/row";
 
 export const TaskShow: React.FC<taskShowProps> = (props) => {
   const {
@@ -48,8 +58,35 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     completed,
     onClose,
   } = props;
-  const { purposes, completedRepetitionTasks, setIsEditing } =
-    useContext(taskContext);
+  const {
+    purposes,
+    completedRepetitionTasks,
+    currentMonth,
+    setIsEditing,
+    loading,
+    setLoading,
+  } = useContext(taskContext);
+  const initialDateObject = new Date().toLocaleDateString().split("T")[0];
+  const currentDate = new Date();
+  currentDate.setFullYear(currentDate.getFullYear() + 5);
+  const endDateObject = currentDate.toLocaleDateString();
+  const start = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)) - 1,
+    1
+  );
+  const end = new Date(
+    Number(currentMonth.slice(0, 4)),
+    Number(currentMonth.slice(4)),
+    0,
+    23,
+    59
+  );
+
+  const [repetitionNewDialogOpen, setRepetitionNewDialogOpen] =
+    useState<boolean>(false);
+  const [editRepetitionSchedule, setEditRepetitionSchedule] =
+    useState(initialDateObject);
 
   const [repetitionDialogOpen, setRepetitionDialogOpen] =
     useState<boolean>(false);
@@ -64,8 +101,15 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
       : []
   );
   const [period, setPeriod] = useState(repetition_type ? repetition_type : "");
+  const [changeRepetitionTaskData, setChangeRepetitionTaskData] = useState<
+    string[]
+  >([]);
 
-  const initialRepetiion = repetition;
+  const initialSchedule = schedule;
+  const initialEndDate = end_date;
+  const initialRepetition = repetition;
+  const intialRepetitionType = repetition_type;
+  const intialRepetitionSettings = repetition_settings;
 
   const [editTitle, setEditTitle] = useState(title);
   const [editPurposeId, setEditPurposeId] = useState(purpose_id);
@@ -79,8 +123,10 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
   const [editBody, setEditBody] = useState(body);
   const [editCompleted, setEditCompleted] = useState<boolean>(completed);
   const [isFormValid, setIsFormValid] = useState(true);
+  const [sortRepetitionTask, setSortRepetitionTask] = useState<boolean>(false);
 
   const editTask = async (id: string) => {
+    setLoading(true);
     try {
       await taskEdit(
         id,
@@ -94,43 +140,119 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         editBody,
         editCompleted
       );
-      if (editRepetition === true) {
-        if (initialRepetiion === true) {
-          await Promise.all(
-            completedRepetitionTasks
-              .filter(
-                (completedRepetitionTask) =>
-                  completedRepetitionTask.task_id === id
-              )
-              .map((completedRepetitionTask) =>
-                completedRepetitionTaskDelete(completedRepetitionTask.id)
-              )
+      if (
+        editRepetition === true &&
+        initialRepetition === editRepetition &&
+        intialRepetitionType === editRepetitionType &&
+        JSON.stringify(intialRepetitionSettings) ===
+          JSON.stringify(editRepetitionSettings) &&
+        initialSchedule === editSchedule &&
+        initialEndDate === editEndDate
+      ) {
+        for (let i = 0; i < changeRepetitionTaskData.length; i += 2) {
+          const selectedRepetitionTask = completedRepetitionTasks.filter(
+            (completedRepetitionTask) =>
+              completedRepetitionTask.id === changeRepetitionTaskData[i]
+          )[0];
+          await completedRepetitionTaskEdit(
+            changeRepetitionTaskData[i],
+            selectedRepetitionTask.task_id,
+            changeRepetitionTaskData[i + 1],
+            selectedRepetitionTask.completed
           );
         }
-        const schedules = calculateNextSchedules();
-        await Promise.all(
-          schedules.map(async (schedule) => {
-            const stringDate = new Date(schedule)
-              .toLocaleDateString()
-              .split("T")[0];
-            await completedRepetitionTaskNew(id, stringDate, false);
-          })
-        );
+      } else {
+        if (editRepetition === true) {
+          if (initialRepetition === true) {
+            await Promise.all(
+              completedRepetitionTasks
+                .filter(
+                  (completedRepetitionTask) =>
+                    completedRepetitionTask.task_id === id
+                )
+                .map((completedRepetitionTask) =>
+                  completedRepetitionTaskDelete(completedRepetitionTask.id)
+                )
+            );
+          }
+          const schedules = calculateNextSchedules();
+          await Promise.all(
+            schedules.map(async (schedule) => {
+              const stringDate = new Date(schedule)
+                .toLocaleDateString()
+                .split("T")[0];
+              await completedRepetitionTaskNew(id, stringDate, false);
+            })
+          );
+        }
       }
+
       setIsEditing(true);
     } catch (error) {
       console.error("Failed to edit task:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteTask = async (taskId: string) => {
+    setLoading(true);
     try {
       await taskDelete(taskId);
       setIsEditing(true);
       onClose();
     } catch (error) {
       console.error("Failed to delete task:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const deleteRepetition = async (id: string) => {
+    setLoading(true);
+    try {
+      await completedRepetitionTaskDelete(id);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewRepetitionTaskDialogOpen = () => {
+    setRepetitionNewDialogOpen(true);
+    setEditRepetitionSchedule(initialDateObject);
+  };
+
+  const handleNewRepetitionTaskDialogCancel = () => {
+    setRepetitionNewDialogOpen(false);
+  };
+
+  const handleNewRepetitionTaskSave = async () => {
+    setLoading(true);
+    setRepetitionNewDialogOpen(false);
+    try {
+      await completedRepetitionTaskNew(id, editRepetitionSchedule, false);
+      setIsEditing(true);
+    } catch (error) {
+      console.error("Failed to delete repetitionPayment:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRepetitionTaskChange = async (id: string, date: string) => {
+    setChangeRepetitionTaskData((prevData) => {
+      const newData = [...prevData];
+      newData.push(id, date);
+      return newData;
+    });
+  };
+
+  const handleRepetitionSchedulChange = (date: Date) => {
+    const stringDate = date.toLocaleDateString().split("T")[0];
+    setEditRepetitionSchedule(stringDate);
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -184,20 +306,9 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     setEditRepetitionSettings([]);
     setFrequency(1);
     setSelectedDays([]);
-    setPeriod("");
-    try {
-      await Promise.all(
-        completedRepetitionTasks
-          .filter(
-            (completedRepetitionTask) => completedRepetitionTask.task_id === id
-          )
-          .map((completedRepetitionTask) =>
-            completedRepetitionTaskDelete(completedRepetitionTask.id)
-          )
-      );
-    } catch (error) {
-      console.error("Failed to delete task:", error);
-    }
+    setPeriod("daily");
+    setEditSchedule(initialDateObject);
+    setEditEndDate(endDateObject);
   };
 
   const handleRepetitionSave = () => {
@@ -360,6 +471,10 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     return schedules;
   };
 
+  const handleSortRepetitionTask = () => {
+    setSortRepetitionTask(!sortRepetitionTask);
+  };
+
   const isDialogFormValid =
     period === "daily" ||
     period === "monthly" ||
@@ -374,8 +489,49 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
     return a.id > b.id ? 1 : -1;
   });
 
+  const sortedRows = completedRepetitionTasks
+    .filter((completedRepetitionTask) => completedRepetitionTask.task_id === id)
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.completed_date).getTime();
+      const dateB = new Date(b.completed_date).getTime();
+      return dateA - dateB;
+    });
+
+  const sortedCurrentMonthRows = completedRepetitionTasks
+    .filter(
+      (completedRepetitionTask) =>
+        completedRepetitionTask.task_id === id &&
+        new Date(completedRepetitionTask.completed_date).getTime() >=
+          start.getTime() &&
+        new Date(completedRepetitionTask.completed_date).getTime() <=
+          end.getTime()
+    )
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.completed_date).getTime();
+      const dateB = new Date(b.completed_date).getTime();
+      return dateA - dateB;
+    });
+
   return (
-    <Box width={560} height={680}>
+    <Box
+      sx={{
+        width:
+          editRepetition === true &&
+          intialRepetitionType === editRepetitionType &&
+          JSON.stringify(intialRepetitionSettings) ===
+            JSON.stringify(editRepetitionSettings) &&
+          initialSchedule === editSchedule &&
+          initialEndDate === editEndDate &&
+          completedRepetitionTasks.filter(
+            (completedRepetitionTask) => completedRepetitionTask.task_id === id
+          ).length > 0
+            ? 1000
+            : 560,
+        height: 815,
+      }}
+    >
       <Dialog
         open={repetitionDialogOpen}
         onClose={handleRepetitionDialogCancel}
@@ -447,106 +603,142 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
         </DialogActions>
       </Dialog>
 
-      <ul className="w-full">
-        {editRepetition === false && (
-          <li className="flex items-center">
-            <Stack direction="row" alignItems="center">
-              <Checkbox
-                checked={editCompleted}
-                onChange={handleCheckboxChange}
-                color="primary"
-              />
-              <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
-            </Stack>
-          </li>
-        )}
-        <li className="pt-5">
-          <Typography variant="subtitle1">タイトル</Typography>
-          <TextField
-            fullWidth
-            variant="outlined"
-            name="title"
-            value={editTitle}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-5">
-          <Typography variant="subtitle1">関連する目標</Typography>
-          <Select
-            fullWidth
-            value={editPurposeId}
-            onChange={handlePurposeChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {sortedPurposes.map((purpose) => (
-              <MenuItem key={purpose.id} value={purpose.id}>
-                {purpose.title}
-              </MenuItem>
-            ))}
-          </Select>
-        </li>
-        <li className="pt-5">
-          <button
-            style={{
-              color: "blue",
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-            onClick={handleRepetitionDialogOpen}
-          >
-            繰り返し
-          </button>
-          <Typography>
-            {editRepetitionSettings && (
-              <>
-                {editRepetitionType === "daily" &&
-                  Number(editRepetitionSettings[0]) === 1 &&
-                  `毎日`}
-                {editRepetitionType === "weekly" &&
-                  Number(editRepetitionSettings[0]) === 1 &&
-                  `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
-                {editRepetitionType === "monthly" &&
-                  Number(editRepetitionSettings[0]) === 1 &&
-                  `毎月`}
-                {Number(editRepetitionSettings[0]) > 1 &&
-                  editRepetitionSettings &&
-                  `毎${editRepetitionSettings[0]}${
-                    editRepetitionType === "daily"
-                      ? "日"
-                      : editRepetitionType === "weekly"
-                      ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
-                      : "月"
-                  }`}
-              </>
-            )}
-          </Typography>
-        </li>
-        <li className="pt-5">
-          {editRepetition === true ? (
-            <Typography variant="subtitle1">繰り返し開始日</Typography>
-          ) : (
-            <Typography variant="subtitle1">予定</Typography>
-          )}
+      <Dialog
+        open={repetitionNewDialogOpen}
+        onClose={handleNewRepetitionTaskDialogCancel}
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "400px",
+            height: "410px",
+          },
+        }}
+      >
+        <button
+          onClick={handleNewRepetitionTaskDialogCancel}
+          className="absolute top-0 right-0 m-3 text-gray-500 hover:text-gray-800"
+        >
+          <CloseIcon />
+        </button>
+        <DialogTitle sx={{ textAlign: "center" }}>新規作成</DialogTitle>
+        <DialogContent>
           <Box
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              borderWidth: "px",
-            }}
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            width="100%"
           >
-            <InputDateTime
-              selectedDate={editSchedule}
-              onChange={handleSchedulChange}
-            />
+            <Typography variant="subtitle1">日付</Typography>
+            <Box
+              sx={{
+                width: 105,
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                fontSize: "20px",
+              }}
+            >
+              <InputDateTime
+                selectedDate={editRepetitionSchedule}
+                onChange={handleRepetitionSchedulChange}
+              />
+            </Box>
           </Box>
-        </li>
-        {editRepetition === true && (
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }} className="mb-32">
+          <Button
+            onClick={handleNewRepetitionTaskSave}
+            sx={{ minWidth: 120, bgcolor: "#4caf50", color: "#fff" }}
+          >
+            追加
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Stack direction="row" spacing={5}>
+        <ul className="w-full">
+          {editRepetition === false && (
+            <li className="flex items-center pt-10">
+              <Stack direction="row" alignItems="center">
+                <Checkbox
+                  checked={editCompleted}
+                  onChange={handleCheckboxChange}
+                  color="primary"
+                />
+                <Typography>{editCompleted ? "完了" : "未完了"}</Typography>
+              </Stack>
+            </li>
+          )}
+          <li className="pt-10">
+            <Typography variant="subtitle1">タイトル</Typography>
+            <TextField
+              fullWidth
+              variant="outlined"
+              name="title"
+              value={editTitle}
+              onChange={handleChange}
+            />
+          </li>
           <li className="pt-5">
-            <Typography variant="subtitle1">繰り返し終了日</Typography>
+            <Typography variant="subtitle1">関連する目標</Typography>
+            <Select
+              fullWidth
+              value={editPurposeId}
+              onChange={handlePurposeChange}
+              displayEmpty
+              inputProps={{ "aria-label": "Without label" }}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {sortedPurposes.map((purpose) => (
+                <MenuItem key={purpose.id} value={purpose.id}>
+                  {purpose.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </li>
+          <li className="pt-5">
+            <button
+              style={{
+                color: "blue",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+              onClick={handleRepetitionDialogOpen}
+            >
+              繰り返し
+            </button>
+            <Typography>
+              {editRepetitionSettings && (
+                <>
+                  {editRepetitionType === "daily" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎日`}
+                  {editRepetitionType === "weekly" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎週 ${editRepetitionSettings.slice(1).join(" ")}`}
+                  {editRepetitionType === "monthly" &&
+                    Number(editRepetitionSettings[0]) === 1 &&
+                    `毎月`}
+                  {Number(editRepetitionSettings[0]) > 1 &&
+                    editRepetitionSettings &&
+                    `毎${editRepetitionSettings[0]}${
+                      editRepetitionType === "daily"
+                        ? "日"
+                        : editRepetitionType === "weekly"
+                        ? `週 ${editRepetitionSettings.slice(1).join(" ")}`
+                        : "月"
+                    }`}
+                </>
+              )}
+            </Typography>
+          </li>
+          <li className="pt-5">
+            {editRepetition === true ? (
+              <Typography variant="subtitle1">繰り返し開始日</Typography>
+            ) : (
+              <Typography variant="subtitle1">予定</Typography>
+            )}
             <Box
               sx={{
                 border: "1px solid #ccc",
@@ -555,40 +747,144 @@ export const TaskShow: React.FC<taskShowProps> = (props) => {
               }}
             >
               <InputDateTime
-                selectedDate={editEndDate}
-                onChange={handleEndDateChange}
+                selectedDate={editSchedule}
+                onChange={handleSchedulChange}
               />
             </Box>
-            <Typography>※設定できるのは最大で今日から5年後です</Typography>
           </li>
-        )}
-        <li className="pt-5">
-          <Typography variant="subtitle1">備考</Typography>
-          <TextField
-            fullWidth
-            multiline
-            variant="outlined"
-            name="body"
-            value={editBody}
-            onChange={handleChange}
-          />
-        </li>
-        <li className="pt-5">
-          <Stack direction="row" justifyContent="center">
-            <Button
-              variant="contained"
-              onClick={handleSave}
-              disabled={!isFormValid}
-              className="ml-60"
-            >
-              保存
-            </Button>
-            <IconButton onClick={() => deleteTask(id)} className="ml-auto">
-              <DeleteIcon />
-            </IconButton>
-          </Stack>
-        </li>
-      </ul>
+          {editRepetition === true && (
+            <li className="pt-5">
+              <Typography variant="subtitle1">繰り返し終了日</Typography>
+              <Box
+                sx={{
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  borderWidth: "px",
+                }}
+              >
+                <InputDateTime
+                  selectedDate={editEndDate}
+                  onChange={handleEndDateChange}
+                />
+              </Box>
+              <Typography>※設定できるのは最大で今日から5年後です</Typography>
+            </li>
+          )}
+          <li className="pt-5">
+            <Typography variant="subtitle1">備考</Typography>
+            <TextField
+              fullWidth
+              multiline
+              variant="outlined"
+              name="body"
+              value={editBody}
+              onChange={handleChange}
+            />
+          </li>
+          <li className="pt-5">
+            <Stack direction="row" justifyContent="center">
+              {loading === true ? (
+                <Typography variant="subtitle1">Loading...</Typography>
+              ) : (
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={!isFormValid}
+                    className="ml-60"
+                  >
+                    保存
+                  </Button>
+                  <IconButton
+                    onClick={() => deleteTask(id)}
+                    className="ml-auto"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </>
+              )}
+            </Stack>
+          </li>
+        </ul>
+        {editRepetition === true &&
+          intialRepetitionType === editRepetitionType &&
+          JSON.stringify(intialRepetitionSettings) ===
+            JSON.stringify(editRepetitionSettings) &&
+          initialSchedule === editSchedule &&
+          initialEndDate === editEndDate &&
+          completedRepetitionTasks.filter(
+            (completedRepetitionTask) => completedRepetitionTask.task_id === id
+          ).length > 0 && (
+            <div className="w-full pt-10">
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <Box display="flex" alignItems="center">
+                  <Typography variant="subtitle1" mr={2}>
+                    繰り返し一覧
+                  </Typography>
+                  <Box display="flex" alignItems="center">
+                    <Checkbox
+                      checked={sortRepetitionTask}
+                      onChange={handleSortRepetitionTask}
+                    />
+                    <Typography>カレンダーの表示月のみ</Typography>
+                  </Box>
+                </Box>
+                <IconButton onClick={handleNewRepetitionTaskDialogOpen}>
+                  <AddIcon />
+                </IconButton>
+              </Box>
+              <TableContainer
+                component={Paper}
+                sx={{ maxHeight: 635, border: "0.5px solid black" }}
+              >
+                <Table stickyHeader size="small" aria-label="sticky table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>日付</TableCell>
+                      <TableCell />
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortRepetitionTask === true
+                      ? sortedCurrentMonthRows.map(
+                          (completedRepetitionTask) => (
+                            <RepetitionTaskRow
+                              key={completedRepetitionTask.id}
+                              id={completedRepetitionTask.id}
+                              task_id={completedRepetitionTask.task_id}
+                              completed_date={
+                                completedRepetitionTask.completed_date
+                              }
+                              completed={completedRepetitionTask.completed}
+                              onChange={handleRepetitionTaskChange}
+                              onDelete={deleteRepetition}
+                            />
+                          )
+                        )
+                      : sortedRows.map((completedRepetitionTask) => (
+                          <RepetitionTaskRow
+                            key={completedRepetitionTask.id}
+                            id={completedRepetitionTask.id}
+                            task_id={completedRepetitionTask.task_id}
+                            completed_date={
+                              completedRepetitionTask.completed_date
+                            }
+                            completed={completedRepetitionTask.completed}
+                            onChange={handleRepetitionTaskChange}
+                            onDelete={deleteRepetition}
+                          />
+                        ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </div>
+          )}{" "}
+      </Stack>
     </Box>
   );
 };
