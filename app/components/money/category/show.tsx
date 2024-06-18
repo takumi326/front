@@ -92,14 +92,14 @@ export const CategoryShow: React.FC<categoryShowProps> = (props) => {
               variant="contained"
               onClick={handleSave}
               disabled={!isFormValid}
-              color="primary"
+              color="primary"className="ml-60"
             >
               保存
             </Button>
 
             <IconButton
               onClick={() => onDelete(id)}
-              className="absolute right-0 bottom-0 m-8"
+              className="ml-auto"
             >
               <DeleteIcon />
             </IconButton>

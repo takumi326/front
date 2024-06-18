@@ -160,16 +160,14 @@ export const AccountShow: React.FC<accountShowProps> = (props) => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!isFormValid||editAmountError||editNameError}
+              disabled={!isFormValid || editAmountError || editNameError}
               color="primary"
+              className="ml-60"
             >
               保存
             </Button>
 
-            <IconButton
-              onClick={() => onDelete(id)}
-              className="absolute right-0 bottom-0 m-8"
-            >
+            <IconButton onClick={() => onDelete(id)} className="ml-auto">
               <DeleteIcon />
             </IconButton>
           </Stack>
