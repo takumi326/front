@@ -21,7 +21,7 @@ const Money: React.FC = () => {
             </div>
             <div className="">
               <p className=" font-bold text-center">
-                来月以降に残ってるお金 （名称ごと）
+                来月以降の月始めの予想残高 （名称ごと）
               </p>
               <AccountNextMonthTable />
             </div>

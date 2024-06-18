@@ -30,21 +30,55 @@ export const AccountNextMonthTable: React.FC = () => {
     isEditing,
     payments,
     incomes,
+    transfers,
+    repetitionMoneies,
     classifications,
     classificationMonthlyAmounts,
     currentMonth,
   } = useContext(moneyContext);
   const currentYear = new Date().getFullYear();
   const currentMont = new Date().getMonth() + 1;
+  const now = new Date();
+  const endOfCurrentDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    0,
+    0
+  );
+  // const endCurrentMonth = new Date(
+  //   Number(currentMonth.slice(0, 4)),
+  //   Number(currentMonth.slice(4)),
+  //   0,
+  //   23,
+  //   59
+  // );
 
   const [page, setPage] = useState(0);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [displayMonth, setDisplayMonth] = useState<string[]>([]);
   const [displayAccountId, setDisplayAccountId] = useState("");
+  const [displayAccountMonthlyMoney, setDisplayAccountMonthlyMoney] = useState<
+    string[]
+  >([]);
+
+  // useEffect(() => {
+  //   console.log(selectedYear);
+  //   console.log(displayMonth);
+  //   console.log(currentMont);
+  // }, [selectedYear, displayMonth]);
 
   useEffect(() => {
+    let stanp = 0;
+    for (let i = 0; i < months.length; i += 1) {
+      if (Number(months[i]) === currentMont) {
+        stanp = i + 1;
+      }
+    }
     if (page === 0) {
-      setDisplayMonth([...months.slice(currentMont - 4)]);
+      setDisplayMonth([...months.slice(stanp)]);
     } else {
       setDisplayMonth(months);
     }
@@ -77,18 +111,18 @@ export const AccountNextMonthTable: React.FC = () => {
   // };
 
   const months = [
-    "4月",
-    "5月",
-    "6月",
-    "7月",
-    "8月",
-    "9月",
-    "10月",
-    "11月",
-    "12月",
-    "1月",
-    "2月",
-    "3月",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "1",
+    "2",
+    "3",
   ];
 
   // useEffect(() => {
@@ -114,6 +148,127 @@ export const AccountNextMonthTable: React.FC = () => {
   const handleAccountChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value as string;
     setDisplayAccountId(value);
+
+    const gap = selectedYear - Number(currentMonth.slice(0, 4));
+
+    let data: string[] = [];
+    let money: number = 0;
+    // accounts.filter(
+    //   (account) => account.id === displayAccountId
+    // )[0].amount;
+    let reduceMoney: number;
+    let increaseMoney: number;
+    for (let t = 0; t <= gap; t += 1) {
+      for (let i = 0; i < displayMonth.length; i += 1) {
+        let startCurrentMonth: Date;
+        let endCurrentMonth: Date;
+        // console.log(displayMonth[i]);
+        if (
+          Number(displayMonth[i]) === 1 ||
+          Number(displayMonth[i]) === 2 ||
+          Number(displayMonth[i]) === 3
+        ) {
+          startCurrentMonth = new Date(
+            Number(selectedYear) + 1 + t,
+            Number(displayMonth[i]) - 2,
+            1
+          );
+          endCurrentMonth = new Date(
+            Number(selectedYear) + 1 + t,
+            Number(displayMonth[i]) - 1,
+            0,
+            23,
+            59
+          );
+        } else {
+          startCurrentMonth = new Date(
+            Number(selectedYear) + t,
+            Number(displayMonth[i]) - 2,
+            1
+          );
+          endCurrentMonth = new Date(
+            Number(selectedYear) + t,
+            Number(displayMonth[i]) - 1,
+            0,
+            23,
+            59
+          );
+        }
+        // console.log(startCurrentMonth);
+        // console.log(endCurrentMonth);
+
+        //減少分
+        classifications
+          .filter(
+            (classification) => classification.classification_type === "payment"
+          )
+          .map((classification) =>
+            classificationMonthlyAmounts
+              .filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                    classification.id &&
+                  classificationMonthlyAmount.month ===
+                    `${selectedYear}${Number(displayMonth[i]) - 1}`
+              )
+              .map(
+                (classificationMonthlyAmount) =>
+                  (reduceMoney += classificationMonthlyAmount.amount)
+              )
+          );
+        transfers
+          .filter(
+            (transfer) =>
+              transfer.before_account_id === displayAccountId &&
+              new Date(transfer.schedule).getTime() >=
+                endOfCurrentDay.getTime() &&
+              transfer.repetition === false &&
+              new Date(transfer.schedule).getTime() >=
+                startCurrentMonth.getTime() &&
+              new Date(transfer.schedule).getTime() <= endCurrentMonth.getTime()
+          )
+          .map((transfer) => (reduceMoney += transfer.amount));
+        transfers
+          .filter((transfer) => transfer.before_account_id === displayAccountId)
+          .map((transfer) =>
+            repetitionMoneies
+              .filter(
+                (repetitionMoney) =>
+                  repetitionMoney.transfer_id === transfer.id &&
+                  new Date(repetitionMoney.repetition_schedule).getTime() >=
+                    startCurrentMonth.getTime() &&
+                  new Date(repetitionMoney.repetition_schedule).getTime() <=
+                    endCurrentMonth.getTime()
+              )
+              .map((repetitionMoney) => (reduceMoney += repetitionMoney.amount))
+          );
+
+        //増加分
+        classifications
+          .filter(
+            (classification) => classification.classification_type === "income"
+          )
+          .map((classification) =>
+            classificationMonthlyAmounts
+              .filter(
+                (classificationMonthlyAmount) =>
+                  classificationMonthlyAmount.classification_id ===
+                    classification.id &&
+                  classificationMonthlyAmount.month ===
+                    `${selectedYear}${Number(displayMonth[i]) - 1}`
+              )
+              .map(
+                (classificationMonthlyAmount) =>
+                  (increaseMoney += classificationMonthlyAmount.amount)
+              )
+          );
+        if (Number(currentMonth.slice(0, 4)) === selectedYear) {
+        } else {
+        }
+        data.push(`${selectedYear}${displayMonth[i]}`, String(money));
+      }
+    }
+    // setDisplayAccountMonthlyMoney(data);
   };
 
   return (
@@ -127,44 +282,42 @@ export const AccountNextMonthTable: React.FC = () => {
               </TableCell>
               {displayMonth.map((month, index) => (
                 <TableCell key={index} sx={{ minWidth: 80 }}>
-                  {month}
+                  {month}月
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedRows.map((account) => (
-              <TableRow key={account.id}>
-                <TableCell>
-                  <Select
-                    value={displayAccountId}
-                    onChange={handleAccountChange}
-                    displayEmpty
-                    inputProps={{ "aria-label": "Without label" }}
-                    sx={{
-                      height: "32px",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {sortedRows.map((sortedAccount) => (
-                      <MenuItem
-                        key={sortedAccount.id}
-                        value={sortedAccount.id}
-                        sx={{
-                          height: "32px",
-                          fontSize: "0.875rem",
-                        }}
-                      >
-                        {sortedAccount.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </TableCell>
-                {displayMonth.map((month, index) => (
-                  <TableCell key={index}>{month}</TableCell>
-                ))}
-              </TableRow>
-            ))}
+            <TableRow>
+              <TableCell>
+                <Select
+                  value={displayAccountId}
+                  onChange={handleAccountChange}
+                  displayEmpty
+                  inputProps={{ "aria-label": "Without label" }}
+                  sx={{
+                    height: "32px",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  {sortedRows.map((sortedAccount) => (
+                    <MenuItem
+                      key={sortedAccount.id}
+                      value={sortedAccount.id}
+                      sx={{
+                        height: "32px",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {sortedAccount.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </TableCell>
+              {displayMonth.map((month, index) => (
+                <TableCell key={index}>{month}</TableCell>
+              ))}
+            </TableRow>
           </TableBody>
         </Table>
       </TableContainer>

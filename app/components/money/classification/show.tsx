@@ -334,15 +334,13 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
                 !isFormValid || editMonthlyAmountError || editMonthlyDateError
               }
               color="primary"
+              className="ml-60"
             >
               保存
             </Button>
-            <IconButton
-              onClick={() => onDelete(id)}
-              className="absolute right-0 bottom-0 m-8"
-            >
+            <IconButton onClick={() => onDelete(id)} className="ml-auto">
               <DeleteIcon />
-            </IconButton>{" "}
+            </IconButton>
           </Stack>
         </li>
       </ul>
