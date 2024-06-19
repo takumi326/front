@@ -294,7 +294,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             )}
           </li>
         </li>
-        {editAccountId && (
+        {classification_type === "payment" && editAccountId && (
           <li className="pt-10">
             {classification_type === "payment" ? (
               <Typography variant="subtitle1">

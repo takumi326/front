@@ -56,14 +56,14 @@ export type selectIncomeData = {
   classification_name: string;
   classification_amount: number;
   classification_account_name: string;
-  classification_date: string;
+  // classification_date: string;
 };
 
 export const columnIncomeNames = {
   classification_name: "分類",
   classification_amount: "合計金額",
-  classification_account_name: "支払い口座",
-  classification_date: "支払い日時",
+  classification_account_name: "給与残高",
+  // classification_date: "給与日時",
 };
 
 export interface incomeRowProps {

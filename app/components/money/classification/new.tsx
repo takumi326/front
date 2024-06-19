@@ -249,7 +249,7 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
             )}
           </li>
         </li>
-        {newAccountId && (
+        {classification_type === "payment" && newAccountId && (
           <li className="pt-10">
             {classification_type === "payment" ? (
               <Typography variant="subtitle1">

@@ -430,13 +430,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                     ? ""
                     : row.classification_account_name}
                 </TableCell>
-              ) : (
-                <TableCell key={key} component="th" scope="row">
-                  {row.classification_account_name === null
-                    ? ""
-                    : row.classification_date}
-                </TableCell>
-              )}
+              ) : null}
             </>
           ) : null
         )}
