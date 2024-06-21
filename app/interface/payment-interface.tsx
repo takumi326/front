@@ -69,7 +69,7 @@ export type selectPaymentData = {
 export const columnPaymentNames = {
   classification_name: "分類",
   classification_amount: "合計金額",
-  classification_account_name: "支払い口座",
+  classification_account_name: "支払い残高",
   classification_date: "支払い日時",
 };
 

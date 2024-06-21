@@ -434,7 +434,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 <TableCell key={key} component="th" scope="row">
                   {row.classification_account_name === null
                     ? ""
-                    : row.classification_date}
+                    : Number(parseFloat(String(currentMonth.slice(4))) + 1) +
+                      "月" +
+                      row.classification_date +
+                      "日"}
                 </TableCell>
               )}
             </>

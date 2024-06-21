@@ -526,7 +526,7 @@ export const MoneyTable: React.FC = () => {
         classification_name: true,
         classification_amount: true,
         classification_account_name: true,
-        classification_date: true,
+        // classification_date: true,
       };
       updateRows = classifications
         .filter(
@@ -610,7 +610,7 @@ export const MoneyTable: React.FC = () => {
         classification_name: "default",
         classification_amount: "default",
         classification_account_name: "default",
-        classification_date: "default",
+        // classification_date: "default",
       };
     } else {
       initialColumnSettings = {

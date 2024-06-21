@@ -19,15 +19,22 @@ export const Header: React.FC = () => {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (pathname.includes("/top")) {
-      setSetting("TOP");
-    } else if (pathname.includes("/money")) {
-      setSetting("Money");
-    } else if (pathname.includes("/purpose")) {
-      setSetting("Purpose");
-    } else if (pathname.includes("/task")) {
-      setSetting("Task");
-    }
+    const handleRouteChange = () => {
+      if (pathname.includes("/top")) {
+        setSetting("TOP");
+      } else if (pathname.includes("/money")) {
+        setSetting("Money");
+      } else if (pathname.includes("/purpose")) {
+        setSetting("Purpose");
+      } else if (pathname.includes("/task")) {
+        setSetting("Task");
+      }
+    };
+
+    handleRouteChange(); // 初期ロード時にも実行
+  }, [pathname]);
+
+  useEffect(() => {
     const accessToken = Cookies.get("_access_token");
     const client = Cookies.get("_client");
     const uid = Cookies.get("_uid");
@@ -58,15 +65,9 @@ export const Header: React.FC = () => {
     }
   };
 
-  // const changedTOP = () => setSetting("TOP");
-  // const changedMoney = () => setSetting("Money");
-  // const changedPurpose = () => setSetting("Purpose");
-  // const changedTask = () => setSetting("Task");
-
-  const handleClick = (newSetting, href) => (event) => {
+  const handleClick = (newSetting, href) => async (event) => {
     event.preventDefault();
-    setSetting(newSetting);
-    router.push(href);
+    await router.push(href);
   };
 
   return (
