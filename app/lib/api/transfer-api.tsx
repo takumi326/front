@@ -12,6 +12,7 @@ export const transferGetData = async () => {
         uid: Cookies.get("_uid"),
       },
     });
+    // console.log(response);
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");

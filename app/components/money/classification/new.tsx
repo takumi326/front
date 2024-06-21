@@ -66,22 +66,22 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
     }
 
     if (
-      Number(currentMonth.slice(4)) === 1 ||
-      Number(currentMonth.slice(4)) === 3 ||
-      Number(currentMonth.slice(4)) === 5 ||
+      Number(currentMonth.slice(4)) === 12 ||
+      Number(currentMonth.slice(4)) === 2 ||
+      Number(currentMonth.slice(4)) === 4 ||
+      Number(currentMonth.slice(4)) === 6 ||
       Number(currentMonth.slice(4)) === 7 ||
-      Number(currentMonth.slice(4)) === 8 ||
-      Number(currentMonth.slice(4)) === 10 ||
-      Number(currentMonth.slice(4)) === 12
+      Number(currentMonth.slice(4)) === 9 ||
+      Number(currentMonth.slice(4)) === 11
     ) {
       if (newMonthlyDateNumber >= 32) {
         setNewMonthlyDateError(true);
       }
     } else if (
-      Number(currentMonth.slice(4)) === 4 ||
-      Number(currentMonth.slice(4)) === 6 ||
-      Number(currentMonth.slice(4)) === 9 ||
-      Number(currentMonth.slice(4)) === 11
+      Number(currentMonth.slice(4)) === 3 ||
+      Number(currentMonth.slice(4)) === 5 ||
+      Number(currentMonth.slice(4)) === 8 ||
+      Number(currentMonth.slice(4)) === 10
     ) {
       if (newMonthlyDateNumber >= 31) {
         setNewMonthlyDateError(true);
@@ -251,15 +251,8 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         </li>
         {classification_type === "payment" && newAccountId && (
           <li className="pt-10">
-            {classification_type === "payment" ? (
-              <Typography variant="subtitle1">
-                {currentMonth.slice(4)}支払い日
-              </Typography>
-            ) : (
-              <Typography variant="subtitle1">
-                {currentMonth.slice(4)}振込み日
-              </Typography>
-            )}
+            <Typography variant="subtitle1">翌月支払い日</Typography>
+
             <div className="flex items-center">
               <TextField
                 variant="outlined"

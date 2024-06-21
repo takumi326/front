@@ -109,22 +109,22 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     }
 
     if (
-      Number(viewMonth.slice(4)) === 1 ||
-      Number(viewMonth.slice(4)) === 3 ||
-      Number(viewMonth.slice(4)) === 5 ||
-      Number(viewMonth.slice(4)) === 7 ||
-      Number(viewMonth.slice(4)) === 8 ||
-      Number(viewMonth.slice(4)) === 10 ||
-      Number(viewMonth.slice(4)) === 12
+      Number(currentMonth.slice(4)) === 12 ||
+      Number(currentMonth.slice(4)) === 2 ||
+      Number(currentMonth.slice(4)) === 4 ||
+      Number(currentMonth.slice(4)) === 6 ||
+      Number(currentMonth.slice(4)) === 7 ||
+      Number(currentMonth.slice(4)) === 9 ||
+      Number(currentMonth.slice(4)) === 11
     ) {
       if (editMonthlyDateNumber >= 32) {
         setEditMonthlyDateError(true);
       }
     } else if (
-      Number(viewMonth.slice(4)) === 4 ||
-      Number(viewMonth.slice(4)) === 6 ||
-      Number(viewMonth.slice(4)) === 9 ||
-      Number(viewMonth.slice(4)) === 11
+      Number(currentMonth.slice(4)) === 3 ||
+      Number(currentMonth.slice(4)) === 5 ||
+      Number(currentMonth.slice(4)) === 8 ||
+      Number(currentMonth.slice(4)) === 10
     ) {
       if (editMonthlyDateNumber >= 31) {
         setEditMonthlyDateError(true);
@@ -296,15 +296,8 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         </li>
         {classification_type === "payment" && editAccountId && (
           <li className="pt-10">
-            {classification_type === "payment" ? (
-              <Typography variant="subtitle1">
-                {viewMonth.slice(4)}月支払い日
-              </Typography>
-            ) : (
-              <Typography variant="subtitle1">
-                {viewMonth.slice(4)}月振込み日
-              </Typography>
-            )}
+            <Typography variant="subtitle1">翌月支払い日</Typography>
+
             <div className="flex items-center">
               <TextField
                 variant="outlined"

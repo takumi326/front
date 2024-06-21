@@ -10,7 +10,7 @@ import { signInParams } from "@/interface/auth-interface";
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
 export const LoginForm: React.FC = () => {
-  const router = useRouter(); // Next.jsのルーターを利用
+  const router = useRouter();
 
   const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
     useContext(authContext);
@@ -28,7 +28,6 @@ export const LoginForm: React.FC = () => {
 
     try {
       const res = await signIn(params);
-      console.log(res);
 
       if (res.status === 200) {
         Cookies.set("_access_token", res.headers["access-token"]);
@@ -41,7 +40,7 @@ export const LoginForm: React.FC = () => {
 
         router.push(`/money`);
 
-        console.log("Signed in successfully!");
+        // console.log("Signed in successfully!");
       } else {
         setAlertMessageOpen(true);
       }
@@ -93,7 +92,7 @@ export const LoginForm: React.FC = () => {
           </button>
         </div>
       </form>
-      <AlertMessage // エラーが発生した場合はアラートを表示
+      <AlertMessage 
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"
