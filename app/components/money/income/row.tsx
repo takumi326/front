@@ -511,7 +511,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
                           ) : (
                             <IconButton
                               onClick={() =>
-                                deleteIncome(historyRow.income_id, isHistory)
+                                deleteIncome(historyRow.income_id, historyIndex)
                               }
                             >
                               <DeleteIcon />

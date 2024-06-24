@@ -40,6 +40,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
+    isEditing,
     loading,
     setLoading,
   } = useContext(moneyContext);
@@ -54,68 +55,74 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     const handleClassificationMonthlyAmount = async () => {
       setLoading(true);
       try {
-        const shouldCreateNewAmount: classificationMonthlyAmountData =
-          classificationMonthlyAmounts.some(
-            (classificationMonthlyAmount) =>
-              classificationMonthlyAmount.classification_id === row.id &&
-              classificationMonthlyAmount.month === currentMonth
+        if (isEditing === false) {
+          const shouldCreateNewAmount: classificationMonthlyAmountData =
+            classificationMonthlyAmounts.find(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id === row.id &&
+                classificationMonthlyAmount.month === currentMonth
+            );
+
+          const selectedClassificationMonthlyAmounts: classificationMonthlyAmountData[] =
+            classificationMonthlyAmounts.filter(
+              (classificationMonthlyAmount) =>
+                classificationMonthlyAmount.classification_id === row.id
+            );
+
+          const dateCounts: { [key: string]: number } = {};
+
+          selectedClassificationMonthlyAmounts.forEach(
+            (classificationMonthlyAmount) => {
+              const date = classificationMonthlyAmount.date;
+              if (date === "-1" || date === "") {
+              } else {
+                if (dateCounts[date]) {
+                  dateCounts[date]++;
+                } else {
+                  dateCounts[date] = 1;
+                }
+              }
+            }
           );
 
-        const selectedClassificationMonthlyAmounts: classificationMonthlyAmountData[] =
-          classificationMonthlyAmounts.filter(
-            (classificationMonthlyAmount) =>
-              classificationMonthlyAmount.classification_id === row.id
-          );
+          let maxCount = 0;
+          let mostFrequentDate: string = "-1";
 
-        const dateCounts: { [key: string]: number } = {};
-
-        selectedClassificationMonthlyAmounts.forEach(
-          (classificationMonthlyAmount) => {
-            const date = classificationMonthlyAmount.date;
-            if (dateCounts[date]) {
-              dateCounts[date]++;
-            } else {
-              dateCounts[date] = 1;
+          for (const date in dateCounts) {
+            if (dateCounts[date] > maxCount) {
+              maxCount = dateCounts[date];
+              mostFrequentDate = date;
             }
           }
-        );
 
-        let maxCount = 0;
-        let mostFrequentDate: string = "";
+          let money = 0;
+          if (!shouldCreateNewAmount) {
+            row.history.map((historyRow) => {
+              if (historyRow.payment_repetition === true) {
+                repetitionMoneies
+                  .filter(
+                    (repetitionMoney) =>
+                      repetitionMoney.payment_id === historyRow.payment_id &&
+                      new Date(repetitionMoney.repetition_schedule).getTime() >=
+                        start.getTime() &&
+                      new Date(repetitionMoney.repetition_schedule).getTime() <=
+                        end.getTime()
+                  )
+                  .map((repetitionMoney) => {
+                    money += parseFloat(String(repetitionMoney.amount));
+                  });
+              } else {
+                money += parseFloat(String(historyRow.payment_amount));
+              }
+            });
 
-        for (const date in dateCounts) {
-          if (dateCounts[date] > maxCount) {
-            maxCount = dateCounts[date];
-            mostFrequentDate = date;
+            await classificationMonthlyAmountNew(
+              row.id,
+              currentMonth,
+              mostFrequentDate,
+              money
+            );
           }
-        }
-
-        let money = 0;
-        if (!shouldCreateNewAmount) {
-          row.history.map((historyRow) => {
-            if (historyRow.payment_repetition === true) {
-              repetitionMoneies
-                .filter(
-                  (repetitionMoney) =>
-                    repetitionMoney.payment_id === historyRow.payment_id &&
-                    new Date(repetitionMoney.repetition_schedule).getTime() >=
-                      start.getTime() &&
-                    new Date(repetitionMoney.repetition_schedule).getTime() <=
-                      end.getTime()
-                )
-                .map((repetitionMoney) => {
-                  money += parseFloat(String(repetitionMoney.amount));
-                });
-            } else {
-              money += parseFloat(String(historyRow.payment_amount));
-            }
-          });
-          await classificationMonthlyAmountNew(
-            row.id,
-            currentMonth,
-            mostFrequentDate,
-            money
-          );
         }
       } catch (error) {
         console.error("Failed to new classificationMonthlyAmount:", error);
@@ -149,7 +156,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     setLoading(true);
     try {
       if (row.classification_name === "分類なし") {
-        paymentDelete(id);
+        paymentDlete(id);
       } else {
         if (sortedHistoryRows[index].payment_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
@@ -520,7 +527,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                           ) : (
                             <IconButton
                               onClick={() =>
-                                deletePayment(historyRow.payment_id, isHistory)
+                                deletePayment(
+                                  historyRow.payment_id,
+                                  historyIndex
+                                )
                               }
                             >
                               <DeleteIcon />

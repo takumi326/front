@@ -145,6 +145,12 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
 
   const editClassification = async (id: string) => {
     setLoading(true);
+    const selectedClassificationMonthlyAmounts: classificationMonthlyAmountData[] =
+      classificationMonthlyAmounts.filter(
+        (classificationMonthlyAmount) =>
+          classificationMonthlyAmount.classification_id === id
+      );
+
     try {
       await classificationEdit(
         id,
@@ -162,13 +168,34 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
           editMonthlyAmount
         );
       } else {
-        await classificationMonthlyAmountEdit(
-          classificationMonthlyAmount.id,
-          classificationMonthlyAmount.classification_id,
-          classificationMonthlyAmount.month,
-          editMonthlyDate,
-          editMonthlyAmount
-        );
+        for (
+          let i = 0;
+          i < selectedClassificationMonthlyAmounts.length;
+          i += 1
+        ) {
+          if (
+            selectedClassificationMonthlyAmounts[i].month ===
+            classificationMonthlyAmount.month
+          ) {
+            await classificationMonthlyAmountEdit(
+              classificationMonthlyAmount.id,
+              classificationMonthlyAmount.classification_id,
+              classificationMonthlyAmount.month,
+              editMonthlyDate,
+              editMonthlyAmount
+            );
+          } else {
+            if (selectedClassificationMonthlyAmounts[i].date === "-1") {
+              await classificationMonthlyAmountEdit(
+                selectedClassificationMonthlyAmounts[i].id,
+                selectedClassificationMonthlyAmounts[i].classification_id,
+                selectedClassificationMonthlyAmounts[i].month,
+                editMonthlyDate,
+                selectedClassificationMonthlyAmounts[i].amount
+              );
+            }
+          }
+        }
       }
 
       setIsEditing(true);
