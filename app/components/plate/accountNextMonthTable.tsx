@@ -423,7 +423,7 @@ export const AccountNextMonthTable: React.FC = () => {
   ];
 
   const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    event: MouseEvent<HTMLButtonElement, MouseEvent> | null,
     newPage: number
   ) => {
     setPage(newPage);
