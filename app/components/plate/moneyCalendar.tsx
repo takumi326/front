@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { CalendarApi } from '@fullcalendar/core';
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -54,11 +55,11 @@ export const MoneyCalendar = (): JSX.Element => {
   >([]);
   const [classificationMonth, setClassificationMonth] = useState("");
 
-  const calendarRef = useRef(null);
+  const calendarRef = useRef<FullCalendar>(null);
 
   const handleDateChange = () => {
     if (calendarRef.current) {
-      const calendarApi = calendarRef.current.getApi();
+      const calendarApi: CalendarApi = calendarRef.current.getApi();
 
       const currentDate = calendarApi.getDate();
       setCurrentMonth(
@@ -143,7 +144,7 @@ export const MoneyCalendar = (): JSX.Element => {
       data = calendarIncomes.filter(
         (income) => income.id === clickInfo.event.extendedProps.incomeId
       )[0];
-      if (data !== undefined) {
+      if (data != undefined) {
         if (incomes) {
           const showIncome = allIncomes.filter(
             (showIncome: incomeData) => showIncome.id === data.id
@@ -159,7 +160,7 @@ export const MoneyCalendar = (): JSX.Element => {
       data = calendarTransfers.filter(
         (transfer) => transfer.id === clickInfo.event.extendedProps.transferId
       )[0];
-      if (data !== undefined) {
+      if (data != undefined) {
         if (transfers) {
           const showTransfer = allTransfers.filter(
             (showTransfer: transferData) => showTransfer.id === data.id
@@ -176,7 +177,7 @@ export const MoneyCalendar = (): JSX.Element => {
         (classification) =>
           classification.id === clickInfo.event.extendedProps.classificationId
       )[0];
-      if (data !== undefined) {
+      if (data != undefined) {
         if (classifications) {
           const showClassification = classifications.filter(
             (showClassification: classificationData) =>
