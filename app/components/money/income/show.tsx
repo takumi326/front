@@ -43,7 +43,7 @@ import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthly
 
 import { incomeShowProps } from "@/interface/income-interface";
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
-import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
+import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 import { RepetitionMoneyRow } from "@/components/money/repetitionMoney/row";
@@ -732,12 +732,12 @@ export const IncomeShow: React.FC<incomeShowProps> = (props) => {
           }
         } else {
           const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
+            classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id ===
                   initialClassificationId &&
                 classificationMonthlyAmount.month === initialMonth
-            );
+            )[0];
 
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =
