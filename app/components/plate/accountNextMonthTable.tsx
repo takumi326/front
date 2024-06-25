@@ -1,16 +1,10 @@
 "use client";
 import React, { useState, useContext, useEffect } from "react";
-import moment from "moment";
 
 import {
-  IconButton,
   TableContainer,
   TableCell,
   TableRow,
-  Collapse,
-  Box,
-  Typography,
-  TableFooter,
   Stack,
   Paper,
   Table,
@@ -423,7 +417,7 @@ export const AccountNextMonthTable: React.FC = () => {
   ];
 
   const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement, MouseEvent> | null,
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
     newPage: number
   ) => {
     setPage(newPage);
