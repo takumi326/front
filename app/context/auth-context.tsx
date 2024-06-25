@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState,ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/api/auth";
@@ -25,7 +25,11 @@ export const authContext = createContext<{
   setcurrentUserId: () => {},
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
 }) => {
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,7 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [setCurrentUser]);
 
   useEffect(() => {
-    // 未認証の場合はsigninページへリダイレクト
     if (!loading && !isSignedIn && pathname !== "/login") {
       router.push("/login");
     }

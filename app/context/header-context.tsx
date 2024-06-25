@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, createContext } from "react";
+import React, { useState, createContext, ReactNode } from "react";
 
 export const headerContext = createContext<{
   setting: string;
@@ -9,7 +9,11 @@ export const headerContext = createContext<{
   setSetting: () => {},
 });
 
-export const HeaderProvider: React.FC = ({ children }) => {
+interface HeaderProviderProps {
+  children: React.ReactNode;
+}
+
+export const HeaderProvider: React.FC< HeaderProviderProps>= ({ children }) => {
   const [setting, setSetting] = useState("TOP");
 
   return (
