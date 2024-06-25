@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { CalendarApi } from '@fullcalendar/core';
+import { CalendarApi,EventClickArg } from '@fullcalendar/core';
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -116,7 +116,7 @@ export const MoneyCalendar = (): JSX.Element => {
     }
   };
 
-  const handleEventClick = (clickInfo) => {
+  const handleEventClick = (clickInfo:EventClickArg ) => {
     let data:
       | paymentData
       | incomeData
