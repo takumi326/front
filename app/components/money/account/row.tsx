@@ -29,13 +29,21 @@ import {
   displayAccountData,
 } from "@/interface/account-interface";
 
+import { transferData } from "@/interface/transfer-interface";
+
 import { AccountShow } from "@/components/money/account/show";
 import { TransferShow } from "@/components/money/transfer/show";
 
 export const AccountRow: React.FC<accountRowProps> = (props) => {
   const { row, visibleColumns } = props;
-  const { accounts, repetitionMoneies, setIsEditing, loading, setLoading } =
-    useContext(moneyContext);
+  const {
+    accounts,
+    transfers,
+    repetitionMoneies,
+    setIsEditing,
+    loading,
+    setLoading,
+  } = useContext(moneyContext);
   const now = new Date();
   const endOfCurrentDay = new Date(
     now.getFullYear(),
@@ -159,7 +167,19 @@ export const AccountRow: React.FC<accountRowProps> = (props) => {
 
   const deleteAccount = async (id: string) => {
     setLoading(true);
+    const selectedBeforeTransfer: transferData[] = transfers.filter(
+      (transfer) => transfer.before_account_id === id
+    );
+    const selectedAfterTransfer: transferData[] = transfers.filter(
+      (transfer) => transfer.after_account_id === id
+    );
     try {
+      for (let i = 0; i < selectedBeforeTransfer.length; i += 1) {
+        await transferDelete(selectedBeforeTransfer[i].id);
+      }
+      for (let t = 0; t < selectedAfterTransfer.length; t += 1) {
+        await transferDelete(selectedAfterTransfer[t].id);
+      }
       await accountDelete(id);
       setIsEditing(true);
     } catch (error) {

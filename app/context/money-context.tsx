@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, createContext, useEffect } from "react";
+import React, { useState, createContext, ReactNode } from "react";
 
 import { paymentData } from "@/interface/payment-interface";
 import { incomeData } from "@/interface/income-interface";
@@ -96,7 +96,11 @@ export const moneyContext = createContext<{
   setLoading: () => {},
 });
 
-export const MoneyProvider: React.FC = ({ children }) => {
+interface MoneyProviderProps {
+  children: React.ReactNode;
+}
+
+export const MoneyProvider: React.FC<MoneyProviderProps> = ({ children }) => {
   const [repetitionMoneies, setRepetitionMoneies] = useState<
     repetitionMoneyData[]
   >([]);

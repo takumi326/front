@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Image from "next/image";
 import moneyImage from "@/../public/TOPお金.png";
 import taskImage from "@/../public/TOP-removebg-preview.png";
@@ -12,13 +12,22 @@ import { signInParams } from "@/interface/auth-interface";
 
 export const TopForm: React.FC = () => {
   const router = useRouter();
+  const [authenticated, setAuthenticated] = useState(false);
 
   const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
     useContext(authContext);
 
+  useEffect(() => {
+    const accessToken = Cookies.get("_access_token");
+    const client = Cookies.get("_client");
+    const uid = Cookies.get("_uid");
+    const isAuthenticated = accessToken && client && uid;
+    if (isAuthenticated) {
+      setAuthenticated(true);
+    }
+  }, []);
+
   const handleSubmit = async () => {
-
-
     const params: signInParams = {
       email: "guest111@getRequestMeta.com",
       password: "password",
@@ -39,7 +48,7 @@ export const TopForm: React.FC = () => {
         router.push(`/money`);
 
         // console.log("Signed in successfully!");
-      } 
+      }
     } catch (err) {
       console.log(err);
     }
@@ -75,15 +84,19 @@ export const TopForm: React.FC = () => {
             </div>
           </div>
         </li>
-        <li className="flex py-5 justify-center">
-          <button
-            type="submit"
-            className="font-bold text-xl bg-blue-500 px-3 rounded-full text-white mt-8 mb-9"
-            onClick={handleSubmit}
-          >
-            ゲストログイン
-          </button>
-        </li>
+        {authenticated ? (
+          <li className="pt-14 pb-20 "></li>
+        ) : (
+          <li className="flex py-5 justify-center">
+            <button
+              type="submit"
+              className="font-bold text-xl bg-blue-500 px-3 rounded-full text-white mt-8 mb-9"
+              onClick={handleSubmit}
+            >
+              ゲストログイン
+            </button>
+          </li>
+        )}
       </ul>
     </>
   );

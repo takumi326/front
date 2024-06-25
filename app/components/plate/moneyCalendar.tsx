@@ -79,6 +79,21 @@ export const MoneyCalendar = (): JSX.Element => {
     }
   }, []);
 
+  const getNextMonth = (yearMonth: string) => {
+    const year = Number(yearMonth.slice(0, 4));
+    const month = Number(yearMonth.slice(4));
+
+    let nextYear = year;
+    let nextMonth = month + 1;
+
+    if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear += 1;
+    }
+
+    return String(nextYear) + String(nextMonth);
+  };
+
   const date = (month: string, date: string) =>
     new Date(
       Number(month.slice(0, 4)),
@@ -215,10 +230,10 @@ export const MoneyCalendar = (): JSX.Element => {
       : calendarTransfers.map((transfer) => ({
           transferId: transfer.id,
           title:
-            accounts.filter(
-              (account) => account.id === transfer.before_account_id
-            )[0].name +
-            "→" +
+            // accounts.filter(
+            //   (account) => account.id === transfer.before_account_id
+            // )[0].name +
+            // "→" +
             transfer.after_account_name,
           start: transfer.schedule,
           allDay: transfer.schedule,
@@ -243,38 +258,12 @@ export const MoneyCalendar = (): JSX.Element => {
               .map((classificationMonthlyAmount) => ({
                 classificationId: classification.id,
                 classificationMonth: classificationMonthlyAmount.month,
-                title: classification.name + "(支払日)",
+                title:
+                  classification.name +" "+
+                  classificationMonthlyAmount.month.slice(4) +
+                  "月分",
                 start: date(
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date
-                ),
-                allDay: date(
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date
-                ),
-                backgroundColor: "red",
-                borderColor: "red",
-              }))
-          )
-      : filter === "income"
-      ? classifications
-          .filter(
-            (classification) => classification.classification_type === "income"
-          )
-          .flatMap((classification) =>
-            classificationMonthlyAmounts
-              .filter(
-                (classificationMonthlyAmount) =>
-                  classificationMonthlyAmount.classification_id ===
-                    classification.id &&
-                  classificationMonthlyAmount.date != "-1"
-              )
-              .map((classificationMonthlyAmount) => ({
-                classificationId: classification.id,
-                classificationMonth: classificationMonthlyAmount.month,
-                title: classification.name + "(給料日)",
-                start: date(
-                  classificationMonthlyAmount.month,
+                  getNextMonth(classificationMonthlyAmount.month),
                   classificationMonthlyAmount.date
                 ),
                 allDay: date(

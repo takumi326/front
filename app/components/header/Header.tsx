@@ -141,9 +141,7 @@ export const Header: React.FC = () => {
             </>
           ) : (
             <>
-              <li className="">
-                <Link href={`/top`}></Link>
-              </li>
+              <li></li>
             </>
           )}
         </ul>
