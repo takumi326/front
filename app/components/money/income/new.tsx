@@ -33,7 +33,7 @@ import { classificationMonthlyAmountData } from "@/interface/classification-inte
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
-export const IncomeNew: React.FC<incomeNewProps> = (props) => {
+export const IncomeNew: React.FC<incomeNewProps> = (props) => { 
   const { onClose } = props;
   const {
     classifications,
