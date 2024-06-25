@@ -31,7 +31,7 @@ export const Header: React.FC = () => {
       }
     };
 
-    handleRouteChange(); // 初期ロード時にも実行
+    handleRouteChange();
   }, [pathname]);
 
   useEffect(() => {
@@ -65,10 +65,11 @@ export const Header: React.FC = () => {
     }
   };
 
-  const handleClick = (newSetting, href) => async (event) => {
-    event.preventDefault();
-    await router.push(href);
-  };
+  const handleClick =
+    (href: string) => async (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      await router.push(href);
+    };
 
   return (
     <header>
@@ -92,7 +93,7 @@ export const Header: React.FC = () => {
                     }}
                   ></Box>
                 )}
-                <button onClick={handleClick("TOP", "/top")}>TOP</button>
+                <button onClick={handleClick("/top")}>TOP</button>
               </li>
               <li className="">
                 {setting === "Money" && (
@@ -106,9 +107,7 @@ export const Header: React.FC = () => {
                   ></Box>
                 )}
 
-                <button onClick={handleClick("Money", "/money")}>
-                  お金管理
-                </button>
+                <button onClick={handleClick("/money")}>お金管理</button>
               </li>
               <li className="">
                 {setting === "Purpose" && (
@@ -120,9 +119,7 @@ export const Header: React.FC = () => {
                     }}
                   ></Box>
                 )}
-                <button onClick={handleClick("Purpose", "/purpose")}>
-                  目的管理
-                </button>
+                <button onClick={handleClick("/purpose")}>目的管理</button>
               </li>
               <li className="">
                 {setting === "Task" && (
@@ -134,9 +131,7 @@ export const Header: React.FC = () => {
                     }}
                   ></Box>
                 )}
-                <button onClick={handleClick("Task", "/task")}>
-                  タスク管理
-                </button>
+                <button onClick={handleClick("/task")}>タスク管理</button>
               </li>
             </>
           ) : (
