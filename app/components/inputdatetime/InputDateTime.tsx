@@ -3,12 +3,13 @@ import React, { useState } from "react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ja from "date-fns/locale/ja";
+import { Locale } from "date-fns";
 
 export const InputDateTime: React.FC<{
   selectedDate: string;
   onChange: (date: Date) => void;
 }> = ({ selectedDate, onChange }) => {
-  registerLocale("ja", ja);
+  registerLocale("ja", ja as unknown as Locale);
 
   const resetTime = (date: string) => {
     const datetype = new Date(date);
@@ -24,7 +25,8 @@ export const InputDateTime: React.FC<{
 
   const [isYearMonthView, setIsYearMonthView] = useState(false);
   const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
-  const editRepetitionScheduleWeek = daysOfWeek[resetTime(selectedDate).getDay()]
+  const editRepetitionScheduleWeek =
+    daysOfWeek[resetTime(selectedDate).getDay()];
 
   const handleYearMonthClick = () => {
     setIsYearMonthView(!isYearMonthView);
