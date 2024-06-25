@@ -10,7 +10,7 @@ export const headerContext = createContext<{
 });
 
 interface HeaderProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const HeaderProvider: React.FC< HeaderProviderProps>= ({ children }) => {

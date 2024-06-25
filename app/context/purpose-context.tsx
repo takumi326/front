@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, createContext } from "react";
+import React, { useState, createContext,ReactNode } from "react";
 
 import { purposeData } from "@/interface/purpose-interface";
 
@@ -15,7 +15,11 @@ export const purposeContext = createContext<{
   setIsEditing: () => {},
 });
 
-export const PurposeProvider: React.FC = ({ children }) => {
+interface PurposeProviderProps {
+  children: ReactNode;
+}
+
+export const PurposeProvider: React.FC<PurposeProviderProps> = ({ children }) => {
   const [purposes, setPurposes] = useState<purposeData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 

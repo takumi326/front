@@ -97,7 +97,7 @@ export const moneyContext = createContext<{
 });
 
 interface MoneyProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const MoneyProvider: React.FC<MoneyProviderProps> = ({ children }) => {

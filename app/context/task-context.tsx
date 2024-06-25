@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, createContext, useEffect } from "react";
+import React, { useState, createContext, useEffect, ReactNode } from "react";
 
 import { purposeGetData } from "@/lib/api/purpose-api";
 
@@ -47,7 +47,11 @@ export const taskContext = createContext<{
   setLoading: () => {},
 });
 
-export const TaskProvider: React.FC = ({ children }) => {
+interface TaskProviderProps {
+  children: ReactNode;
+}
+
+export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
   const [tableTasks, setTableTasks] = useState<taskData[]>([]);
   const [calendarTasks, setCalendarTasks] = useState<taskData[]>([]);
   const [allTasks, setAllTasks] = useState<taskData[]>([]);

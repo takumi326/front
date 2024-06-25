@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useEffect, useState,ReactNode } from "react";
+import React, { createContext, useEffect, useState, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/api/auth";
@@ -26,12 +26,10 @@ export const authContext = createContext<{
 });
 
 interface AuthProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
@@ -44,7 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const handleGetCurrentUser = async () => {
     try {
       const res = await getCurrentUser();
-      
+
       if (res?.data.isLogin === true) {
         setIsSignedIn(true);
         setCurrentUser(res?.data.data);
