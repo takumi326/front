@@ -211,7 +211,7 @@ export const MoneyCalendar = (): JSX.Element => {
           paymentId: payment.id,
           title: payment.category_name,
           start: payment.schedule,
-          allDay: payment.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }))
@@ -220,7 +220,7 @@ export const MoneyCalendar = (): JSX.Element => {
           incomeId: income.id,
           title: income.category_name,
           start: income.schedule,
-          allDay: income.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }))
@@ -233,7 +233,7 @@ export const MoneyCalendar = (): JSX.Element => {
             // "→" +
             transfer.after_account_name,
           start: transfer.schedule,
-          allDay: transfer.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }));
@@ -264,10 +264,7 @@ export const MoneyCalendar = (): JSX.Element => {
                   getNextMonth(classificationMonthlyAmount.month),
                   classificationMonthlyAmount.date
                 ),
-                allDay: date(
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date
-                ),
+                allDay: true,
                 backgroundColor: "red",
                 borderColor: "red",
               }))
