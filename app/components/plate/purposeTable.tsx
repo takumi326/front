@@ -33,7 +33,7 @@ import {
 
 import { purposeContext } from "@/context/purpose-context";
 
-import { PurposeRow } from "@/components/purpose/row";
+import { PurposeRow } from "@/components/purpose/row"; 
 import { PurposeNew } from "@/components/purpose/new";
 
 export const PurposeTable: React.FC = () => {

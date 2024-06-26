@@ -3,7 +3,7 @@ import React, { useState, useContext } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { CalendarApi, EventClickArg } from "@fullcalendar/core";
+import {EventClickArg } from "@fullcalendar/core";
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 

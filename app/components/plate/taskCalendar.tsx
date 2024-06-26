@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { CalendarApi, EventClickArg } from "@fullcalendar/core";
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -22,7 +23,7 @@ export const TaskCalendar = (): JSX.Element => {
 
   const handleDateChange = () => {
     if (calendarRef.current) {
-      const calendarApi = calendarRef.current.getApi();
+      const calendarApi: CalendarApi = calendarRef.current.getApi();
 
       const currentDate = calendarApi.getDate();
       setCurrentMonth(
@@ -43,7 +44,7 @@ export const TaskCalendar = (): JSX.Element => {
     }
   }, []);
 
-  const handleEventClick = (clickInfo) => {
+  const handleEventClick = (clickInfo: EventClickArg) => {
     const task = calendarTasks.find(
       (task) => task.id === clickInfo.event.extendedProps.taskId
     );
@@ -68,7 +69,7 @@ export const TaskCalendar = (): JSX.Element => {
       taskId: item.id,
       title: item.title,
       start: item.schedule,
-      allDay: item.schedule,
+      allDay: true,
       backgroundColor: "green",
       borderColor: "green",
     }));
@@ -79,7 +80,7 @@ export const TaskCalendar = (): JSX.Element => {
       taskId: item.id,
       title: item.title,
       start: item.schedule,
-      allDay: item.schedule,
+      allDay: true,
       backgroundColor: "red",
       borderColor: "red",
     }));
