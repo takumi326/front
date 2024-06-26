@@ -27,8 +27,8 @@ import {
   classificationMonthlyAmountEdit,
 } from "@/lib/api/classificationMonthlyAmount-api";
 
-import { paymentRowProps } from "@/interface/Payment-interface";
-import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
+import { paymentRowProps } from "@/interface/payment-interface";
+import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 import { PaymentShow } from "@/components/money/payment/show";
 import { ClassificationShow } from "@/components/money/classification/show";
@@ -56,8 +56,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
       setLoading(true);
       try {
         if (isEditing === false) {
-          const shouldCreateNewAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
+          const shouldCreateNewAmount: boolean =
+            classificationMonthlyAmounts.some(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id === row.id &&
                 classificationMonthlyAmount.month === currentMonth
@@ -156,7 +156,7 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     setLoading(true);
     try {
       if (row.classification_name === "分類なし") {
-        paymentDlete(id);
+        paymentDelete(id);
       } else {
         if (sortedHistoryRows[index].payment_repetition === true) {
           for (const classificationMonthlyAmount of classificationMonthlyAmounts.filter(
@@ -199,11 +199,11 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
           }
         } else {
           const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
+            classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id === row.id &&
                 classificationMonthlyAmount.month === currentMonth
-            );
+            )[0];
 
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =

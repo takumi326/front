@@ -27,8 +27,8 @@ import {
   classificationMonthlyAmountEdit,
 } from "@/lib/api/classificationMonthlyAmount-api";
 
-import { incomeRowProps } from "@/interface/Income-interface";
-import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
+import { incomeRowProps } from "@/interface/income-interface";
+import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 import { IncomeShow } from "@/components/money/income/show";
 import { ClassificationShow } from "@/components/money/classification/show";
@@ -54,7 +54,7 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
     const handleClassificationMonthlyAmount = async () => {
       setLoading(true);
       try {
-        const shouldCreateNewAmount: classificationMonthlyAmountData =
+        const shouldCreateNewAmount: boolean =
           classificationMonthlyAmounts.some(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id === row.id &&
@@ -192,11 +192,11 @@ export const IncomeRow: React.FC<incomeRowProps> = (props) => {
           }
         } else {
           const editClassificationMonthlyAmount: classificationMonthlyAmountData =
-            classificationMonthlyAmounts.find(
+            classificationMonthlyAmounts.filter(
               (classificationMonthlyAmount) =>
                 classificationMonthlyAmount.classification_id === row.id &&
                 classificationMonthlyAmount.month === currentMonth
-            );
+            )[0];
 
           if (editClassificationMonthlyAmount) {
             const editClassificationAmount =

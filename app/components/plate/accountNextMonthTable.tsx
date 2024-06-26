@@ -1,16 +1,10 @@
 "use client";
 import React, { useState, useContext, useEffect } from "react";
-import moment from "moment";
 
 import {
-  IconButton,
   TableContainer,
   TableCell,
   TableRow,
-  Collapse,
-  Box,
-  Typography,
-  TableFooter,
   Stack,
   Paper,
   Table,
@@ -104,8 +98,14 @@ export const AccountNextMonthTable: React.FC = () => {
             23,
             59
           );
-          startIncreaseCurrentMonth = new Date(year, Number(month[i] ) - 2, 1);
-          endIncreaseCurrentMonth = new Date(year, Number(month[i]) - 1, 0, 23, 59);
+          startIncreaseCurrentMonth = new Date(year, Number(month[i]) - 2, 1);
+          endIncreaseCurrentMonth = new Date(
+            year,
+            Number(month[i]) - 1,
+            0,
+            23,
+            59
+          );
 
           //減少分
           classifications
@@ -416,14 +416,17 @@ export const AccountNextMonthTable: React.FC = () => {
     "3",
   ];
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
+    newPage: number
+  ) => {
     setPage(newPage);
-    setSelectedYear(years[newPage]);
+    setSelectedYear(Number(years[newPage]));
   };
 
-  const handleYearChange = (event) => {
-    setSelectedYear(Number(event.target.value));
-  };
+  // const handleYearChange = (event) => {
+  //   setSelectedYear(Number(event.target.value));
+  // };
 
   const resetToCurrentYear = () => {
     setSelectedYear(currentYear);

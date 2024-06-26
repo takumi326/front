@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { CalendarApi, EventClickArg } from "@fullcalendar/core";
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -54,11 +55,11 @@ export const MoneyCalendar = (): JSX.Element => {
   >([]);
   const [classificationMonth, setClassificationMonth] = useState("");
 
-  const calendarRef = useRef(null);
+  const calendarRef = useRef<FullCalendar>(null);
 
   const handleDateChange = () => {
     if (calendarRef.current) {
-      const calendarApi = calendarRef.current.getApi();
+      const calendarApi: CalendarApi = calendarRef.current.getApi();
 
       const currentDate = calendarApi.getDate();
       setCurrentMonth(
@@ -115,7 +116,7 @@ export const MoneyCalendar = (): JSX.Element => {
     }
   };
 
-  const handleEventClick = (clickInfo) => {
+  const handleEventClick = (clickInfo: EventClickArg) => {
     let data:
       | paymentData
       | incomeData
@@ -124,14 +125,13 @@ export const MoneyCalendar = (): JSX.Element => {
       | undefined;
 
     if (clickInfo.event.extendedProps.paymentId) {
-      data = calendarPayments.filter(
-        (payment) => payment.id === clickInfo.event.extendedProps.paymentId
-      )[0];
-      if (data !== undefined) {
-        if (payments) {
-          const showPayment = allPayments.filter(
-            (showPayment: paymentData) => showPayment.id === data.id
-          )[0];
+      const paymentId = clickInfo.event.extendedProps.paymentId;
+      data = calendarPayments.find((payment) => payment.id === paymentId);
+      if (data && payments) {
+        const showPayment = allPayments.find(
+          (showPayment) => showPayment.id === data!.id
+        );
+        if (showPayment) {
           selectedEvent = showPayment;
           setSortedPaymentRows([showPayment]);
           setSortedIncomeRows([]);
@@ -140,14 +140,13 @@ export const MoneyCalendar = (): JSX.Element => {
         }
       }
     } else if (clickInfo.event.extendedProps.incomeId) {
-      data = calendarIncomes.filter(
-        (income) => income.id === clickInfo.event.extendedProps.incomeId
-      )[0];
-      if (data !== undefined) {
-        if (incomes) {
-          const showIncome = allIncomes.filter(
-            (showIncome: incomeData) => showIncome.id === data.id
-          )[0];
+      const incomeId = clickInfo.event.extendedProps.incomeId;
+      data = calendarIncomes.find((income) => income.id === incomeId);
+      if (data && incomes) {
+        const showIncome = allIncomes.find(
+          (showIncome) => showIncome.id === data!.id
+        );
+        if (showIncome) {
           selectedEvent = showIncome;
           setSortedPaymentRows([]);
           setSortedIncomeRows([showIncome]);
@@ -156,14 +155,13 @@ export const MoneyCalendar = (): JSX.Element => {
         }
       }
     } else if (clickInfo.event.extendedProps.transferId) {
-      data = calendarTransfers.filter(
-        (transfer) => transfer.id === clickInfo.event.extendedProps.transferId
-      )[0];
-      if (data !== undefined) {
-        if (transfers) {
-          const showTransfer = allTransfers.filter(
-            (showTransfer: transferData) => showTransfer.id === data.id
-          )[0];
+      const transferId = clickInfo.event.extendedProps.transferId;
+      data = calendarTransfers.find((transfer) => transfer.id === transferId);
+      if (data && transfers) {
+        const showTransfer = allTransfers.find(
+          (showTransfer) => showTransfer.id === data!.id
+        );
+        if (showTransfer) {
           selectedEvent = showTransfer;
           setSortedPaymentRows([]);
           setSortedIncomeRows([]);
@@ -172,16 +170,15 @@ export const MoneyCalendar = (): JSX.Element => {
         }
       }
     } else {
-      data = classifications.filter(
-        (classification) =>
-          classification.id === clickInfo.event.extendedProps.classificationId
-      )[0];
-      if (data !== undefined) {
-        if (classifications) {
-          const showClassification = classifications.filter(
-            (showClassification: classificationData) =>
-              showClassification.id === data.id
-          )[0];
+      const classificationId = clickInfo.event.extendedProps.classificationId;
+      data = classifications.find(
+        (classification) => classification.id === classificationId
+      );
+      if (data && classifications) {
+        const showClassification = classifications.find(
+          (showClassification) => showClassification.id === data!.id
+        );
+        if (showClassification) {
           selectedEvent = showClassification;
           setSortedPaymentRows([]);
           setSortedIncomeRows([]);
@@ -214,7 +211,7 @@ export const MoneyCalendar = (): JSX.Element => {
           paymentId: payment.id,
           title: payment.category_name,
           start: payment.schedule,
-          allDay: payment.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }))
@@ -223,7 +220,7 @@ export const MoneyCalendar = (): JSX.Element => {
           incomeId: income.id,
           title: income.category_name,
           start: income.schedule,
-          allDay: income.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }))
@@ -236,7 +233,7 @@ export const MoneyCalendar = (): JSX.Element => {
             // "→" +
             transfer.after_account_name,
           start: transfer.schedule,
-          allDay: transfer.schedule,
+          allDay: true,
           backgroundColor: "green",
           borderColor: "green",
         }));
@@ -259,17 +256,15 @@ export const MoneyCalendar = (): JSX.Element => {
                 classificationId: classification.id,
                 classificationMonth: classificationMonthlyAmount.month,
                 title:
-                  classification.name +" "+
+                  classification.name +
+                  " " +
                   classificationMonthlyAmount.month.slice(4) +
                   "月分",
                 start: date(
                   getNextMonth(classificationMonthlyAmount.month),
                   classificationMonthlyAmount.date
                 ),
-                allDay: date(
-                  classificationMonthlyAmount.month,
-                  classificationMonthlyAmount.date
-                ),
+                allDay: true,
                 backgroundColor: "red",
                 borderColor: "red",
               }))

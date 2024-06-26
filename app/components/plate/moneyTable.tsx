@@ -728,35 +728,35 @@ export const MoneyTable: React.FC = () => {
     const compare = (key: accountOrderByType | paymentOrderByType) => {
       if (order[key] === "asc") {
         if (key === "classification_amount" || key === "account_amount") {
-          return a[key] - b[key];
+          return (a as any)[key] - (b as any)[key];
         } else if (key === "classification_date") {
-          if (a[key] === null || a[key] === "") {
+          if ((a as any)[key] === null || (a as any)[key] === "") {
             return 1;
-          } else if (b[key] === null || b[key] === "") {
+          } else if ((b as any)[key] === null || (b as any)[key] === "") {
             return -1;
           } else {
-            return Number(a[key]) - Number(b[key]);
+            return Number((a as any)[key]) - Number((b as any)[key]);
           }
         } else {
-          if (a[key] === null || a[key] === "") {
+          if ((a as any)[key] === null || (a as any)[key] === "") {
             return 1;
-          } else if (b[key] === null || b[key] === "") {
+          } else if ((b as any)[key] === null || (b as any)[key] === "") {
             return -1;
           }
-          return a[key] > b[key] ? 1 : -1;
+          return (a as any)[key] > (b as any)[key] ? 1 : -1;
         }
       } else if (order[key] === "desc") {
         if (key === "classification_amount" || key === "account_amount") {
-          return b[key] - a[key];
+          return (b as any)[key] - (a as any)[key];
         } else if (key === "classification_date") {
-          return Number(b[key]) - Number(a[key]);
+          return Number((b as any)[key]) - Number((a as any)[key]);
         } else {
-          if (a[key] === null || a[key] === "") {
+          if ((a as any)[key] === null || (a as any)[key] === "") {
             return 1;
-          } else if (b[key] === null || b[key] === "") {
+          } else if ((b as any)[key] === null || (b as any)[key] === "") {
             return -1;
           }
-          return a[key] < b[key] ? 1 : -1;
+          return (a as any)[key] < (b as any)[key] ? 1 : -1;
         }
       }
       return a.id > b.id ? 1 : -1;

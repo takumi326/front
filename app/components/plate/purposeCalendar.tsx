@@ -3,6 +3,7 @@ import React, { useState, useContext } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { CalendarApi, EventClickArg } from "@fullcalendar/core";
 import jaLocale from "@fullcalendar/core/locales/ja";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -18,13 +19,11 @@ export const PurposeCalendar = (): JSX.Element => {
   const [selectedEvent, setSelectedEvent] = useState<purposeData>();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const handleEventClick = (clickInfo) => {
+  const handleEventClick = (clickInfo: EventClickArg) => {
     const purpose = purposes.find(
       (purpose) => purpose.id === clickInfo.event.extendedProps.purposeId
     );
-    console.log(1);
-    if (purpose !== undefined) {
-      console.log(2);
+    if (purpose) {
       setSelectedEvent(purpose);
     }
     setIsEditModalOpen(true);
@@ -40,7 +39,7 @@ export const PurposeCalendar = (): JSX.Element => {
       purposeId: item.id,
       title: item.title,
       start: item.deadline,
-      allDay: item.deadline,
+      allDay: true,
       description: item.body,
       backgroundColor: "green",
       borderColor: "green",
@@ -52,7 +51,7 @@ export const PurposeCalendar = (): JSX.Element => {
       purposeId: item.id,
       title: item.title,
       start: item.deadline,
-      allDay: item.deadline,
+      allDay: true,
       description: item.body,
       backgroundColor: "red",
       borderColor: "red",

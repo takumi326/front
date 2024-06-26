@@ -29,7 +29,7 @@ import { classificationMonthlyAmountEdit } from "@/lib/api/classificationMonthly
 
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { paymentNewProps } from "@/interface/payment-interface";
-import { classificationMonthlyAmountData } from "@/lib/api/classification-interface";
+import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
@@ -98,12 +98,12 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
         );
 
         const selectedClassificationMonthlyAmount: classificationMonthlyAmountData =
-          classificationMonthlyAmounts.find(
+          classificationMonthlyAmounts.filter(
             (classificationMonthlyAmount) =>
               classificationMonthlyAmount.classification_id ===
                 newClassificationId &&
               classificationMonthlyAmount.month === newMonth
-          );
+          )[0];
 
         const editedClassificationAmount =
           parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
