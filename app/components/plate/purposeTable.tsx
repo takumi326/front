@@ -33,7 +33,7 @@ import {
 
 import { purposeContext } from "@/context/purpose-context";
 
-import { PurposeRow } from "@/components/purpose/row"; 
+import { PurposeRow } from "@/components/purpose/row";
 import { PurposeNew } from "@/components/purpose/new";
 
 export const PurposeTable: React.FC = () => {
@@ -260,6 +260,7 @@ export const PurposeTable: React.FC = () => {
           </div>
         </div>
       )}
+
       <Stack direction="row" alignItems="center">
         <Stack direction="row" alignItems="center" spacing={2}>
           <Button
@@ -281,6 +282,7 @@ export const PurposeTable: React.FC = () => {
             すべて
           </Button>
         </Stack>
+
         <Button
           aria-controls="column-menu"
           aria-haspopup="true"
@@ -292,14 +294,11 @@ export const PurposeTable: React.FC = () => {
             <KeyboardArrowDownIcon />
           )}
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleNewClick}
-          className="ml-auto"
-        >
-          新規作成
-        </Button>
+        <div className="ml-auto">
+          <Button variant="contained" color="primary" onClick={handleNewClick}>
+            新規作成
+          </Button>
+        </div>
       </Stack>
       <Menu
         id="column-menu"
