@@ -59,14 +59,14 @@ export const SignUpForm: React.FC = () => {
     <Container component="main" maxWidth="xs">
       <Box
         sx={{
-          marginTop: 8,
+          py: 24,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}
       >
         <Typography component="h1" variant="h5">
-          ログイン
+          アカウント作成
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 3 }}>
           <TextField
