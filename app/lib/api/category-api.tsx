@@ -1,17 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { categoryData } from "@/interface/category-interface";
 
 export const categoryGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/categories", {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    const response = await apiClient.get("/categories");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -23,22 +16,12 @@ export const categoryNew = async (
   category_type: string
 ): Promise<categoryData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/categories",
-      {
-        category: {
-          name: name,
-          category_type: category_type,
-        },
+    const response = await apiClient.post("/categories", {
+      category: {
+        name: name,
+        category_type: category_type,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post category");
@@ -51,22 +34,12 @@ export const categoryEdit = async (
   category_type: string
 ): Promise<categoryData> => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/categories/${id}`,
-      {
-        category: {
-          name: name,
-          category_type: category_type,
-        },
+    const response = await apiClient.patch(`/categories/${id}`, {
+      category: {
+        name: name,
+        category_type: category_type,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to edit category");
@@ -75,13 +48,7 @@ export const categoryEdit = async (
 
 export const categoryDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/categories/${id}`, {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    await apiClient.delete(`/categories/${id}`);
   } catch (error) {
     throw new Error("Failed to delete category");
   }

@@ -1,17 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { paymentData } from "@/interface/payment-interface";
 
 export const paymentGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/payments", {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    const response = await apiClient.get("/payments");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -30,29 +23,19 @@ export const paymentNew = async (
   body: string
 ): Promise<paymentData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/payments",
-      {
-        payment: {
-          category_id: category_id,
-          classification_id: classification_id,
-          amount: amount,
-          schedule: schedule,
-          end_date: end_date,
-          repetition: repetition,
-          repetition_type: repetition_type,
-          repetition_settings: repetition_settings,
-          body: body,
-        },
+    const response = await apiClient.post("/payments", {
+      payment: {
+        category_id: category_id,
+        classification_id: classification_id,
+        amount: amount,
+        schedule: schedule,
+        end_date: end_date,
+        repetition: repetition,
+        repetition_type: repetition_type,
+        repetition_settings: repetition_settings,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post payment");
@@ -72,29 +55,19 @@ export const paymentEdit = async (
   body: string
 ): Promise<paymentData> => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/payments/${id}`,
-      {
-        payment: {
-          category_id: category_id,
-          classification_id: classification_id,
-          amount: amount,
-          schedule: schedule,
-          end_date: end_date,
-          repetition: repetition,
-          repetition_type: repetition_type,
-          repetition_settings: repetition_settings,
-          body: body,
-        },
+    const response = await apiClient.patch(`/payments/${id}`, {
+      payment: {
+        category_id: category_id,
+        classification_id: classification_id,
+        amount: amount,
+        schedule: schedule,
+        end_date: end_date,
+        repetition: repetition,
+        repetition_type: repetition_type,
+        repetition_settings: repetition_settings,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to edit payment");
@@ -103,13 +76,7 @@ export const paymentEdit = async (
 
 export const paymentDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/payments/${id}`, {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    await apiClient.delete(`/payments/${id}`);
   } catch (error) {
     throw new Error("Failed to delete payment");
   }

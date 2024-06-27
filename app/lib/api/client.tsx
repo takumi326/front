@@ -12,7 +12,10 @@ const options = {
 
 export const client = applyCaseMiddleware(
   axios.create({
-    baseURL: "https://back-red-leaf-1146.fly.dev/api/v1",
+    baseURL: "http://localhost:3000/api/v1",
   }),
   options
 );
+
+// "http://localhost:3000/api/v1"
+// "https://back-red-leaf-1146.fly.dev/api/v1"

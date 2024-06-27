@@ -1,20 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { completedRepetitionTaskData } from "@/interface/task-interface";
 
 export const completedRepetitionTaskGetData = async () => {
   try {
-    const response = await axios.get(
-      "http://localhost:3000/completed_repetition_tasks",
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    const response = await apiClient.get("/completed_repetition_tasks");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch completed_repetition_task");
@@ -27,23 +17,13 @@ export const completedRepetitionTaskNew = async (
   completed: boolean
 ): Promise<completedRepetitionTaskData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/completed_repetition_tasks",
-      {
-        completed_repetition_task: {
-          task_id: task_id,
-          completed_date: completed_date,
-          completed: completed,
-        },
+    const response = await apiClient.post("/completed_repetition_tasks", {
+      completed_repetition_task: {
+        task_id: task_id,
+        completed_date: completed_date,
+        completed: completed,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post completed_repetition_task");
@@ -57,20 +37,13 @@ export const completedRepetitionTaskEdit = async (
   completed: boolean
 ) => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/completed_repetition_tasks/${id}`,
+    const response = await apiClient.patch(
+      `/completed_repetition_tasks/${id}`,
       {
         completed_repetition_task: {
           task_id: task_id,
           completed_date: completed_date,
           completed: completed,
-        },
-      },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
         },
       }
     );
@@ -82,16 +55,7 @@ export const completedRepetitionTaskEdit = async (
 
 export const completedRepetitionTaskDelete = async (id: string) => {
   try {
-    await axios.delete(
-      `http://localhost:3000/completed_repetition_tasks/${id}`,
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    await apiClient.delete(`/completed_repetition_tasks/${id}`);
   } catch (error) {
     throw new Error("Failed to delete completed_repetition_task");
   }

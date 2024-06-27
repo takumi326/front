@@ -1,20 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
 export const classificationMonthlyAmountGetData = async () => {
   try {
-    const response = await axios.get(
-      "http://localhost:3000/classification_monthly_amounts",
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    const response = await apiClient.get("/classification_monthly_amounts");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -28,24 +18,14 @@ export const classificationMonthlyAmountNew = async (
   amount: number
 ): Promise<classificationMonthlyAmountData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/classification_monthly_amounts",
-      {
-        classification_monthlyamount: {
-          classification_id: classification_id,
-          month: month,
-          date: date,
-          amount: amount,
-        },
+    const response = await apiClient.post("/classification_monthly_amounts", {
+      classification_monthlyamount: {
+        classification_id: classification_id,
+        month: month,
+        date: date,
+        amount: amount,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post classificationMonthlyAmount");
@@ -60,21 +40,14 @@ export const classificationMonthlyAmountEdit = async (
   amount: number
 ): Promise<classificationMonthlyAmountData> => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/classification_monthly_amounts/${id}`,
+    const response = await apiClient.patch(
+      `/classification_monthly_amounts/${id}`,
       {
         classification_monthlyamount: {
           classification_id: classification_id,
           month: month,
           date: date,
           amount: amount,
-        },
-      },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
         },
       }
     );
@@ -86,16 +59,7 @@ export const classificationMonthlyAmountEdit = async (
 
 export const classificationMonthlyAmountDelete = async (id: string) => {
   try {
-    await axios.delete(
-      `http://localhost:3000/classification_monthly_amounts/${id}`,
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    await apiClient.delete(`/classification_monthly_amounts/${id}`);
   } catch (error) {
     throw new Error("Failed to delete classificationMonthlyAmount");
   }
