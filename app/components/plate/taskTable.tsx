@@ -471,14 +471,11 @@ export const TaskTable: React.FC = () => {
             <KeyboardArrowDownIcon />
           )}
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleNewClick}
-          className="ml-auto"
-        >
-          新規作成
-        </Button>
+        <div className="ml-auto">
+          <Button variant="contained" color="primary" onClick={handleNewClick}>
+            新規作成
+          </Button>
+        </div>
       </Stack>
       <Menu
         id="column-menu"
