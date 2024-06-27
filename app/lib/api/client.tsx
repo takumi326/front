@@ -16,3 +16,6 @@ export const client = applyCaseMiddleware(
   }),
   options
 );
+
+// "http://localhost:3000/api/v1"
+// "https://back-red-leaf-1146.fly.dev/api/v1"

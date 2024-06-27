@@ -1,17 +1,12 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { purposeData } from "@/interface/purpose-interface";
 
 export const purposeGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/purposes", {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    const response = await apiClient.get("/purposes");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch purpose");
@@ -25,25 +20,15 @@ export const purposeNew = async (
   body: string
 ): Promise<purposeData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/purposes",
-      {
-        purpose: {
-          title: title,
-          result: result,
-          deadline: deadline,
-          body: body,
-          completed: false,
-        },
+    const response = await apiClient.post("/purposes", {
+      purpose: {
+        title: title,
+        result: result,
+        deadline: deadline,
+        body: body,
+        completed: false,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post purpose");
@@ -59,25 +44,15 @@ export const purposeEdit = async (
   completed: boolean
 ): Promise<purposeData> => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/purposes/${id}`,
-      {
-        purpose: {
-          title: title,
-          result: result,
-          deadline: deadline,
-          body: body,
-          completed: completed,
-        },
+    const response = await apiClient.patch(`/purposes/${id}`, {
+      purpose: {
+        title: title,
+        result: result,
+        deadline: deadline,
+        body: body,
+        completed: completed,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to edit purpose");
@@ -86,13 +61,7 @@ export const purposeEdit = async (
 
 export const purposeDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/purposes/${id}`, {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    await apiClient.delete(`/purposes/${id}`);
   } catch (error) {
     throw new Error("Failed to delete purpose");
   }

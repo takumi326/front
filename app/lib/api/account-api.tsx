@@ -1,17 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { accountData } from "@/interface/account-interface";
 
 export const accountGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/accounts", {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    const response = await apiClient.get("/accounts");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -24,23 +17,13 @@ export const accountNew = async (
   body: string
 ): Promise<accountData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/accounts",
-      {
-        account: {
-          name: name,
-          amount: amount,
-          body: body,
-        },
+    const response = await apiClient.post("/accounts", {
+      account: {
+        name: name,
+        amount: amount,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post account");
@@ -58,23 +41,13 @@ export const accountEdit = async (
     throw new Error("Name field cannot be empty.");
   }
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/accounts/${id}`,
-      {
-        account: {
-          name: name,
-          amount: amount,
-          body: body,
-        },
+    const response = await apiClient.patch(`/accounts/${id}`, {
+      account: {
+        name: name,
+        amount: amount,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to edit account");
@@ -83,13 +56,7 @@ export const accountEdit = async (
 
 export const accountDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/accounts/${id}`, {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    await apiClient.delete(`/accounts/${id}`);
   } catch (error) {
     throw new Error("Failed to delete account");
   }

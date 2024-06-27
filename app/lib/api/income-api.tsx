@@ -1,17 +1,10 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { apiClient } from "@/lib/api/apiClient";
 
 import { incomeData } from "@/interface/income-interface";
 
 export const incomeGetData = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/incomes", {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    const response = await apiClient.get("/incomes");
     return response.data;
   } catch (error) {
     throw new Error("Failed to fetch data");
@@ -30,29 +23,19 @@ export const incomeNew = async (
   body: string
 ): Promise<incomeData> => {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/incomes",
-      {
-        income: {
-          category_id: category_id,
-          classification_id: classification_id,
-          amount: amount,
-          schedule: schedule,
-          end_date: end_date,
-          repetition: repetition,
-          repetition_type: repetition_type,
-          repetition_settings: repetition_settings,
-          body: body,
-        },
+    const response = await apiClient.post("/incomes", {
+      income: {
+        category_id: category_id,
+        classification_id: classification_id,
+        amount: amount,
+        schedule: schedule,
+        end_date: end_date,
+        repetition: repetition,
+        repetition_type: repetition_type,
+        repetition_settings: repetition_settings,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to post income");
@@ -72,29 +55,19 @@ export const incomeEdit = async (
   body: string
 ): Promise<incomeData> => {
   try {
-    const response = await axios.patch(
-      `http://localhost:3000/incomes/${id}`,
-      {
-        income: {
-          category_id: category_id,
-          classification_id: classification_id,
-          amount: amount,
-          schedule: schedule,
-          end_date: end_date,
-          repetition: repetition,
-          repetition_type: repetition_type,
-          repetition_settings: repetition_settings,
-          body: body,
-        },
+    const response = await apiClient.patch(`/incomes/${id}`, {
+      income: {
+        category_id: category_id,
+        classification_id: classification_id,
+        amount: amount,
+        schedule: schedule,
+        end_date: end_date,
+        repetition: repetition,
+        repetition_type: repetition_type,
+        repetition_settings: repetition_settings,
+        body: body,
       },
-      {
-        headers: {
-          "access-token": Cookies.get("_access_token"),
-          client: Cookies.get("_client"),
-          uid: Cookies.get("_uid"),
-        },
-      }
-    );
+    });
     return response.data;
   } catch (error) {
     throw new Error("Failed to edit income");
@@ -103,13 +76,7 @@ export const incomeEdit = async (
 
 export const incomeDelete = async (id: string) => {
   try {
-    await axios.delete(`http://localhost:3000/incomes/${id}`, {
-      headers: {
-        "access-token": Cookies.get("_access_token"),
-        client: Cookies.get("_client"),
-        uid: Cookies.get("_uid"),
-      },
-    });
+    await apiClient.delete(`/incomes/${id}`);
   } catch (error) {
     throw new Error("Failed to delete income");
   }
