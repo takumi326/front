@@ -159,7 +159,7 @@ export const TaskTable: React.FC = () => {
                   .forEach(
                     (completedRepetitionTask: completedRepetitionTaskData) => {
                       const repetitionTaskData = {
-                        id: taskData.id,
+                        id: completedRepetitionTask.id,
                         title: taskData.title,
                         purpose_id: taskData.purpose_id,
                         purpose_title: taskData.purpose_title,
