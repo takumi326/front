@@ -159,7 +159,7 @@ export const TaskTable: React.FC = () => {
                   .forEach(
                     (completedRepetitionTask: completedRepetitionTaskData) => {
                       const repetitionTaskData = {
-                        id: completedRepetitionTask.id,
+                        id: taskData.id,
                         title: taskData.title,
                         purpose_id: taskData.purpose_id,
                         purpose_title: taskData.purpose_title,
@@ -203,7 +203,7 @@ export const TaskTable: React.FC = () => {
                   .forEach(
                     (completedRepetitionTask: completedRepetitionTaskData) => {
                       const repetitionTaskData = {
-                        id: taskData.id,
+                        id: completedRepetitionTask.id,
                         title: taskData.title,
                         purpose_id: taskData.purpose_id,
                         purpose_title: taskData.purpose_title,
@@ -343,32 +343,51 @@ export const TaskTable: React.FC = () => {
 
   const handleSelectAllClick = () => {
     if (filter === "incomplete") {
-      if (incompleteSelected.length === incompleteTasks.length) {
+      if (
+        incompleteSelected.length ===
+        incompleteTasks.filter((task) => task.repetition === false).length
+      ) {
         setIncompleteSelected([]);
         setSelected(selected.filter((id) => !incompleteSelected.includes(id)));
       } else {
-        const allIds = incompleteTasks.map((task) => task.id);
+        const allIds = incompleteTasks
+          .filter((task) => task.repetition === false)
+          .map((task) => task.id);
         setIncompleteSelected(allIds);
         setSelected([...selected, ...allIds]);
       }
     } else if (filter === "completed") {
-      if (completedSelected.length === completedTasks.length) {
+      if (
+        completedSelected.length ===
+        completedTasks.filter((task) => task.repetition === false).length
+      ) {
         setCompletedSelected([]);
         setSelected(selected.filter((id) => !completedSelected.includes(id)));
       } else {
-        const allIds = completedTasks.map((task) => task.id);
+        const allIds = completedTasks
+          .filter((task) => task.repetition === false)
+          .map((task) => task.id);
         setCompletedSelected(allIds);
         setSelected([...selected, ...allIds]);
       }
     } else {
-      if (selected.length === tableTasks.length) {
+      if (
+        selected.length ===
+        tableTasks.filter((task) => task.repetition === false).length
+      ) {
         setCompletedSelected([]);
         setIncompleteSelected([]);
         setSelected([]);
       } else {
-        const allIds = tableTasks.map((task) => task.id);
-        const allCompletedIds = completedTasks.map((task) => task.id);
-        const allIncompleteIds = incompleteTasks.map((task) => task.id);
+        const allIds = tableTasks
+          .filter((task) => task.repetition === false)
+          .map((task) => task.id);
+        const allCompletedIds = completedTasks
+          .filter((task) => task.repetition === false)
+          .map((task) => task.id);
+        const allIncompleteIds = incompleteTasks
+          .filter((task) => task.repetition === false)
+          .map((task) => task.id);
         setCompletedSelected(allCompletedIds);
         setIncompleteSelected(allIncompleteIds);
         setSelected(allIds);
@@ -514,28 +533,36 @@ export const TaskTable: React.FC = () => {
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length <
-                          tableTasks.filter((row) => !row.completed).length
+                          tableTasks.filter(
+                            (row) => !row.completed && row.repetition === false
+                          ).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length <
-                          tableTasks.filter((row) => row.completed).length
+                          tableTasks.filter(
+                            (row) => row.completed && row.repetition === false
+                          ).length
                       : filter === "all"
                       ? selected.length > 0 &&
-                        selected.length < tableTasks.length
+                        selected.length < tableTasks.filter((task) => task.repetition === false).length
                       : false
                   }
                   checked={
                     filter === "incomplete"
                       ? incompleteSelected.length > 0 &&
                         incompleteSelected.length ===
-                          tableTasks.filter((row) => !row.completed).length
+                          tableTasks.filter(
+                            (row) => !row.completed && row.repetition === false
+                          ).length
                       : filter === "completed"
                       ? completedSelected.length > 0 &&
                         completedSelected.length ===
-                          tableTasks.filter((row) => row.completed).length
+                          tableTasks.filter(
+                            (row) => row.completed && row.repetition === false
+                          ).length
                       : filter === "all"
                       ? selected.length > 0 &&
-                        selected.length === tableTasks.length
+                        selected.length === tableTasks.filter((task) => task.repetition === false).length
                       : false
                   }
                   onChange={handleSelectAllClick}
