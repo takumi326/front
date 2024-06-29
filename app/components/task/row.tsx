@@ -41,7 +41,18 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
 
   useEffect(() => {
     if (allTasks) {
-      const task = allTasks.find((task: taskData) => task.id === row.id);
+      let task: taskData | undefined;
+      if (row.repetition === true) {
+        task = allTasks.filter(
+          (task) =>
+            task.id ===
+            completedRepetitionTasks.filter(
+              (completedRepetitionTask) => completedRepetitionTask.id === row.id
+            )[0].task_id
+        )[0];
+      } else {
+        task = allTasks.find((task: taskData) => task.id === row.id);
+      }
       if (task && task.repetition === true) {
         setSchedule(task.schedule);
         setCompleted(task.completed);
@@ -61,19 +72,13 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
     onSelect(row.id, row.completed);
   };
 
-  const deleteTask = async (taskId: string) => {
+  const deleteTask = async (id: string) => {
     setLoading(true);
     try {
       if (row.repetition === true) {
-        await completedRepetitionTaskDelete(
-          completedRepetitionTasks.filter(
-            (completedRepetitionTask) =>
-              completedRepetitionTask.task_id === taskId &&
-              completedRepetitionTask.completed_date === row.schedule
-          )[0].id
-        );
+        await completedRepetitionTaskDelete(id);
       } else {
-        await taskDelete(taskId);
+        await taskDelete(id);
       }
       setIsEditing(true);
     } catch (error) {
@@ -88,12 +93,15 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
     try {
       if (row.repetition === true) {
         await completedRepetitionTaskEdit(
-          completedRepetitionTasks.filter(
-            (completedRepetitionTask) =>
-              completedRepetitionTask.task_id === row.id &&
-              completedRepetitionTask.completed_date === row.schedule
-          )[0].id,
           row.id,
+          allTasks.filter(
+            (task) =>
+              task.id ===
+              completedRepetitionTasks.filter(
+                (completedRepetitionTask) =>
+                  completedRepetitionTask.id === row.id
+              )[0].task_id
+          )[0].id,
           row.schedule,
           !isChecked
         );
@@ -184,7 +192,16 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
               />
             ) : (
               <TaskShow
-                id={row.id}
+                id={
+                  allTasks.filter(
+                    (task) =>
+                      task.id ===
+                      completedRepetitionTasks.filter(
+                        (completedRepetitionTask) =>
+                          completedRepetitionTask.id === row.id
+                      )[0].task_id
+                  )[0].id
+                }
                 title={row.title}
                 purpose_id={row.purpose_id}
                 schedule={schedule}
@@ -209,9 +226,13 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
           },
         }}
       >
-        <TableCell padding="checkbox">
-          <Checkbox checked={isSelected} onChange={handleCheckboxChange} />
-        </TableCell>
+        {row.repetition === false ? (
+          <TableCell padding="checkbox">
+            <Checkbox checked={isSelected} onChange={handleCheckboxChange} />
+          </TableCell>
+        ) : (
+          <TableCell padding="checkbox"></TableCell>
+        )}
         {Object.keys(visibleColumns).map((key) =>
           visibleColumns[key] ? (
             <TableCell key={key} component="th" scope="row">
