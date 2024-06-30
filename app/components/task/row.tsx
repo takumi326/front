@@ -43,13 +43,12 @@ export const TaskRow: React.FC<taskRowProps> = (props) => {
     if (allTasks) {
       let task: taskData | undefined;
       if (row.repetition === true) {
-        task = allTasks.filter(
-          (task) =>
-            task.id ===
-            completedRepetitionTasks.filter(
-              (completedRepetitionTask) => completedRepetitionTask.id === row.id
-            )[0].task_id
+        const completedTask = completedRepetitionTasks.filter(
+          (completedRepetitionTask) => completedRepetitionTask.id === row.id
         )[0];
+        if (completedTask) {
+          task = allTasks.find((task) => task.id === completedTask.task_id);
+        }
       } else {
         task = allTasks.find((task: taskData) => task.id === row.id);
       }
