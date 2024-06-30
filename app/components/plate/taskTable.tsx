@@ -612,7 +612,7 @@ export const TaskTable: React.FC = () => {
                           );
                         if (completedRepetitionTasksFiltered.length > 0) {
                           return completedRepetitionTasksFiltered[0].id;
-                        }
+                        }6
                       })()
                     : row.id
                 }
