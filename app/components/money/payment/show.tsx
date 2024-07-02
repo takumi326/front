@@ -163,7 +163,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
     if (editAmount > 0) {
       setEditAmountError(false);
     } else {
-      setEditAmountError(true);
+      setEditAmountError(true); 
     }
   }, [editAmount]);
 
