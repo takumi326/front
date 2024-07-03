@@ -45,6 +45,8 @@ import { paymentShowProps } from "@/interface/payment-interface";
 import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
+import { accountEdit } from "@/lib/api/account-api";
+
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 import { RepetitionMoneyRow } from "@/components/money/repetitionMoney/row";
 
@@ -64,6 +66,7 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   } = props;
   const {
     repetitionMoneies,
+    accounts,
     classifications,
     categories,
     classificationMonthlyAmounts,
@@ -158,6 +161,14 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
   );
   const [sortRepetitionMoney, setSortRepetitionMoney] =
     useState<boolean>(false);
+
+  const classificationMonthlyAmount:
+    | classificationMonthlyAmountData
+    | undefined = classificationMonthlyAmounts.find(
+    (classificationMonthlyAmount) =>
+      classificationMonthlyAmount.classification_id === editClassificationId &&
+      classificationMonthlyAmount.month === currentMonth
+  );
 
   useEffect(() => {
     if (editAmount > 0) {
@@ -591,6 +602,31 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                   );
                 }
               }
+              if (editClassificationMonthlyAmount.date === "100") {
+                const classification = classifications.filter(
+                  (classification) =>
+                    classification.classification_type === "payment" &&
+                    classification.id === editClassificationId
+                )[0];
+                const account = accounts.filter(
+                  (account) => account.id === classification.account_id
+                )[0];
+                const editAccountAmount =
+                  parseFloat(String(account.amount)) +
+                    parseFloat(String(initialAmount)) -
+                    parseFloat(String(editAmount)) >
+                  0
+                    ? parseFloat(String(account.amount)) +
+                      parseFloat(String(initialAmount)) -
+                      parseFloat(String(editAmount))
+                    : 0;
+                await accountEdit(
+                  account.id,
+                  account.name,
+                  editAccountAmount,
+                  account.body
+                );
+              }
             }
           }
         } else {
@@ -670,6 +706,79 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
                 editClassificationMonthlyAmount.month,
                 editClassificationMonthlyAmount.date,
                 Math.max(0, editClassificationAmount)
+              );
+            }
+          }
+
+          const initiaClassification = classifications.filter(
+            (classification) =>
+              classification.classification_type === "payment" &&
+              classification.id === initialClassificationId
+          )[0];
+          const editClassification = classifications.filter(
+            (classification) =>
+              classification.classification_type === "payment" &&
+              classification.id === editClassificationId
+          )[0];
+          if (
+            initiaClassification.account_id === editClassification.account_id
+          ) {
+            if (editClassificationMonthlyAmount.date === "100") {
+              const account = accounts.filter(
+                (account) => account.id === editClassification.account_id
+              )[0];
+              const editAccountAmount =
+                account.amount + initialAmount - editAmount > 0
+                  ? account.amount + initialAmount - editAmount
+                  : 0;
+              await accountEdit(
+                account.id,
+                account.name,
+                editAccountAmount,
+                account.body
+              );
+            }
+          } else {
+            if (initialClassificationMonthlyAmount.date === "100") {
+              const classification = classifications.filter(
+                (classification) =>
+                  classification.classification_type === "payment" &&
+                  classification.id === initialClassificationId
+              )[0];
+              const account = accounts.filter(
+                (account) => account.id === classification.account_id
+              )[0];
+              const editAccountAmount =
+                parseFloat(String(account.amount)) +
+                parseFloat(String(initialAmount));
+              await accountEdit(
+                account.id,
+                account.name,
+                editAccountAmount,
+                account.body
+              );
+            }
+            if (editClassificationMonthlyAmount.date === "100") {
+              const classification = classifications.filter(
+                (classification) =>
+                  classification.classification_type === "payment" &&
+                  classification.id === editClassificationId
+              )[0];
+              const account = accounts.filter(
+                (account) => account.id === classification.account_id
+              )[0];
+              const editAccountAmount =
+                parseFloat(String(account.amount)) -
+                  parseFloat(String(editAmount)) >
+                0
+                  ? parseFloat(String(account.amount)) -
+                    parseFloat(String(editAmount))
+                  : 0;
+              await accountEdit(
+                account.id,
+                account.name,
+                editAccountAmount,
+                account.body
               );
             }
           }
@@ -1512,27 +1621,31 @@ export const PaymentShow: React.FC<paymentShowProps> = (props) => {
             </>
           )}
           <li className="pt-5">
-            <Stack direction="row" spacing={1}>
-              <button
-                style={{
-                  color: "blue",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                }}
-                onClick={handleRepetitionDialogOpen}
-              >
-                繰り返し
-              </button>
-              {editRepetition === true ? (
-                <Typography align="left" variant="subtitle1">
-                  ON
-                </Typography>
-              ) : (
-                <Typography align="left" variant="subtitle1">
-                  OFF
-                </Typography>
-              )}
-            </Stack>
+            {classificationMonthlyAmount === undefined ||
+            (classificationMonthlyAmount &&
+              classificationMonthlyAmount.date != "100") ? (
+              <Stack direction="row" spacing={1}>
+                <button
+                  style={{
+                    color: "blue",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                  onClick={handleRepetitionDialogOpen}
+                >
+                  繰り返し
+                </button>
+                {editRepetition ? (
+                  <Typography align="left" variant="subtitle1">
+                    ON
+                  </Typography>
+                ) : (
+                  <Typography align="left" variant="subtitle1">
+                    OFF
+                  </Typography>
+                )}
+              </Stack>
+            ) : null}
             <Typography>
               {editRepetitionSettings && (
                 <>

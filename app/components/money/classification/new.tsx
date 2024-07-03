@@ -25,6 +25,8 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
     useContext(moneyContext);
 
   const [newAccountId, setNewAccountId] = useState("");
+  const [newAccountMonthlyDate, setNewAccountMonthlyDate] =
+    useState<boolean>(false);
   const [newName, setNewName] = useState("");
   const [newNameError, setNewNameError] = useState<boolean>(false);
   const [newMonthlyDate, setNewMonthlyDate] = useState("1");
@@ -65,39 +67,41 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
       setNewMonthlyDateError(true);
     }
 
-    if (
-      Number(currentMonth.slice(4)) === 12 ||
-      Number(currentMonth.slice(4)) === 2 ||
-      Number(currentMonth.slice(4)) === 4 ||
-      Number(currentMonth.slice(4)) === 6 ||
-      Number(currentMonth.slice(4)) === 7 ||
-      Number(currentMonth.slice(4)) === 9 ||
-      Number(currentMonth.slice(4)) === 11
-    ) {
-      if (newMonthlyDateNumber >= 32) {
-        setNewMonthlyDateError(true);
-      }
-    } else if (
-      Number(currentMonth.slice(4)) === 3 ||
-      Number(currentMonth.slice(4)) === 5 ||
-      Number(currentMonth.slice(4)) === 8 ||
-      Number(currentMonth.slice(4)) === 10
-    ) {
-      if (newMonthlyDateNumber >= 31) {
-        setNewMonthlyDateError(true);
-      }
-    } else {
-      if (Number(currentMonth.slice(2, 4)) % 4 === 0) {
-        if (newMonthlyDateNumber >= 30) {
+    if (!newAccountMonthlyDate) {
+      if (
+        Number(currentMonth.slice(4)) === 12 ||
+        Number(currentMonth.slice(4)) === 2 ||
+        Number(currentMonth.slice(4)) === 4 ||
+        Number(currentMonth.slice(4)) === 6 ||
+        Number(currentMonth.slice(4)) === 7 ||
+        Number(currentMonth.slice(4)) === 9 ||
+        Number(currentMonth.slice(4)) === 11
+      ) {
+        if (newMonthlyDateNumber >= 32) {
+          setNewMonthlyDateError(true);
+        }
+      } else if (
+        Number(currentMonth.slice(4)) === 3 ||
+        Number(currentMonth.slice(4)) === 5 ||
+        Number(currentMonth.slice(4)) === 8 ||
+        Number(currentMonth.slice(4)) === 10
+      ) {
+        if (newMonthlyDateNumber >= 31) {
           setNewMonthlyDateError(true);
         }
       } else {
-        if (newMonthlyDateNumber >= 29) {
-          setNewMonthlyDateError(true);
+        if (Number(currentMonth.slice(2, 4)) % 4 === 0) {
+          if (newMonthlyDateNumber >= 30) {
+            setNewMonthlyDateError(true);
+          }
+        } else {
+          if (newMonthlyDateNumber >= 29) {
+            setNewMonthlyDateError(true);
+          }
         }
       }
+      setNewMonthlyAmountError(false);
     }
-    setNewMonthlyAmountError(false);
   }, [newMonthlyDateNumber]);
 
   const newClassification = async () => {
@@ -117,12 +121,21 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
           newMonthlyAmount
         );
       } else {
-        await classificationMonthlyAmountNew(
-          response.id,
-          currentMonth,
-          newMonthlyDate,
-          newMonthlyAmount
-        );
+        if (newMonthlyDateNumber === 100) {
+          await classificationMonthlyAmountNew(
+            response.id,
+            currentMonth,
+            "100",
+            newMonthlyAmount
+          );
+        } else {
+          await classificationMonthlyAmountNew(
+            response.id,
+            currentMonth,
+            newMonthlyDate,
+            newMonthlyAmount
+          );
+        }
       }
       setIsEditing(true);
     } catch (error) {
@@ -178,6 +191,17 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
         break;
       default:
         break;
+    }
+  };
+
+  const handleCheckboxChange = () => {
+    setNewAccountMonthlyDate(!newAccountMonthlyDate);
+    if (newAccountMonthlyDate) {
+      setNewMonthlyDate("1");
+      setNewMonthlyDateNumber(1);
+    } else {
+      setNewMonthlyDate("100");
+      setNewMonthlyDateNumber(100);
     }
   };
 
@@ -263,8 +287,16 @@ export const ClassificationNew: React.FC<classificationNewProps> = (props) => {
                   inputMode: "numeric",
                   pattern: "[0-9]*",
                 }}
+                disabled={newAccountMonthlyDate}
               />
               <span>日</span>
+            </div>
+            <div className="flex items-center">
+              <Checkbox
+                checked={newAccountMonthlyDate}
+                onChange={handleCheckboxChange}
+              />
+              即時反映
             </div>
             {newMonthlyDateError && (
               <Typography align="left" variant="subtitle1">

@@ -31,14 +31,18 @@ import { repetitionMoneyData } from "@/interface/repetitionMoney-interface";
 import { paymentNewProps } from "@/interface/payment-interface";
 import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
+import { accountEdit } from "@/lib/api/account-api";
+
 import { InputDateTime } from "@/components/inputdatetime/InputDateTime";
 
 export const PaymentNew: React.FC<paymentNewProps> = (props) => {
   const { onClose } = props;
   const {
+    accounts,
     classifications,
     categories,
     classificationMonthlyAmounts,
+    currentMonth,
     setIsEditing,
     setLoading,
   } = useContext(moneyContext);
@@ -73,6 +77,14 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
     useState(true);
   const [isCategoryFormValid, setIsCategoryFormValid] = useState(true);
 
+  const classificationMonthlyAmount:
+    | classificationMonthlyAmountData
+    | undefined = classificationMonthlyAmounts.find(
+    (classificationMonthlyAmount) =>
+      classificationMonthlyAmount.classification_id === newClassificationId &&
+      classificationMonthlyAmount.month === currentMonth
+  );
+
   useEffect(() => {
     if (newAmount > 0) {
       setNewAmountError(false);
@@ -97,19 +109,20 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           newBody
         );
 
-        const selectedClassificationMonthlyAmount: classificationMonthlyAmountData =
-          classificationMonthlyAmounts.filter(
-            (classificationMonthlyAmount) =>
-              classificationMonthlyAmount.classification_id ===
-                newClassificationId &&
-              classificationMonthlyAmount.month === newMonth
-          )[0];
-
-        const editedClassificationAmount =
-          parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
-          parseFloat(String(newAmount));
+        const selectedClassificationMonthlyAmount:
+          | classificationMonthlyAmountData
+          | undefined = classificationMonthlyAmounts.find(
+          (classificationMonthlyAmount) =>
+            classificationMonthlyAmount.classification_id ===
+              newClassificationId &&
+            classificationMonthlyAmount.month === newMonth
+        );
 
         if (selectedClassificationMonthlyAmount) {
+          const editedClassificationAmount =
+            parseFloat(String(selectedClassificationMonthlyAmount.amount)) +
+            parseFloat(String(newAmount));
+
           await classificationMonthlyAmountEdit(
             selectedClassificationMonthlyAmount.id,
             selectedClassificationMonthlyAmount.classification_id,
@@ -117,6 +130,29 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
             selectedClassificationMonthlyAmount.date,
             editedClassificationAmount
           );
+          if (selectedClassificationMonthlyAmount.date === "100") {
+            const classification = classifications.filter(
+              (classification) =>
+                classification.classification_type === "payment" &&
+                classification.id === newClassificationId
+            )[0];
+            const account = accounts.filter(
+              (account) => account.id === classification.account_id
+            )[0];
+            const editAccountAmount =
+              parseFloat(String(account.amount)) -
+                parseFloat(String(newAmount)) >
+              0
+                ? parseFloat(String(account.amount)) -
+                  parseFloat(String(newAmount))
+                : 0;
+            await accountEdit(
+              account.id,
+              account.name,
+              editAccountAmount,
+              account.body
+            );
+          }
         }
       } else {
         const response = await paymentNew(
@@ -618,27 +654,31 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           )}
         </li>
         <li className="pt-5">
-          <Stack direction="row" spacing={1}>
-            <button
-              style={{
-                color: "blue",
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
-              onClick={handleRepetitionDialogOpen}
-            >
-              繰り返し
-            </button>
-            {newRepetition === true ? (
-              <Typography align="left" variant="subtitle1">
-                ON
-              </Typography>
-            ) : (
-              <Typography align="left" variant="subtitle1">
-                OFF
-              </Typography>
-            )}
-          </Stack>
+          {classificationMonthlyAmount === undefined ||
+          (classificationMonthlyAmount &&
+            classificationMonthlyAmount.date != "100") ? (
+            <Stack direction="row" spacing={1}>
+              <button
+                style={{
+                  color: "blue",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                onClick={handleRepetitionDialogOpen}
+              >
+                繰り返し
+              </button>
+              {newRepetition ? (
+                <Typography align="left" variant="subtitle1">
+                  ON
+                </Typography>
+              ) : (
+                <Typography align="left" variant="subtitle1">
+                  OFF
+                </Typography>
+              )}
+            </Stack>
+          ) : null}
           <Typography>
             {newRepetitionSettings && (
               <>
