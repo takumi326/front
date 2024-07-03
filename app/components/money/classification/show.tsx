@@ -37,6 +37,7 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   } = props;
   const {
     accounts,
+    payments,
     classifications,
     classificationMonthlyAmounts,
     currentMonth,
@@ -80,6 +81,12 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
   const [editMonthlyAmountError, setEditMonthlyAmountError] =
     useState<boolean>(false);
   const [isFormValid, setIsFormValid] = useState(true);
+
+  const result = payments
+    .filter((payment) => payment.classification_id === id)
+    .some((payment) => payment.repetition === true)
+    ? false
+    : true;
 
   useEffect(() => {
     const classification = classifications.filter(
@@ -383,14 +390,18 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
                 disabled={editAccountMonthlyDate}
               />
               <span>日</span>
-            </div>{" "}
-            <div className="flex items-center">
-              <Checkbox
-                checked={editAccountMonthlyDate}
-                onChange={handleCheckboxChange}
-              />
-              即時反映
             </div>
+            {result ? (
+              <div className="flex items-center">
+                <Checkbox
+                  checked={editAccountMonthlyDate}
+                  onChange={handleCheckboxChange}
+                />
+                即時反映
+              </div>
+            ) : (
+              <div className="flex items-center">支出に繰り返しの設定があるときは即時反映にできません</div>
+            )}
             {editMonthlyDateError && (
               <Typography align="left" variant="subtitle1">
                 存在する日付にして下さい
