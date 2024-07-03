@@ -45,6 +45,13 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
     setLoading,
   } = useContext(moneyContext);
 
+  const classificationMonthlyAmount: classificationMonthlyAmountData =
+    classificationMonthlyAmounts.filter(
+      (classificationMonthlyAmount) =>
+        classificationMonthlyAmount.classification_id === row.id &&
+        classificationMonthlyAmount.month === currentMonth
+    )[0];
+
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [isEditClassificationModalOpen, setIsEditClassificationModalOpen] =
     useState(false);
@@ -70,16 +77,21 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
             );
 
           const dateCounts: { [key: string]: number } = {};
+          let hundredCounts: boolean = false;
 
           selectedClassificationMonthlyAmounts.forEach(
             (classificationMonthlyAmount) => {
               const date = classificationMonthlyAmount.date;
               if (date === "-1" || date === "") {
               } else {
-                if (dateCounts[date]) {
-                  dateCounts[date]++;
+                if (date === "100") {
+                  hundredCounts = true;
                 } else {
-                  dateCounts[date] = 1;
+                  if (dateCounts[date]) {
+                    dateCounts[date]++;
+                  } else {
+                    dateCounts[date] = 1;
+                  }
                 }
               }
             }
@@ -115,13 +127,21 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 money += parseFloat(String(historyRow.payment_amount));
               }
             });
-
-            await classificationMonthlyAmountNew(
-              row.id,
-              currentMonth,
-              mostFrequentDate,
-              money
-            );
+            if (hundredCounts) {
+              await classificationMonthlyAmountNew(
+                row.id,
+                currentMonth,
+                "100",
+                money
+              );
+            } else {
+              await classificationMonthlyAmountNew(
+                row.id,
+                currentMonth,
+                mostFrequentDate,
+                money
+              );
+            }
           }
         }
       } catch (error) {
@@ -439,7 +459,10 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
-                  {row.classification_account_name === null
+                  {classificationMonthlyAmount &&
+                  classificationMonthlyAmount.date === "100"
+                    ? "即時反映"
+                    : row.classification_account_name === null
                     ? ""
                     : Number(parseFloat(String(currentMonth.slice(4))) + 1) +
                       "月" +

@@ -54,6 +54,9 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
     )[0];
 
   const [editAccountId, setEditAccountId] = useState(account_id);
+  const [editAccountMonthlyDate, setEditAccountMonthlyDate] = useState<boolean>(
+    classificationMonthlyAmount.date === "100" ? true : false
+  );
   const [editName, setEditName] = useState(name);
   const [editNameError, setEditNameError] = useState<boolean>(false);
   const [editMonthlyDate, setEditMonthlyDate] = useState(
@@ -108,39 +111,41 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
       setEditMonthlyDateError(true);
     }
 
-    if (
-      Number(currentMonth.slice(4)) === 12 ||
-      Number(currentMonth.slice(4)) === 2 ||
-      Number(currentMonth.slice(4)) === 4 ||
-      Number(currentMonth.slice(4)) === 6 ||
-      Number(currentMonth.slice(4)) === 7 ||
-      Number(currentMonth.slice(4)) === 9 ||
-      Number(currentMonth.slice(4)) === 11
-    ) {
-      if (editMonthlyDateNumber >= 32) {
-        setEditMonthlyDateError(true);
-      }
-    } else if (
-      Number(currentMonth.slice(4)) === 3 ||
-      Number(currentMonth.slice(4)) === 5 ||
-      Number(currentMonth.slice(4)) === 8 ||
-      Number(currentMonth.slice(4)) === 10
-    ) {
-      if (editMonthlyDateNumber >= 31) {
-        setEditMonthlyDateError(true);
-      }
-    } else {
-      if (Number(viewMonth.slice(2, 4)) % 4 === 0) {
-        if (editMonthlyDateNumber >= 30) {
+    if (!editAccountMonthlyDate) {
+      if (
+        Number(currentMonth.slice(4)) === 12 ||
+        Number(currentMonth.slice(4)) === 2 ||
+        Number(currentMonth.slice(4)) === 4 ||
+        Number(currentMonth.slice(4)) === 6 ||
+        Number(currentMonth.slice(4)) === 7 ||
+        Number(currentMonth.slice(4)) === 9 ||
+        Number(currentMonth.slice(4)) === 11
+      ) {
+        if (editMonthlyDateNumber >= 32) {
+          setEditMonthlyDateError(true);
+        }
+      } else if (
+        Number(currentMonth.slice(4)) === 3 ||
+        Number(currentMonth.slice(4)) === 5 ||
+        Number(currentMonth.slice(4)) === 8 ||
+        Number(currentMonth.slice(4)) === 10
+      ) {
+        if (editMonthlyDateNumber >= 31) {
           setEditMonthlyDateError(true);
         }
       } else {
-        if (editMonthlyDateNumber >= 29) {
-          setEditMonthlyDateError(true);
+        if (Number(viewMonth.slice(2, 4)) % 4 === 0) {
+          if (editMonthlyDateNumber >= 30) {
+            setEditMonthlyDateError(true);
+          }
+        } else {
+          if (editMonthlyDateNumber >= 29) {
+            setEditMonthlyDateError(true);
+          }
         }
       }
+      setEditMonthlyAmountError(false);
     }
-    setEditMonthlyAmountError(false);
   }, [editMonthlyDateNumber, editAccountId]);
 
   const editClassification = async (id: string) => {
@@ -150,6 +155,16 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         (classificationMonthlyAmount) =>
           classificationMonthlyAmount.classification_id === id
       );
+
+    // let hundredCounts: boolean = false;
+    // selectedClassificationMonthlyAmounts.forEach(
+    //   (classificationMonthlyAmount) => {
+    //     const date = classificationMonthlyAmount.date;
+    //     if (date === "100") {
+    //       hundredCounts = true;
+    //     }
+    //   }
+    // );
 
     try {
       await classificationEdit(
@@ -177,22 +192,42 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
             selectedClassificationMonthlyAmounts[i].month ===
             classificationMonthlyAmount.month
           ) {
-            await classificationMonthlyAmountEdit(
-              classificationMonthlyAmount.id,
-              classificationMonthlyAmount.classification_id,
-              classificationMonthlyAmount.month,
-              editMonthlyDate,
-              editMonthlyAmount
-            );
+            if (editMonthlyDateNumber === 100) {
+              await classificationMonthlyAmountEdit(
+                classificationMonthlyAmount.id,
+                classificationMonthlyAmount.classification_id,
+                classificationMonthlyAmount.month,
+                "100",
+                editMonthlyAmount
+              );
+            } else {
+              await classificationMonthlyAmountEdit(
+                classificationMonthlyAmount.id,
+                classificationMonthlyAmount.classification_id,
+                classificationMonthlyAmount.month,
+                editMonthlyDate,
+                editMonthlyAmount
+              );
+            }
           } else {
             if (selectedClassificationMonthlyAmounts[i].date === "-1") {
-              await classificationMonthlyAmountEdit(
-                selectedClassificationMonthlyAmounts[i].id,
-                selectedClassificationMonthlyAmounts[i].classification_id,
-                selectedClassificationMonthlyAmounts[i].month,
-                editMonthlyDate,
-                selectedClassificationMonthlyAmounts[i].amount
-              );
+              if (editMonthlyDateNumber === 100) {
+                await classificationMonthlyAmountEdit(
+                  selectedClassificationMonthlyAmounts[i].id,
+                  selectedClassificationMonthlyAmounts[i].classification_id,
+                  selectedClassificationMonthlyAmounts[i].month,
+                  "100",
+                  selectedClassificationMonthlyAmounts[i].amount
+                );
+              } else {
+                await classificationMonthlyAmountEdit(
+                  selectedClassificationMonthlyAmounts[i].id,
+                  selectedClassificationMonthlyAmounts[i].classification_id,
+                  selectedClassificationMonthlyAmounts[i].month,
+                  editMonthlyDate,
+                  selectedClassificationMonthlyAmounts[i].amount
+                );
+              }
             }
           }
         }
@@ -253,6 +288,17 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         break;
       default:
         break;
+    }
+  };
+
+  const handleCheckboxChange = () => {
+    setEditAccountMonthlyDate(!editAccountMonthlyDate);
+    if (editAccountMonthlyDate) {
+      setEditMonthlyDate("1");
+      setEditMonthlyDateNumber(1);
+    } else {
+      setEditMonthlyDate("100");
+      setEditMonthlyDateNumber(100);
     }
   };
 
@@ -324,7 +370,6 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
         {classification_type === "payment" && editAccountId && (
           <li className="pt-10">
             <Typography variant="subtitle1">翌月支払い日</Typography>
-
             <div className="flex items-center">
               <TextField
                 variant="outlined"
@@ -335,8 +380,16 @@ export const ClassificationShow: React.FC<classificationShowProps> = (
                   inputMode: "numeric",
                   pattern: "[0-9]*",
                 }}
+                disabled={editAccountMonthlyDate}
               />
               <span>日</span>
+            </div>{" "}
+            <div className="flex items-center">
+              <Checkbox
+                checked={editAccountMonthlyDate}
+                onChange={handleCheckboxChange}
+              />
+              即時反映
             </div>
             {editMonthlyDateError && (
               <Typography align="left" variant="subtitle1">
