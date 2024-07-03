@@ -654,9 +654,8 @@ export const PaymentNew: React.FC<paymentNewProps> = (props) => {
           )}
         </li>
         <li className="pt-5">
-          {classificationMonthlyAmount === undefined ||
-          (classificationMonthlyAmount &&
-            classificationMonthlyAmount.date != "100") ? (
+          {classificationMonthlyAmount &&
+          classificationMonthlyAmount.date != "100" ? (
             <Stack direction="row" spacing={1}>
               <button
                 style={{

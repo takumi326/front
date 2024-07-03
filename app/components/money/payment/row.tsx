@@ -30,6 +30,8 @@ import {
 import { paymentRowProps } from "@/interface/payment-interface";
 import { classificationMonthlyAmountData } from "@/interface/classification-interface";
 
+import { accountEdit } from "@/lib/api/account-api";
+
 import { PaymentShow } from "@/components/money/payment/show";
 import { ClassificationShow } from "@/components/money/classification/show";
 
@@ -37,6 +39,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
   const { row, start, end, visibleColumns } = props;
   const {
     repetitionMoneies,
+    accounts,
+    classifications,
     classificationMonthlyAmounts,
     currentMonth,
     setIsEditing,
@@ -236,6 +240,27 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
               editClassificationMonthlyAmount.month,
               editClassificationMonthlyAmount.date,
               Math.max(0, editClassificationAmount)
+            );
+          }
+
+          if (editClassificationMonthlyAmount.date === "100") {
+            const classification = classifications.filter(
+              (classification) =>
+                classification.classification_type === "payment" &&
+                classification.id ===
+                  editClassificationMonthlyAmount.classification_id
+            )[0];
+            const account = accounts.filter(
+              (account) => account.id === classification.account_id
+            )[0];
+            const editAccountAmount =
+              parseFloat(String(account.amount)) +
+              parseFloat(String(sortedHistoryRows[index].payment_amount));
+            await accountEdit(
+              account.id,
+              account.name,
+              editAccountAmount,
+              account.body
             );
           }
         }
