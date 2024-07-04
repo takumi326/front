@@ -1219,7 +1219,7 @@ export const MoneyTable: React.FC = () => {
                   <TableCell></TableCell>
                   <TableCell>
                     <Typography>
-                      {currentMonth.slice(4)}月分合計：{" "}
+                      {currentMonth.slice(4)}月分合計：
                       {formatAmountCommas(totalClassificationMoney)}
                     </Typography>
                   </TableCell>
@@ -1230,7 +1230,7 @@ export const MoneyTable: React.FC = () => {
                   <TableCell></TableCell>
                   <TableCell>
                     <Typography>
-                      {currentMonth.slice(4)}月分合計：{" "}
+                      {currentMonth.slice(4)}月分合計：
                       {formatAmountCommas(totalClassificationMoney)}
                     </Typography>
                   </TableCell>
