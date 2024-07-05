@@ -46,7 +46,7 @@ const Money: React.FC = () => {
             {changeGraphOrCalendar === "calendar" ? (
               <>
                 <div>
-                  <div className="flex justify-between font-bold">
+                  <div className="flex justify-between font-bold mt-1">
                     <p>年の変更</p>
                     <p className="text-right">月の変更</p>
                   </div>
