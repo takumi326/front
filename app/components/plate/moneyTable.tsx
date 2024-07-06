@@ -315,8 +315,10 @@ export const MoneyTable: React.FC = () => {
             const repetitonIncomes = incomes.filter(
               (income: incomeData) =>
                 income.repetition === true &&
-                (new Date(income.schedule).getTime() >= start.getTime() ||
-                  new Date(income.end_date).getTime() <= end.getTime())
+                !(
+                  new Date(income.schedule).getTime() >= start.getTime() ||
+                  new Date(income.end_date).getTime() <= end.getTime()
+                )
             );
             setIncomes(() => [...noRepetitonIncomes, ...repetitonIncomes]);
           } else {
@@ -602,7 +604,7 @@ export const MoneyTable: React.FC = () => {
           classification_account_id: "",
           classification_account_name: "",
           classification_date: "",
-          classification_classification_type: "payment",
+          classification_classification_type: "income",
           history: classificationNilDatas,
         },
       ];
