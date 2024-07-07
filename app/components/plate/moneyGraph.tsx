@@ -384,7 +384,7 @@ export const MoneyGraph = (): JSX.Element => {
             fontFamily: "Arial, sans-serif",
           }}
         >
-          {value}円
+          {value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}円
         </text>
       </>
     );
@@ -452,10 +452,10 @@ export const MoneyGraph = (): JSX.Element => {
                   }}
                 >
                   合計：
-                  {paymentSettingData.reduce(
-                    (acc, curr) => acc + curr.value,
-                    0
-                  )}
+                  {paymentSettingData
+                    .reduce((acc, curr) => acc + curr.value, 0)
+                    .toString()
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   円
                 </div>
                 <PieChart width={400} height={400}>
@@ -535,7 +535,10 @@ export const MoneyGraph = (): JSX.Element => {
                   }}
                 >
                   合計：
-                  {incomeSettingData.reduce((acc, curr) => acc + curr.value, 0)}
+                  {incomeSettingData
+                    .reduce((acc, curr) => acc + curr.value, 0)
+                    .toString()
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   円
                 </div>
                 <PieChart width={400} height={400}>
