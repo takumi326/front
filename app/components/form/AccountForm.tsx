@@ -3,106 +3,111 @@ import React, { useState, useContext } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
+import { Box, Container, Typography, TextField, Button } from "@mui/material";
+
 import { authContext } from "@/context/auth-context";
-import { signIn } from "@/lib/api/auth";
-import { signInParams } from "@/interface/auth-interface";
+import { UpdateUser } from "@/lib/api/auth";
+import { UpdateParams } from "@/interface/auth-interface";
 
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
-export const LoginForm: React.FC = () => {
+export const AccountForm: React.FC = () => {
   const router = useRouter();
-
   const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
     useContext(authContext);
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  //   const [passwordConfirmation, setPasswordConfirmation] = useState<string>("");
   const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const params: signInParams = {
+    const params: UpdateParams = {
       email: email,
       password: password,
     };
 
     try {
-      const res = await signIn(params);
+      const res = await UpdateUser(params);
 
       if (res.status === 200) {
         Cookies.set("_access_token", res.headers["access-token"]);
         Cookies.set("_client", res.headers["client"]);
         Cookies.set("_uid", res.headers["uid"]);
 
-        setIsSignedIn(true);
+        // setIsSignedIn(true);
         setCurrentUser(res.data.data);
         setcurrentUserId(res.data.data.id);
 
-        router.push(`/money`);
+        router.push(`/account`);
 
         // console.log("Signed in successfully!");
       } else {
         setAlertMessageOpen(true);
       }
     } catch (err) {
-      console.log(err);
+      //   console.log(err);
       setAlertMessageOpen(true);
     }
   };
 
   return (
-    <div className="mx-auto md:w-2/3 w-full px-10 pt-28 pb-16">
-      <p className="text-4xl font-bold text-center">ログイン</p>
-      <form onSubmit={handleSubmit} className="mb-0">
-        <div className="mt-16">
-          <label htmlFor="email" className="text-2xl">
-            メールアドレス
-          </label>
-          <input
-            type="email"
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          py: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          アカウント設定
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 3 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
             id="email"
-            placeholder="test@example.com"
-            className="w-full my-5 py-3"
+            label="メールアドレス"
+            name="email"
+            autoComplete="email"
+            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
-        </div>
-        <div>
-          <label htmlFor="password" className="text-2xl">
-            パスワード
-          </label>
-          <input
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="パスワード"
             type="password"
             id="password"
-            placeholder="password"
-            className="w-full my-5 py-3"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
           />
-        </div>
-        <div className="py-6 pb-24">
-          <button
+
+          <Button
             type="submit"
-            className="font-bold text-xl bg-blue-500 px-3 rounded-full text-white"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
           >
-            ログイン
-          </button>
-        </div>
-      </form>
-      <div className="text-center">
-        <a href="/passreset" className="text-blue-500 underline">
-          パスワードをお忘れの場合
-        </a>
-      </div>
+            編集確定
+          </Button>
+        </Box>
+      </Box>
       <AlertMessage
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"
         message="メールアドレスかパスワードが無効です"
       />
-    </div>
+    </Container>
   );
 };

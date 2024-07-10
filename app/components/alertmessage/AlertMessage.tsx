@@ -15,22 +15,21 @@ export const AlertMessage: React.FC<AlertMessageProps> = ({
   severity,
   message,
 }) => {
-  const handleCloseAlertMessage = (
-    event?: React.SyntheticEvent,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpen(false);
-  };
+  // const handleCloseAlertMessage = (
+  //   event?: React.SyntheticEvent,
+  //   reason?: string
+  // ) => {
+  //   if (reason === "clickaway") {
+  //     return;
+  //   }
+  //   setOpen(false);
+  // };
 
   return (
     <>
       {open && (
         <div className={`alert ${severity}`} role="alert">
           <span>{message}</span>
-          <button onClick={handleCloseAlertMessage}>Close</button>
         </div>
       )}
     </>

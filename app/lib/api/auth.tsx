@@ -1,7 +1,12 @@
 import { client } from "@/lib/api/client";
 import Cookies from "js-cookie";
 
-import { signUpParams, signInParams } from "@/interface/auth-interface";
+import {
+  signUpParams,
+  signInParams,
+  UpdateParams,
+  ResetParams,
+} from "@/interface/auth-interface";
 
 export const signUp = (params: signUpParams) => {
   return client.post("auth", params);
@@ -19,6 +24,14 @@ export const signOut = () => {
       uid: Cookies.get("_uid"),
     },
   });
+};
+
+export const UpdateUser = (params: UpdateParams) => {
+  return client.put("auth", params);
+};
+
+export const ResetPassword = (params: ResetParams) => {
+  return client.post("auth/password", params);
 };
 
 export const getCurrentUser = () => {

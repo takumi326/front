@@ -11,6 +11,18 @@ export interface signInParams {
   password: string;
 }
 
+// ユーザー情報変更
+export interface UpdateParams {
+  email: string;
+  password: string;
+}
+
+// ユーザー情報変更
+export interface ResetParams {
+  email: string;
+  redirect_url: string;
+}
+
 // ユーザー
 export interface User {
   id: number;
