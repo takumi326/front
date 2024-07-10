@@ -119,7 +119,7 @@ export const SignUpForm: React.FC = () => {
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"
-        message="Invalid email or password"
+        message="メールアドレスかパスワードが無効です"
       />
     </Container>
   );

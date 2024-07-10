@@ -142,9 +142,14 @@ export const Header: React.FC = () => {
         </ul>
         <ul className="flex ml-auto ml-64">
           {authenticated ? (
-            <li className="mx-10">
-              <button onClick={handleSignOut}>ログアウト</button>
-            </li>
+            <>
+              {/* <li className="">
+                <Link href="/account">アカウント設定</Link>
+              </li> */}
+              <li className="mx-10">
+                <button onClick={handleSignOut}>ログアウト</button>
+              </li>
+            </>
           ) : (
             <>
               <li className="">
