@@ -3,6 +3,15 @@ import React, { useState, useContext } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Link,
+} from "@mui/material";
+
 import { authContext } from "@/context/auth-context";
 import { signIn } from "@/lib/api/auth";
 import { signInParams } from "@/interface/auth-interface";
@@ -39,8 +48,6 @@ export const LoginForm: React.FC = () => {
         setcurrentUserId(res.data.data.id);
 
         router.push(`/money`);
-
-        // console.log("Signed in successfully!");
       } else {
         setAlertMessageOpen(true);
       }
@@ -51,58 +58,64 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto md:w-2/3 w-full px-10 pt-28 pb-16">
-      <p className="text-4xl font-bold text-center">ログイン</p>
-      <form onSubmit={handleSubmit} className="mb-0">
-        <div className="mt-16">
-          <label htmlFor="email" className="text-2xl">
-            メールアドレス
-          </label>
-          <input
-            type="email"
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          py: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          ログイン
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 3 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
             id="email"
-            placeholder="test@example.com"
-            className="w-full my-5 py-3"
+            label="メールアドレス"
+            name="email"
+            autoComplete="email"
+            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
-        </div>
-        <div>
-          <label htmlFor="password" className="text-2xl">
-            パスワード
-          </label>
-          <input
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="パスワード"
             type="password"
             id="password"
-            placeholder="password"
-            className="w-full my-5 py-3"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
           />
-        </div>
-        <div className="py-6 pb-24">
-          <button
+          <Button
             type="submit"
-            className="font-bold text-xl bg-blue-500 px-3 rounded-full text-white"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
           >
             ログイン
-          </button>
-        </div>
-      </form>
-      <div className="text-center">
-        <a href="/passreset" className="text-blue-500 underline">
-          パスワードをお忘れの場合
-        </a>
-      </div>
-      <AlertMessage
-        open={alertMessageOpen}
-        setOpen={setAlertMessageOpen}
-        severity="error"
-        message="メールアドレスかパスワードが無効です"
-      />
-    </div>
+          </Button>
+          <AlertMessage
+            open={alertMessageOpen}
+            setOpen={setAlertMessageOpen}
+            severity="error"
+            message="メールアドレスかパスワードが無効です"
+          />
+          <Typography className="mt-12">
+            <Link href="/passreset" color="primary" underline="hover">
+              パスワードをお忘れの場合
+            </Link>
+          </Typography>
+        </Box>
+      </Box>
+    </Container>
   );
 };

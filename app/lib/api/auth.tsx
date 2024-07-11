@@ -1,23 +1,25 @@
-import { client } from "@/lib/api/client";
+import { useSearchParams } from "next/navigation";
+import { authClient, resetClient } from "@/lib/api/authClient";
 import Cookies from "js-cookie";
 
 import {
   signUpParams,
   signInParams,
   UpdateParams,
+  ResetPasswordParams,
   ResetParams,
 } from "@/interface/auth-interface";
 
 export const signUp = (params: signUpParams) => {
-  return client.post("auth", params);
+  return authClient.post("auth", params);
 };
 
 export const signIn = (params: signInParams) => {
-  return client.post("auth/sign_in", params);
+  return authClient.post("auth/sign_in", params);
 };
 
 export const signOut = () => {
-  return client.delete("auth/sign_out", {
+  return authClient.delete("auth/sign_out", {
     headers: {
       "access-token": Cookies.get("_access_token"),
       client: Cookies.get("_client"),
@@ -27,11 +29,36 @@ export const signOut = () => {
 };
 
 export const UpdateUser = (params: UpdateParams) => {
-  return client.put("auth", params);
+  return authClient.put("auth", params);
 };
 
-export const ResetPassword = (params: ResetParams) => {
-  return client.post("auth/password", params);
+export const ResetPassword = (params: ResetPasswordParams) => {
+  return authClient.post("auth/password", params);
+};
+
+export const Reset = (params: ResetParams) => {
+  const {
+    password,
+    passwordConfirmation,
+    accessToken,
+    client,
+    uid,
+  } = params;
+
+  return resetClient.patch(
+    "auth/password",
+    {
+      password: password,
+      password_confirmation: passwordConfirmation
+    },
+    {
+      headers: {
+        "access-token": accessToken,
+        client: client,
+        uid: uid,
+      },
+    }
+  );
 };
 
 export const getCurrentUser = () => {
@@ -41,7 +68,7 @@ export const getCurrentUser = () => {
     !Cookies.get("_uid")
   )
     return;
-  return client.get("/auth/sessions", {
+  return authClient.get("/auth/sessions", {
     headers: {
       "access-token": Cookies.get("_access_token"),
       client: Cookies.get("_client"),

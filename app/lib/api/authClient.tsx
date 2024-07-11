@@ -10,11 +10,17 @@ const options = {
   ignoreHeaders: true,
 };
 
-export const client = applyCaseMiddleware(
+export const authClient = applyCaseMiddleware(
   axios.create({
     baseURL: "http://localhost:3000/api/v1",
   }),
   options
+);
+
+export const resetClient = applyCaseMiddleware(
+  axios.create({
+    baseURL: "http://localhost:3000/api/v1",
+  })
 );
 
 // "http://localhost:3000/api/v1"

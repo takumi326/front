@@ -1,65 +1,38 @@
 "use client";
-import React, { useState, useContext } from "react";
-import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Box, Container, Typography, TextField, Button } from "@mui/material";
 
-import { authContext } from "@/context/auth-context";
-import { signUp } from "@/lib/api/auth";
-import { signUpParams } from "@/interface/auth-interface";
+import { Reset } from "@/lib/api/auth";
+import { ResetParams } from "@/interface/auth-interface";
 
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
-export const SignUpForm: React.FC = () => {
+export const ResetForm: React.FC = () => {
   const router = useRouter();
-  const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
-    useContext(authContext);
+  const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState<string>("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
-  const [passwordAlertMessageOpen, setPasswordAlertMessageOpen] =
-    useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const params: signUpParams = {
-      email: email,
+    const params: ResetParams = {
       password: password,
       passwordConfirmation: passwordConfirmation,
+      accessToken: searchParams.get("access-token"),
+      client: searchParams.get("client"),
+      uid: searchParams.get("uid"),
     };
 
     try {
-      const res = await signUp(params);
-      console.log(res);
-
-      if (res.status === 200) {
-        Cookies.set("_access_token", res.headers["access-token"]);
-        Cookies.set("_client", res.headers["client"]);
-        Cookies.set("_uid", res.headers["uid"]);
-
-        setIsSignedIn(true);
-        setCurrentUser(res.data.data);
-        setcurrentUserId(res.data.data.id);
-
-        router.push(`/money`);
-
-        console.log("Signed in successfully!");
-      } else {
-        setAlertMessageOpen(true);
-        if (password.length < 6) {
-          setPasswordAlertMessageOpen(true);
-        }
-      }
+      await Reset(params);
+      router.push(`/login`);
     } catch (err) {
-      console.log(err);
       setAlertMessageOpen(true);
-      if (password.length < 6) {
-        setPasswordAlertMessageOpen(true);
-      }
     }
   };
 
@@ -74,21 +47,9 @@ export const SignUpForm: React.FC = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          アカウント作成
+          パスワード再設定
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 3 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="メールアドレス"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
           <TextField
             margin="normal"
             required
@@ -119,16 +80,10 @@ export const SignUpForm: React.FC = () => {
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
           >
-            ログイン
+            設定
           </Button>
           <AlertMessage
             open={alertMessageOpen}
-            setOpen={setAlertMessageOpen}
-            severity="error"
-            message="メールアドレスかパスワードが無効です"
-          />
-          <AlertMessage
-            open={passwordAlertMessageOpen}
             setOpen={setAlertMessageOpen}
             severity="error"
             message="パスワードは6文字以上にしてください"
