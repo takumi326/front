@@ -18,9 +18,17 @@ export interface UpdateParams {
 }
 
 // ユーザー情報変更
-export interface ResetParams {
+export interface ResetPasswordParams {
   email: string;
   redirect_url: string;
+}
+
+export interface ResetParams {
+  password: string;
+  passwordConfirmation: string;
+  accessToken: string | null;
+  client: string | null;
+  uid: string | null;
 }
 
 // ユーザー
