@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Box, Container, Typography, TextField, Button } from "@mui/material";
 
 import { ResetPassword } from "@/lib/api/auth";
-import { ResetParams } from "@/interface/auth-interface";
+import { ResetPasswordParams } from "@/interface/auth-interface";
 
 import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
@@ -18,10 +18,12 @@ export const PasswordReset: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const params: ResetParams = {
+    const params: ResetPasswordParams = {
       email: email,
-      redirect_url: "http://localhost:8000/reset",
+      redirect_url: "https://tasumane.vercel.app/reset",
     };
+    // "http://localhost:8000/reset"
+    // "https://tasumane.vercel.app/reset"
 
     try {
       await ResetPassword(params);
