@@ -89,26 +89,30 @@ export const AccountForm: React.FC = () => {
           >
             {String(currentEmail)}
           </Typography>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="newEmail"
-            label="新しいメールアドレス"
-            name="newEmail"
-            autoComplete="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={!isEmailValid}
-          >
-            編集確定
-          </Button>
+          {Cookies.get("_uid") != "guest111@getrequestmeta.com" && (
+            <>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="newEmail"
+                label="新しいメールアドレス"
+                name="newEmail"
+                autoComplete="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={!isEmailValid}
+              >
+                編集確定
+              </Button>
+            </>
+          )}
           <AlertMessage
             open={alertMessageOpen}
             setOpen={setAlertMessageOpen}
