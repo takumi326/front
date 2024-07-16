@@ -15,7 +15,6 @@ export const Header: React.FC = () => {
   const { setting, setSetting } = useContext(headerContext);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -28,6 +27,8 @@ export const Header: React.FC = () => {
         setSetting("Purpose");
       } else if (pathname.includes("/task")) {
         setSetting("Task");
+      } else if (pathname.includes("/account")) {
+        setSetting("Account");
       }
     };
 
@@ -143,9 +144,20 @@ export const Header: React.FC = () => {
         <ul className="flex ml-auto ml-64">
           {authenticated ? (
             <>
-              {/* <li className="">
-                <Link href="/account">アカウント設定</Link>
-              </li> */}
+              <li className="">
+                {setting === "Account" && (
+                  <Box
+                    component="li"
+                    sx={{
+                      borderBottom: "5px solid black",
+                      mb: 1,
+                    }}
+                  ></Box>
+                )}
+                <button onClick={handleClick("/account")}>
+                  アカウント設定
+                </button>
+              </li>
               <li className="mx-10">
                 <button onClick={handleSignOut}>ログアウト</button>
               </li>

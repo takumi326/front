@@ -14,6 +14,8 @@ export const authContext = createContext<{
   setCurrentUser: React.Dispatch<React.SetStateAction<User | undefined>>;
   currentUserId: number | undefined;
   setcurrentUserId: React.Dispatch<React.SetStateAction<number | undefined>>;
+  currentUserEmail: string | undefined;
+  setcurrentUserEmail: React.Dispatch<React.SetStateAction<string | undefined>>;
 }>({
   loading: false,
   setLoading: () => {},
@@ -23,6 +25,8 @@ export const authContext = createContext<{
   setCurrentUser: () => {},
   currentUserId: undefined,
   setcurrentUserId: () => {},
+  currentUserEmail: undefined,
+  setcurrentUserEmail: () => {},
 });
 
 interface AuthProviderProps {
@@ -36,6 +40,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUserId, setcurrentUserId] = useState<number | undefined>(
     undefined
   );
+  const [currentUserEmail, setcurrentUserEmail] = useState<string | undefined>(
+    undefined
+  );
   const router = useRouter();
   const pathname = usePathname();
 
@@ -47,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsSignedIn(true);
         setCurrentUser(res?.data.data);
         setcurrentUserId(res?.data.data.id);
+        setcurrentUserEmail(res?.data.data.uid);
       } else {
         console.log("No current user");
       }
@@ -78,6 +86,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setCurrentUser,
         currentUserId,
         setcurrentUserId,
+        currentUserEmail,
+        setcurrentUserEmail,
       }}
     >
       {children}

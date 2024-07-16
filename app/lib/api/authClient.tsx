@@ -12,14 +12,14 @@ const options = {
 
 export const authClient = applyCaseMiddleware(
   axios.create({
-    baseURL: "https://back-red-leaf-1146.fly.dev/api/v1",
+    baseURL: "ttps://back-red-leaf-1146.fly.dev/api/v1",
   }),
   options
 );
 
 export const resetClient = applyCaseMiddleware(
   axios.create({
-    baseURL: "https://back-red-leaf-1146.fly.dev/api/v1",
+    baseURL: "ttps://back-red-leaf-1146.fly.dev/api/v1",
   })
 );
 

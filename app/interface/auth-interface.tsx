@@ -13,8 +13,10 @@ export interface signInParams {
 
 // ユーザー情報変更
 export interface UpdateParams {
-  email: string;
-  password: string;
+  email: string | undefined;
+  accessToken: string | undefined;
+  client: string | undefined;
+  uid: string | undefined;
 }
 
 // ユーザー情報変更

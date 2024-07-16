@@ -13,8 +13,12 @@ import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
 export const SignUpForm: React.FC = () => {
   const router = useRouter();
-  const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
-    useContext(authContext);
+  const {
+    setcurrentUserId,
+    setIsSignedIn,
+    setCurrentUser,
+    setcurrentUserEmail,
+  } = useContext(authContext);
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -44,6 +48,7 @@ export const SignUpForm: React.FC = () => {
         setIsSignedIn(true);
         setCurrentUser(res.data.data);
         setcurrentUserId(res.data.data.id);
+        setcurrentUserEmail(res.data.data.uid);
 
         router.push(`/money`);
 
