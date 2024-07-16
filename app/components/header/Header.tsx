@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useState, useEffect } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
 
@@ -144,20 +144,24 @@ export const Header: React.FC = () => {
         <ul className="flex ml-auto ml-64">
           {authenticated ? (
             <>
-              <li className="">
-                {setting === "Account" && (
-                  <Box
-                    component="li"
-                    sx={{
-                      borderBottom: "5px solid black",
-                      mb: 1,
-                    }}
-                  ></Box>
-                )}
-                <button onClick={handleClick("/account")}>
-                  アカウント設定
-                </button>
-              </li>
+              {Cookies.get("_uid") != "guest111@getrequestmeta.com" && (
+                <>
+                  <li className="">
+                    {setting === "Account" && (
+                      <Box
+                        component="li"
+                        sx={{
+                          borderBottom: "5px solid black",
+                          mb: 1,
+                        }}
+                      ></Box>
+                    )}
+                    <button onClick={handleClick("/account")}>
+                      アカウント設定
+                    </button>
+                  </li>
+                </>
+              )}
               <li className="mx-10">
                 <button onClick={handleSignOut}>ログアウト</button>
               </li>
