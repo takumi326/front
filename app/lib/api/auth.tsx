@@ -29,7 +29,21 @@ export const signOut = () => {
 };
 
 export const UpdateUser = (params: UpdateParams) => {
-  return authClient.put("auth", params);
+  const { email, accessToken, client, uid } = params;
+
+  return resetClient.patch(
+    "auth",
+    {
+      email: email,
+    },
+    {
+      headers: {
+        "access-token": accessToken,
+        client: client,
+        uid: uid,
+      },
+    }
+  );
 };
 
 export const ResetPassword = (params: ResetPasswordParams) => {
@@ -37,19 +51,13 @@ export const ResetPassword = (params: ResetPasswordParams) => {
 };
 
 export const Reset = (params: ResetParams) => {
-  const {
-    password,
-    passwordConfirmation,
-    accessToken,
-    client,
-    uid,
-  } = params;
+  const { password, passwordConfirmation, accessToken, client, uid } = params;
 
   return resetClient.patch(
     "auth/password",
     {
       password: password,
-      password_confirmation: passwordConfirmation
+      password_confirmation: passwordConfirmation,
     },
     {
       headers: {

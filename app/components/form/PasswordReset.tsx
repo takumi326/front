@@ -46,7 +46,7 @@ export const PasswordReset: React.FC = () => {
         <Typography component="h1" variant="h5">
           パスワードリセット
         </Typography>
-        <Typography className="mt-24">
+        <Typography sx={{ mt: 24 }}>
           登録されているメールアドレスにパスワードリセットのメールを送信します
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 8 }}>

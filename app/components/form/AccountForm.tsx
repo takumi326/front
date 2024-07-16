@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
@@ -13,42 +13,54 @@ import { AlertMessage } from "@/components/alertmessage/AlertMessage";
 
 export const AccountForm: React.FC = () => {
   const router = useRouter();
-  const { setcurrentUserId, setIsSignedIn, setCurrentUser } =
-    useContext(authContext);
+  const {
+    setcurrentUserId,
+    setCurrentUser,
+    currentUserEmail,
+    setcurrentUserEmail,
+  } = useContext(authContext);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  //   const [passwordConfirmation, setPasswordConfirmation] = useState<string>("");
+  const [currentEmail, setCurrentEmail] = useState(currentUserEmail);
+  const [newEmail, setNewEmail] = useState("");
   const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
+  const [isEmailValid, setIsEmailValid] = useState(false);
+
+  useEffect(() => {
+    setCurrentEmail(currentUserEmail);
+  }, [currentUserEmail]);
+
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setIsEmailValid(emailRegex.test(newEmail));
+  }, [newEmail]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const params: UpdateParams = {
-      email: email,
-      password: password,
+      email: newEmail,
+      accessToken: Cookies.get("_access_token"),
+      client: Cookies.get("_client"),
+      uid: Cookies.get("_uid"),
     };
 
     try {
-      const res = await UpdateUser(params);
+      if (isEmailValid) {
+        const res = await UpdateUser(params);
 
-      if (res.status === 200) {
-        Cookies.set("_access_token", res.headers["access-token"]);
-        Cookies.set("_client", res.headers["client"]);
-        Cookies.set("_uid", res.headers["uid"]);
+        if (res.status === 200) {
+          // Cookies.set("_access_token", res.headers["access-token"]);
+          // Cookies.set("_client", res.headers["client"]);
+          Cookies.set("_uid", res.headers["uid"]);
 
-        // setIsSignedIn(true);
-        setCurrentUser(res.data.data);
-        setcurrentUserId(res.data.data.id);
-
-        router.push(`/account`);
-
-        // console.log("Signed in successfully!");
+          setCurrentUser(res.data.data);
+          setcurrentUserId(res.data.data.id);
+          setcurrentUserEmail(res.data.data.uid);
+        }
       } else {
         setAlertMessageOpen(true);
       }
     } catch (err) {
-      //   console.log(err);
       setAlertMessageOpen(true);
     }
   };
@@ -67,47 +79,44 @@ export const AccountForm: React.FC = () => {
           アカウント設定
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 3 }}>
+          <Typography component="h3" variant="body2" sx={{ mt: 3, mb: 2 }}>
+            現在のメールアドレス
+          </Typography>
+          <Typography
+            component="h1"
+            variant="h5"
+            sx={{ mb: 2, fontSize: "1.5rem" }}
+          >
+            {String(currentEmail)}
+          </Typography>
           <TextField
             margin="normal"
             required
             fullWidth
-            id="email"
-            label="メールアドレス"
-            name="email"
+            id="newEmail"
+            label="新しいメールアドレス"
+            name="newEmail"
             autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
           />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="パスワード"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
           <Button
             type="submit"
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={!isEmailValid}
           >
             編集確定
           </Button>
+          <AlertMessage
+            open={alertMessageOpen}
+            setOpen={setAlertMessageOpen}
+            severity="error"
+            message="メールアドレスが無効です"
+          />
         </Box>
       </Box>
-      <AlertMessage
-        open={alertMessageOpen}
-        setOpen={setAlertMessageOpen}
-        severity="error"
-        message="メールアドレスかパスワードが無効です"
-      />
     </Container>
   );
 };
