@@ -316,8 +316,8 @@ export const MoneyTable: React.FC = () => {
               (income: incomeData) =>
                 income.repetition === true &&
                 !(
-                  new Date(income.schedule).getTime() >= start.getTime() ||
-                  new Date(income.end_date).getTime() <= end.getTime()
+                  new Date(income.end_date).getTime() <= start.getTime() ||
+                  new Date(income.schedule).getTime() >= end.getTime()
                 )
             );
             setIncomes(() => [...noRepetitonIncomes, ...repetitonIncomes]);
