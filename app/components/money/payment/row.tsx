@@ -484,16 +484,17 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
-                  {row.classification_name !== "分類なし" &&
-                  classificationMonthlyAmount &&
-                  classificationMonthlyAmount.date === "100"
-                    ? "即時反映"
-                    : row.classification_account_name === null
-                    ? ""
-                    : Number(parseFloat(String(currentMonth.slice(4))) + 1) +
-                      "月" +
-                      row.classification_date +
-                      "日"}
+                  {classificationMonthlyAmount &&
+                  row.classification_name != "分類なし"
+                    ? classificationMonthlyAmount.date === "100"
+                      ? "即時反映"
+                      : row.classification_account_name === null
+                      ? ""
+                      : Number(parseFloat(String(currentMonth.slice(4))) + 1) +
+                        "月" +
+                        row.classification_date +
+                        "日"
+                    : null}
                 </TableCell>
               )}
             </>
