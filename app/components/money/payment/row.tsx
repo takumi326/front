@@ -484,7 +484,8 @@ export const PaymentRow: React.FC<paymentRowProps> = (props) => {
                 </TableCell>
               ) : (
                 <TableCell key={key} component="th" scope="row">
-                  {classificationMonthlyAmount &&
+                  {row.classification_name !== "分類なし" &&
+                  classificationMonthlyAmount &&
                   classificationMonthlyAmount.date === "100"
                     ? "即時反映"
                     : row.classification_account_name === null
