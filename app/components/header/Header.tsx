@@ -27,6 +27,8 @@ export const Header: React.FC = () => {
         setSetting("Purpose");
       } else if (pathname.includes("/task")) {
         setSetting("Task");
+      } else if (pathname.includes("/timer")) {
+        setSetting("Timer");
       } else if (pathname.includes("/account")) {
         setSetting("Account");
       }
@@ -80,7 +82,7 @@ export const Header: React.FC = () => {
             タスマネ
           </Link>
         </div>
-        <ul className="ml-64 grid grid-cols-4 gap-24">
+        <ul className="ml-64 grid grid-cols-5 gap-24">
           {authenticated ? (
             <>
               <li className="">
@@ -133,6 +135,18 @@ export const Header: React.FC = () => {
                   ></Box>
                 )}
                 <button onClick={handleClick("/task")}>タスク管理</button>
+              </li>
+              <li className="">
+                {/* {setting === "Timer" && (
+                  <Box
+                    component="li"
+                    sx={{
+                      borderBottom: "5px solid black",
+                      mb: 1,
+                    }}
+                  ></Box>
+                )}
+                <button onClick={handleClick("/timer")}>タイマー</button> */}
               </li>
             </>
           ) : (
