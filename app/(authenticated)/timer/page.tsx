@@ -4,7 +4,7 @@ import React from "react";
 // import { TaskCalendar } from "@/components/plate/taskCalendar";
 // import { TaskTable } from "@/components/plate/taskTable";
 
-// import { TaskProvider } from "@/context/task-context";
+import { TaskProvider } from "@/context/task-context";
 import { TimerView } from "@/components/plate/timer";
 
 const Timer: React.FC = () => {
@@ -27,7 +27,9 @@ const Timer: React.FC = () => {
           </div>
         </ul>
       </TaskProvider> */}
-      <TimerView />
+      <TaskProvider>
+        <TimerView />
+      </TaskProvider>
     </>
   );
 };
