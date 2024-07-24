@@ -30,9 +30,9 @@ export const TimerView: React.FC = () => {
     isEditing,
     setIsEditing,
   } = useContext(taskContext);
-  const [time, setTime] = useState(0); // タイマーの秒数を保持
-  const [isRunning, setIsRunning] = useState(false); // タイマーの状態を保持
-  const timerRef = useRef<NodeJS.Timeout | null>(null); // タイマーの参照
+  const [time, setTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false); 
+  const timerRef = useRef<NodeJS.Timeout | null>(null); 
 
   useEffect(() => {
     if (isRunning) {
