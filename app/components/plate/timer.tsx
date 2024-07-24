@@ -31,8 +31,8 @@ export const TimerView: React.FC = () => {
     setIsEditing,
   } = useContext(taskContext);
   const [time, setTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false); 
-  const timerRef = useRef<NodeJS.Timeout | null>(null); 
+  const [isRunning, setIsRunning] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isRunning) {
