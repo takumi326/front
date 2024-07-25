@@ -52,44 +52,44 @@ export const TimerView: React.FC = () => {
   }, [isRunning, time]);
 
   useEffect(() => {
-    const handleAllDataFetch = async () => {
-      await taskGetData().then((taskDatas) => {
-        const allTasks: Array<taskData> = [];
-        completedRepetitionTaskGetData().then(
-          (completedRepetitionTaskDatas) => {
-            taskDatas.forEach((taskData: taskData) => {
-              if (taskData.repetition === true) {
-                completedRepetitionTaskDatas
-                  .filter(
-                    (completedRepetitionTask: completedRepetitionTaskData) =>
-                      completedRepetitionTask.task_id === taskData.id
-                  )
-                  .forEach(
-                    (completedRepetitionTask: completedRepetitionTaskData) => {
-                      const repetitionTaskData = {
-                        id: taskData.id,
-                        title: taskData.title,
-                        purpose_id: taskData.purpose_id,
-                        purpose_title: taskData.purpose_title,
-                        schedule: completedRepetitionTask.completed_date,
-                        end_date: taskData.end_date,
-                        repetition: taskData.repetition,
-                        repetition_type: taskData.repetition_type,
-                        repetition_settings: taskData.repetition_settings,
-                        body: taskData.body,
-                        completed: completedRepetitionTask.completed,
-                      };
-                      allTasks.push(repetitionTaskData);
-                    }
-                  );
-              } else {
-                allTasks.push(taskData);
-              }
-            });
-            setCalendarTasks(allTasks);
-          }
-        );
-      });
+    // const handleAllDataFetch = async () => {
+    //   await taskGetData().then((taskDatas) => {
+    //     const allTasks: Array<taskData> = [];
+    //     completedRepetitionTaskGetData().then(
+    //       (completedRepetitionTaskDatas) => {
+    //         taskDatas.forEach((taskData: taskData) => {
+    //           if (taskData.repetition === true) {
+    //             completedRepetitionTaskDatas
+    //               .filter(
+    //                 (completedRepetitionTask: completedRepetitionTaskData) =>
+    //                   completedRepetitionTask.task_id === taskData.id
+    //               )
+    //               .forEach(
+    //                 (completedRepetitionTask: completedRepetitionTaskData) => {
+    //                   const repetitionTaskData = {
+    //                     id: taskData.id,
+    //                     title: taskData.title,
+    //                     purpose_id: taskData.purpose_id,
+    //                     purpose_title: taskData.purpose_title,
+    //                     schedule: completedRepetitionTask.completed_date,
+    //                     end_date: taskData.end_date,
+    //                     repetition: taskData.repetition,
+    //                     repetition_type: taskData.repetition_type,
+    //                     repetition_settings: taskData.repetition_settings,
+    //                     body: taskData.body,
+    //                     completed: completedRepetitionTask.completed,
+    //                   };
+    //                   allTasks.push(repetitionTaskData);
+    //                 }
+    //               );
+    //           } else {
+    //             allTasks.push(taskData);
+    //           }
+    //         });
+    //         setCalendarTasks(allTasks);
+    //       }
+    //     );
+    //   });
 
       //   await taskGetData().then((taskDatas) => {
       //     const allTasks: Array<taskData> = [];
